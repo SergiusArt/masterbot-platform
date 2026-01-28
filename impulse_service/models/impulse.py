@@ -54,6 +54,7 @@ class UserNotificationSettings(Base):
     __tablename__ = "user_notification_settings"
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     growth_threshold: Mapped[int] = mapped_column(Integer, default=20)
     fall_threshold: Mapped[int] = mapped_column(Integer, default=-15)
     morning_report: Mapped[bool] = mapped_column(Boolean, default=True)

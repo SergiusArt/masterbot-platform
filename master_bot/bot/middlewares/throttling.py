@@ -40,8 +40,8 @@ class ThrottlingMiddleware(BaseMiddleware):
             if await redis.get(key):
                 return  # Silently ignore throttled messages
 
-            # Set throttle key with expiration
-            await redis.set(key, "1", expire=int(self.rate_limit * 1000))
+            # Set throttle key with expiration (in seconds, minimum 1)
+            await redis.set(key, "1", expire=max(1, int(self.rate_limit)))
 
         except Exception:
             # If Redis fails, continue without throttling

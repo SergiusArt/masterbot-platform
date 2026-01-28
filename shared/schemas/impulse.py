@@ -91,6 +91,7 @@ class NotificationSettingsSchema(BaseSchema):
     """User notification settings schema."""
 
     user_id: int
+    notifications_enabled: bool = True
     growth_threshold: int = Field(default=20, ge=1, le=100)
     fall_threshold: int = Field(default=-15, ge=-100, le=-1)
     morning_report: bool = True
@@ -106,6 +107,7 @@ class NotificationSettingsSchema(BaseSchema):
 class NotificationSettingsUpdate(BaseSchema):
     """Update notification settings schema."""
 
+    notifications_enabled: Optional[bool] = None
     growth_threshold: Optional[int] = Field(default=None, ge=1, le=100)
     fall_threshold: Optional[int] = Field(default=None, ge=-100, le=-1)
     morning_report: Optional[bool] = None

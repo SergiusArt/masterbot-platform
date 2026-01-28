@@ -27,18 +27,61 @@ async def notifications_menu(message: Message) -> None:
         settings = await impulse_client.get_user_settings(user_id)
         growth = settings.get("growth_threshold", 20)
         fall = settings.get("fall_threshold", -15)
+        notifications_enabled = settings.get("notifications_enabled", True)
     except Exception:
         growth = 20
         fall = -15
+        notifications_enabled = True
+
+    status_text = "🔔 <b>Включены</b>" if notifications_enabled else "🔕 <b>Выключены</b>"
 
     await message.answer(
-        "🔔 <b>Уведомления</b>\n\n"
-        "Настройте пороги для получения уведомлений об импульсах.\n\n"
+        f"🔔 <b>Уведомления об импульсах</b>\n\n"
+        f"Статус: {status_text}\n\n"
         f"📈 <b>Порог роста:</b> {growth}%\n"
         f"📉 <b>Порог падения:</b> {fall}%\n\n"
+        "<i>Если вам нужны только отчёты без сигналов в реальном времени — "
+        "выключите уведомления.</i>\n\n"
         "Нажмите на кнопку для изменения:",
-        reply_markup=get_notifications_menu_keyboard(growth, fall),
+        reply_markup=get_notifications_menu_keyboard(growth, fall, notifications_enabled),
     )
+
+
+@router.message(F.text.in_(["🔔 Включить уведомления", "🔕 Выключить уведомления"]))
+async def toggle_notifications(message: Message) -> None:
+    """Toggle notifications on/off.
+
+    Args:
+        message: Incoming message
+    """
+    user_id = message.from_user.id
+
+    try:
+        settings = await impulse_client.get_user_settings(user_id)
+        current = settings.get("notifications_enabled", True)
+        new_value = not current
+
+        await impulse_client.update_user_settings(user_id, {"notifications_enabled": new_value})
+
+        if new_value:
+            await message.answer("🔔 Уведомления об импульсах <b>включены</b>")
+        else:
+            await message.answer(
+                "🔕 Уведомления об импульсах <b>выключены</b>\n\n"
+                "<i>Вы будете получать только отчёты.</i>"
+            )
+
+        # Refresh menu
+        growth = settings.get("growth_threshold", 20)
+        fall = settings.get("fall_threshold", -15)
+
+        await message.answer(
+            "Настройки уведомлений:",
+            reply_markup=get_notifications_menu_keyboard(growth, fall, new_value),
+        )
+
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
 
 
 @router.message(F.text.startswith("📈 Рост:"))

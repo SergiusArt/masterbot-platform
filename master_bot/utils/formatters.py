@@ -38,7 +38,7 @@ def format_analytics(data: dict) -> str:
         lines.append("\n<b>🏆 Топ рост:</b>")
         for item in top_growth[:5]:
             symbol = item.get("symbol", "N/A")
-            percent = item.get("percent", 0)
+            percent = float(item.get("percent", 0))
             count = item.get("count", 1)
             lines.append(f"  • {symbol}: <b>+{percent:.1f}%</b> ({count}x)")
 
@@ -48,7 +48,7 @@ def format_analytics(data: dict) -> str:
         lines.append("\n<b>📉 Топ падение:</b>")
         for item in top_fall[:5]:
             symbol = item.get("symbol", "N/A")
-            percent = item.get("percent", 0)
+            percent = float(item.get("percent", 0))
             count = item.get("count", 1)
             lines.append(f"  • {symbol}: <b>{percent:.1f}%</b> ({count}x)")
 
@@ -71,7 +71,7 @@ def format_impulse(data: dict) -> str:
         Formatted message string
     """
     symbol = data.get("symbol", "N/A")
-    percent = data.get("percent", 0)
+    percent = float(data.get("percent", 0))
     impulse_type = data.get("type", "growth")
 
     if impulse_type == "growth":
@@ -89,6 +89,6 @@ def format_impulse(data: dict) -> str:
 
     max_percent = data.get("max_percent")
     if max_percent:
-        lines.append(f"Максимум: <b>{max_percent:+.2f}%</b>")
+        lines.append(f"Максимум: <b>{float(max_percent):+.2f}%</b>")
 
     return "\n".join(lines)

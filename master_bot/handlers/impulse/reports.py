@@ -16,6 +16,19 @@ from shared.constants import (
 router = Router()
 
 
+REPORTS_HELP = """📋 <b>Отчёты</b>
+
+<b>Расписание отчётов:</b>
+🌅 <b>Утренний</b> — 08:00 (итоги за прошлый день)
+🌆 <b>Вечерний</b> — 20:00 (итоги за текущий день)
+📊 <b>Недельный</b> — понедельник 09:00 (пн-вс прошлой недели)
+📊 <b>Месячный</b> — 1-е число месяца 09:00 (прошлый месяц)
+
+<i>Время указано по московскому часовому поясу (UTC+3)</i>
+
+Нажмите на кнопку, чтобы включить/выключить отчёт:"""
+
+
 @router.message(F.text == MENU_REPORTS)
 async def reports_menu(message: Message) -> None:
     """Handle reports menu button.
@@ -28,8 +41,7 @@ async def reports_menu(message: Message) -> None:
     try:
         settings = await impulse_client.get_user_settings(user_id)
         await message.answer(
-            "📋 <b>Отчёты</b>\n\n"
-            "Нажмите на кнопку, чтобы включить/выключить отчёт:",
+            REPORTS_HELP,
             reply_markup=get_reports_menu_keyboard(
                 morning=settings.get("morning_report", True),
                 evening=settings.get("evening_report", True),
@@ -39,8 +51,7 @@ async def reports_menu(message: Message) -> None:
         )
     except Exception:
         await message.answer(
-            "📋 <b>Отчёты</b>\n\n"
-            "Нажмите на кнопку, чтобы включить/выключить отчёт:",
+            REPORTS_HELP,
             reply_markup=get_reports_menu_keyboard(),
         )
 

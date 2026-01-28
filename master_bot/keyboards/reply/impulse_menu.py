@@ -69,18 +69,23 @@ def get_analytics_menu_keyboard() -> ReplyKeyboardMarkup:
 def get_notifications_menu_keyboard(
     growth_threshold: int = 20,
     fall_threshold: int = -15,
+    notifications_enabled: bool = True,
 ) -> ReplyKeyboardMarkup:
     """Build notifications settings keyboard.
 
     Args:
         growth_threshold: Current growth threshold
         fall_threshold: Current fall threshold
+        notifications_enabled: Whether notifications are enabled
 
     Returns:
         Notifications menu keyboard
     """
+    toggle_text = "🔕 Выключить уведомления" if notifications_enabled else "🔔 Включить уведомления"
+
     return ReplyKeyboardMarkup(
         keyboard=[
+            [KeyboardButton(text=toggle_text)],
             [KeyboardButton(text=f"📈 Рост: {growth_threshold}%")],
             [KeyboardButton(text=f"📉 Падение: {fall_threshold}%")],
             [KeyboardButton(text=MENU_BACK)],

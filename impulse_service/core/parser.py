@@ -27,6 +27,8 @@ class ImpulseParser:
 
     # Common patterns for impulse messages
     PATTERNS = [
+        # Pattern: 🟢[SYNUSDT.P](link) **10%** or 🔴[AXSUSDT.P](link) **-15%**
+        r"\[([A-Z0-9]+(?:USDT|BUSD)?\.?P?)\]\([^)]+\)\s*\*\*([+-]?\d+\.?\d*)%\*\*",
         # Pattern: BTCUSDT +15.5%
         r"([A-Z0-9]+(?:USDT|BUSD|USDC|BTC|ETH))\s*([+-]?\d+\.?\d*)%",
         # Pattern: BTC/USDT: 15.5%
@@ -110,13 +112,18 @@ class ImpulseParser:
         Returns:
             Max percent or None
         """
-        # Pattern: max: 25.5%
-        match = re.search(r"max[:\s]+([+-]?\d+\.?\d*)%", message, re.IGNORECASE)
-        if match:
-            try:
-                return Decimal(match.group(1))
-            except ValueError:
-                pass
+        # Pattern: Максимальный импульс: 91% or max: 25.5%
+        patterns = [
+            r"Максимальный импульс[:\s]+([+-]?\d+\.?\d*)%",
+            r"max[:\s]+([+-]?\d+\.?\d*)%",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, message, re.IGNORECASE)
+            if match:
+                try:
+                    return Decimal(match.group(1))
+                except ValueError:
+                    pass
         return None
 
     def _extract_ratios(self, message: str) -> tuple[Optional[Decimal], Optional[Decimal]]:
@@ -131,14 +138,20 @@ class ImpulseParser:
         growth_ratio = None
         fall_ratio = None
 
-        # Pattern: G/F: 3.5/2.1
-        match = re.search(r"G/F[:\s]+(\d+\.?\d*)/(\d+\.?\d*)", message, re.IGNORECASE)
-        if match:
-            try:
-                growth_ratio = Decimal(match.group(1))
-                fall_ratio = Decimal(match.group(2))
-            except ValueError:
-                pass
+        # Pattern: 📈|29%|---|71%|📉 or G/F: 3.5/2.1
+        patterns = [
+            r"📈\|(\d+\.?\d*)%\|---\|(\d+\.?\d*)%\|📉",
+            r"G/F[:\s]+(\d+\.?\d*)/(\d+\.?\d*)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, message, re.IGNORECASE)
+            if match:
+                try:
+                    growth_ratio = Decimal(match.group(1))
+                    fall_ratio = Decimal(match.group(2))
+                    break
+                except ValueError:
+                    pass
 
         return growth_ratio, fall_ratio
 

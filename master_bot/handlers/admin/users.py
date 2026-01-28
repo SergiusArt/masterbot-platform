@@ -140,14 +140,23 @@ async def list_users(message: Message, is_admin: bool = False) -> None:
 
     for user in users:
         status = "✅" if user.is_active else "❌"
-        admin = "👑" if user.is_admin else ""
-        name = user.username or user.first_name or str(user.id)
+        admin = " 👑" if user.is_admin else ""
 
-        expires = ""
+        # Build name display
+        name_parts = []
+        if user.first_name:
+            name_parts.append(user.first_name)
+        if user.username:
+            name_parts.append(f"@{user.username}")
+        name = " ".join(name_parts) if name_parts else "—"
+
+        # Build expiration display
         if user.access_expires_at:
-            expires = f" (до {user.access_expires_at.strftime('%d.%m.%Y')})"
+            expires = f"до {user.access_expires_at.strftime('%d.%m.%Y')}"
+        else:
+            expires = "♾ бессрочно"
 
-        lines.append(f"{status}{admin} <code>{user.id}</code> - {name}{expires}")
+        lines.append(f"{status}{admin} <code>{user.id}</code> | {name} | {expires}")
 
     await message.answer("\n".join(lines))
 
