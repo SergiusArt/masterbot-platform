@@ -1,0 +1,63 @@
+"""Start command and main menu handlers."""
+
+from aiogram import Router, F
+from aiogram.filters import CommandStart, Command
+from aiogram.types import Message
+
+from keyboards.reply.main_menu import get_main_menu_keyboard
+
+router = Router()
+
+
+@router.message(CommandStart())
+async def cmd_start(message: Message, is_admin: bool = False) -> None:
+    """Handle /start command.
+
+    Args:
+        message: Incoming message
+        is_admin: Whether user is admin
+    """
+    user = message.from_user
+    name = user.first_name or user.username or "пользователь"
+
+    await message.answer(
+        f"👋 <b>Добро пожаловать, {name}!</b>\n\n"
+        f"Это <b>MasterBot</b> — единая платформа для управления сервисами.\n\n"
+        f"Выберите раздел в меню ниже:",
+        reply_markup=get_main_menu_keyboard(is_admin),
+    )
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message) -> None:
+    """Handle /help command.
+
+    Args:
+        message: Incoming message
+    """
+    await message.answer(
+        "📚 <b>Справка по MasterBot</b>\n\n"
+        "<b>Доступные команды:</b>\n"
+        "/start — Начать работу с ботом\n"
+        "/help — Показать справку\n"
+        "/menu — Вернуться в главное меню\n\n"
+        "<b>Разделы:</b>\n"
+        "📊 <b>Импульсы</b> — Аналитика и уведомления по криптовалютам\n"
+        "⚙️ <b>Настройки</b> — Настройки профиля\n"
+        "👑 <b>Админ-панель</b> — Управление пользователями (только для админов)\n\n"
+        "По всем вопросам обращайтесь к администратору."
+    )
+
+
+@router.message(Command("menu"))
+async def cmd_menu(message: Message, is_admin: bool = False) -> None:
+    """Handle /menu command.
+
+    Args:
+        message: Incoming message
+        is_admin: Whether user is admin
+    """
+    await message.answer(
+        "🏠 <b>Главное меню</b>\n\nВыберите раздел:",
+        reply_markup=get_main_menu_keyboard(is_admin),
+    )

@@ -1,0 +1,25 @@
+"""Impulse section menu handler."""
+
+from aiogram import Router, F
+from aiogram.types import Message
+
+from keyboards.reply.impulse_menu import get_impulse_menu_keyboard
+from shared.constants import MENU_IMPULSES
+
+router = Router()
+
+
+@router.message(F.text == MENU_IMPULSES)
+async def impulse_menu(message: Message) -> None:
+    """Handle impulse menu button.
+
+    Args:
+        message: Incoming message
+    """
+    await message.answer(
+        "📊 <b>Раздел: Импульсы</b>\n\n"
+        "Здесь вы можете просматривать аналитику по криптовалютам, "
+        "настраивать уведомления и получать отчёты.\n\n"
+        "Выберите действие:",
+        reply_markup=get_impulse_menu_keyboard(),
+    )

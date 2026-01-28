@@ -1,0 +1,167 @@
+"""Scheduler for periodic tasks."""
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+from services.report_service import report_service
+from shared.utils.redis_client import get_redis_client
+from shared.utils.logger import get_logger
+from shared.constants import REDIS_CHANNEL_NOTIFICATIONS, EVENT_REPORT_READY
+from config import settings
+
+logger = get_logger("scheduler")
+
+scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
+
+
+async def send_morning_reports():
+    """Send morning reports to subscribed users."""
+    logger.info("Sending morning reports...")
+
+    from sqlalchemy import select
+    from models.impulse import UserNotificationSettings
+    from shared.database.connection import async_session_maker
+
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(UserNotificationSettings.user_id).where(
+                UserNotificationSettings.morning_report == True
+            )
+        )
+        user_ids = [row[0] for row in result.all()]
+
+    redis = await get_redis_client()
+
+    for user_id in user_ids:
+        try:
+            report = await report_service.generate_report("morning", user_id)
+            await redis.publish(
+                REDIS_CHANNEL_NOTIFICATIONS,
+                {
+                    "event": EVENT_REPORT_READY,
+                    "user_id": user_id,
+                    "data": {
+                        "type": "morning",
+                        "text": report.text,
+                        "timestamp": report.generated_at.isoformat(),
+                    },
+                },
+            )
+        except Exception as e:
+            logger.error(f"Failed to send morning report to {user_id}: {e}")
+
+    logger.info(f"Morning reports sent to {len(user_ids)} users")
+
+
+async def send_evening_reports():
+    """Send evening reports to subscribed users."""
+    logger.info("Sending evening reports...")
+
+    from sqlalchemy import select
+    from models.impulse import UserNotificationSettings
+    from shared.database.connection import async_session_maker
+
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(UserNotificationSettings.user_id).where(
+                UserNotificationSettings.evening_report == True
+            )
+        )
+        user_ids = [row[0] for row in result.all()]
+
+    redis = await get_redis_client()
+
+    for user_id in user_ids:
+        try:
+            report = await report_service.generate_report("evening", user_id)
+            await redis.publish(
+                REDIS_CHANNEL_NOTIFICATIONS,
+                {
+                    "event": EVENT_REPORT_READY,
+                    "user_id": user_id,
+                    "data": {
+                        "type": "evening",
+                        "text": report.text,
+                        "timestamp": report.generated_at.isoformat(),
+                    },
+                },
+            )
+        except Exception as e:
+            logger.error(f"Failed to send evening report to {user_id}: {e}")
+
+    logger.info(f"Evening reports sent to {len(user_ids)} users")
+
+
+async def send_weekly_reports():
+    """Send weekly reports to subscribed users."""
+    logger.info("Sending weekly reports...")
+
+    from sqlalchemy import select
+    from models.impulse import UserNotificationSettings
+    from shared.database.connection import async_session_maker
+
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(UserNotificationSettings.user_id).where(
+                UserNotificationSettings.weekly_report == True
+            )
+        )
+        user_ids = [row[0] for row in result.all()]
+
+    redis = await get_redis_client()
+
+    for user_id in user_ids:
+        try:
+            report = await report_service.generate_report("weekly", user_id)
+            await redis.publish(
+                REDIS_CHANNEL_NOTIFICATIONS,
+                {
+                    "event": EVENT_REPORT_READY,
+                    "user_id": user_id,
+                    "data": {
+                        "type": "weekly",
+                        "text": report.text,
+                        "timestamp": report.generated_at.isoformat(),
+                    },
+                },
+            )
+        except Exception as e:
+            logger.error(f"Failed to send weekly report to {user_id}: {e}")
+
+    logger.info(f"Weekly reports sent to {len(user_ids)} users")
+
+
+def start_scheduler():
+    """Start the scheduler."""
+    # Morning reports at 8:00
+    scheduler.add_job(
+        send_morning_reports,
+        CronTrigger(hour=8, minute=0),
+        id="morning_reports",
+        replace_existing=True,
+    )
+
+    # Evening reports at 20:00
+    scheduler.add_job(
+        send_evening_reports,
+        CronTrigger(hour=20, minute=0),
+        id="evening_reports",
+        replace_existing=True,
+    )
+
+    # Weekly reports on Monday at 9:00
+    scheduler.add_job(
+        send_weekly_reports,
+        CronTrigger(day_of_week="mon", hour=9, minute=0),
+        id="weekly_reports",
+        replace_existing=True,
+    )
+
+    scheduler.start()
+    logger.info("Scheduler started")
+
+
+def stop_scheduler():
+    """Stop the scheduler."""
+    scheduler.shutdown(wait=False)
+    logger.info("Scheduler stopped")
