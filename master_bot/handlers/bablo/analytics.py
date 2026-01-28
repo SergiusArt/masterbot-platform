@@ -1,0 +1,116 @@
+"""Bablo analytics handlers."""
+
+from aiogram import Router, F
+from aiogram.types import Message
+
+from keyboards.reply.bablo_menu import get_bablo_analytics_keyboard
+from keyboards.reply.impulse_menu import get_analytics_menu_keyboard
+from services.bablo_client import bablo_client
+from shared.constants import (
+    MENU_BABLO_ANALYTICS,
+    MENU_TODAY,
+    MENU_YESTERDAY,
+    MENU_WEEK,
+    MENU_MONTH,
+    MENU_BACK,
+)
+
+router = Router()
+
+
+@router.message(F.text == MENU_BABLO_ANALYTICS)
+async def bablo_analytics_menu(message: Message) -> None:
+    """Handle Bablo analytics menu.
+
+    Args:
+        message: Incoming message
+    """
+    await message.answer(
+        "📊 <b>Статистика Bablo</b>\n\n"
+        "Выберите период:",
+        reply_markup=get_bablo_analytics_keyboard(),
+    )
+
+
+async def _show_analytics(message: Message, period: str) -> None:
+    """Show analytics for specified period.
+
+    Args:
+        message: Incoming message
+        period: Analytics period
+    """
+    period_labels = {
+        "today": "за сегодня",
+        "yesterday": "за вчера",
+        "week": "за неделю",
+        "month": "за месяц",
+    }
+
+    try:
+        data = await bablo_client.get_analytics(period)
+
+        total = data.get("total_signals", 0)
+        long_count = data.get("long_count", 0)
+        short_count = data.get("short_count", 0)
+        avg_quality = data.get("average_quality")
+
+        lines = [
+            f"💰 <b>Статистика Bablo {period_labels.get(period, period)}</b>",
+            "",
+            f"📊 Всего сигналов: <b>{total}</b>",
+            f"🟢 Long: {long_count} | 🔴 Short: {short_count}",
+        ]
+
+        # Timeframe breakdown
+        by_tf = data.get("by_timeframe", {})
+        if by_tf:
+            lines.append("")
+            lines.append("📈 <b>По таймфреймам:</b>")
+            for tf, count in sorted(by_tf.items()):
+                lines.append(f"  • {tf}: {count}")
+
+        # Average quality
+        if avg_quality:
+            lines.append("")
+            lines.append(f"⭐ Средний показатель качества: <b>{avg_quality}</b>")
+
+        # Top symbols
+        top_symbols = data.get("top_symbols", [])
+        if top_symbols:
+            lines.append("")
+            lines.append("🏆 <b>Топ символы:</b>")
+            for item in top_symbols[:5]:
+                lines.append(f"  • {item['symbol']}: {item['count']}")
+
+        await message.answer("\n".join(lines))
+
+    except Exception as e:
+        await message.answer(
+            f"❌ <b>Ошибка</b>\n\n"
+            f"Не удалось получить аналитику: {str(e)}\n\n"
+            "Попробуйте позже."
+        )
+
+
+@router.message(F.text == "💰 " + MENU_TODAY[2:])  # За сегодня (Bablo context)
+async def bablo_analytics_today(message: Message) -> None:
+    """Show today's Bablo analytics."""
+    await _show_analytics(message, "today")
+
+
+@router.message(F.text == "💰 " + MENU_YESTERDAY[2:])  # За вчера (Bablo context)
+async def bablo_analytics_yesterday(message: Message) -> None:
+    """Show yesterday's Bablo analytics."""
+    await _show_analytics(message, "yesterday")
+
+
+@router.message(F.text == "💰 " + MENU_WEEK[2:])  # За неделю (Bablo context)
+async def bablo_analytics_week(message: Message) -> None:
+    """Show week's Bablo analytics."""
+    await _show_analytics(message, "week")
+
+
+@router.message(F.text == "💰 " + MENU_MONTH[2:])  # За месяц (Bablo context)
+async def bablo_analytics_month(message: Message) -> None:
+    """Show month's Bablo analytics."""
+    await _show_analytics(message, "month")

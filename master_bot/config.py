@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # Services
     IMPULSE_SERVICE_URL: str = "http://localhost:8001"
+    BABLO_SERVICE_URL: str = "http://localhost:8002"
 
     # Timezone
     TIMEZONE: str = "Europe/Moscow"

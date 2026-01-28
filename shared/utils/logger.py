@@ -60,4 +60,6 @@ def get_logger(name: str) -> logging.Logger:
 # Pre-configured loggers
 bot_logger = setup_logger("master_bot")
 impulse_logger = setup_logger("impulse_service")
+bablo_logger = setup_logger("bablo_service")
+bablo_listener_logger = setup_logger("bablo_listener")
 db_logger = setup_logger("database")

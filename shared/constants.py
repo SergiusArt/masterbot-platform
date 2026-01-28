@@ -28,15 +28,19 @@ class AnalyticsPeriod(str, Enum):
     MONTH = "month"
 
 
-# Redis channels
+# Redis channels - Impulse
 REDIS_CHANNEL_NOTIFICATIONS = "impulse:notifications"
 REDIS_CHANNEL_ACTIVITY = "impulse:activity"
 REDIS_CHANNEL_REPORTS = "impulse:reports"
+
+# Redis channels - Bablo
+REDIS_CHANNEL_BABLO = "bablo:notifications"
 
 # Event types
 EVENT_IMPULSE_ALERT = "impulse_alert"
 EVENT_ACTIVITY_ALERT = "activity_alert"
 EVENT_REPORT_READY = "report_ready"
+EVENT_BABLO_SIGNAL = "bablo_signal"
 
 # Default values
 DEFAULT_GROWTH_THRESHOLD = 20
@@ -50,6 +54,7 @@ DEFAULT_EVENING_REPORT_TIME = "20:00"
 MENU_MAIN = "🏠 Главное меню"
 MENU_BACK = "◀️ Назад"
 MENU_IMPULSES = "📊 Импульсы"
+MENU_BABLO = "💰 Bablo"
 MENU_ANALYTICS = "📈 Аналитика"
 MENU_NOTIFICATIONS = "🔔 Уведомления"
 MENU_REPORTS = "📋 Отчёты"
@@ -58,6 +63,17 @@ MENU_SETTINGS = "⚙️ Настройки"
 MENU_ADMIN = "👑 Админ-панель"
 MENU_USERS = "👥 Пользователи"
 MENU_SERVICES = "🔧 Сервисы"
+
+# Bablo menu buttons
+MENU_BABLO_ANALYTICS = "📊 Статистика"
+MENU_BABLO_SIGNALS = "📋 Сигналы"
+MENU_BABLO_SETTINGS = "⚙️ Настройки"
+MENU_BABLO_TIMEFRAMES = "⏱ Таймфреймы"
+MENU_BABLO_DIRECTIONS = "📈 Направления"
+MENU_BABLO_QUALITY = "⭐ Качество"
+
+# Bablo timeframes
+BABLO_TIMEFRAMES = ["1m", "15m", "1h", "4h"]
 
 # Analytics period buttons
 MENU_TODAY = "📅 За сегодня"

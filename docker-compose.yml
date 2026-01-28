@@ -46,6 +46,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       - REDIS_URL=redis://redis:6379/0
       - IMPULSE_SERVICE_URL=http://impulse_service:8001
+      - BABLO_SERVICE_URL=http://bablo_service:8002
       - TIMEZONE=${TIMEZONE}
     depends_on:
       postgres:
@@ -53,6 +54,8 @@ services:
       redis:
         condition: service_healthy
       impulse_service:
+        condition: service_healthy
+      bablo_service:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -80,6 +83,35 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - masterbot_network
+
+  # Bablo Service
+  bablo_service:
+    build:
+      context: .
+      dockerfile: bablo_service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://redis:6379/0
+      - BABLO_CHANNEL_ID=${BABLO_CHANNEL_ID}
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_SESSION_STRING=${TELEGRAM_SESSION_STRING}
+      - TIMEZONE=${TIMEZONE}
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 10s
       timeout: 5s
       retries: 3

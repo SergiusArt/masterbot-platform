@@ -21,6 +21,10 @@ from handlers.admin import menu as admin_menu
 from handlers.admin import users as admin_users
 from handlers.admin import services as admin_services
 from handlers.settings import menu as settings_menu
+from handlers.bablo import menu as bablo_menu
+from handlers.bablo import analytics as bablo_analytics
+from handlers.bablo import settings as bablo_settings
+from handlers.bablo import signals as bablo_signals
 from services.notification_listener import NotificationListener
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
@@ -78,6 +82,12 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(impulse_reports.router)
     dp.include_router(impulse_notifications.router)
     dp.include_router(impulse_activity.router)
+
+    # Bablo handlers
+    dp.include_router(bablo_menu.router)
+    dp.include_router(bablo_analytics.router)
+    dp.include_router(bablo_settings.router)
+    dp.include_router(bablo_signals.router)
 
     # Admin handlers
     dp.include_router(admin_menu.router)
