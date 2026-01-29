@@ -86,6 +86,31 @@ async def change_activity_threshold(message: Message, state: FSMContext) -> None
     )
 
 
+@router.message(ActivitySettingsState.waiting_for_window, F.text == MENU_BACK)
+async def back_from_window_input(message: Message, state: FSMContext) -> None:
+    """Handle back button when waiting for window input.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.bablo_activity)
+    user_id = message.from_user.id
+
+    try:
+        settings = await bablo_client.get_user_settings(user_id)
+        window = settings.get("activity_window_minutes", 15)
+        threshold = settings.get("activity_threshold", 10)
+    except Exception:
+        window = 15
+        threshold = 10
+
+    await message.answer(
+        "⚡ <b>Настройки активности</b>",
+        reply_markup=get_activity_menu_keyboard(window, threshold),
+    )
+
+
 @router.message(ActivitySettingsState.waiting_for_window)
 async def process_window_input(message: Message, state: FSMContext) -> None:
     """Process activity window input.
@@ -104,7 +129,7 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
             user_id, {"activity_window_minutes": value}
         )
 
-        await state.clear()
+        await state.set_state(MenuState.bablo_activity)
         await message.answer(f"✅ Окно активности установлено: {value} минут")
 
         # Refresh menu
@@ -121,6 +146,31 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
         await message.answer(
             "❌ Введите число от 5 до 60.\n\nПопробуйте ещё раз:"
         )
+
+
+@router.message(ActivitySettingsState.waiting_for_threshold, F.text == MENU_BACK)
+async def back_from_threshold_input(message: Message, state: FSMContext) -> None:
+    """Handle back button when waiting for threshold input.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.bablo_activity)
+    user_id = message.from_user.id
+
+    try:
+        settings = await bablo_client.get_user_settings(user_id)
+        window = settings.get("activity_window_minutes", 15)
+        threshold = settings.get("activity_threshold", 10)
+    except Exception:
+        window = 15
+        threshold = 10
+
+    await message.answer(
+        "⚡ <b>Настройки активности</b>",
+        reply_markup=get_activity_menu_keyboard(window, threshold),
+    )
 
 
 @router.message(ActivitySettingsState.waiting_for_threshold)
@@ -141,7 +191,7 @@ async def process_threshold_input(message: Message, state: FSMContext) -> None:
             user_id, {"activity_threshold": value}
         )
 
-        await state.clear()
+        await state.set_state(MenuState.bablo_activity)
         await message.answer(f"✅ Порог активности установлен: {value} сигналов")
 
         # Refresh menu

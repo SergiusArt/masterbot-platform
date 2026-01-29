@@ -17,8 +17,10 @@ def get_bablo_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_BABLO_ANALYTICS),
                 KeyboardButton(text=MENU_BABLO_SIGNALS),
             ],
-            [KeyboardButton(text=MENU_ACTIVITY)],
-            [KeyboardButton(text=MENU_BABLO_SETTINGS)],
+            [
+                KeyboardButton(text=MENU_ACTIVITY),
+                KeyboardButton(text=MENU_BABLO_SETTINGS),
+            ],
             [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,

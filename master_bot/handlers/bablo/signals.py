@@ -44,7 +44,8 @@ async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
     await state.update_data(selected_timeframes=set(), signal_direction=None)
     await message.answer(
         "📋 <b>Сигналы Bablo</b>\n\n"
-        "Выберите тип сигналов:",
+        "Здесь отображаются <b>все сигналы за текущий день</b>, которые соответствуют вашим фильтрам.\n\n"
+        "Выберите направление сигналов для просмотра:",
         reply_markup=get_bablo_signals_keyboard(),
     )
 

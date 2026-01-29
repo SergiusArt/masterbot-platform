@@ -98,6 +98,7 @@ async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
 
         await message.answer(
             f"⚙️ <b>Настройки Bablo</b>\n\n"
+            f"<i>Здесь настраивается фильтрация поступающих уведомлений о сигналах.</i>\n\n"
             f"Уведомления: {status}\n\n"
             f"⭐ <b>Мин. качество:</b> {min_quality}/10\n"
             f"⏱ <b>Таймфреймы:</b> {', '.join(tf_list) or 'все'}\n"
