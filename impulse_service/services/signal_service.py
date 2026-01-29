@@ -108,6 +108,45 @@ class SignalService:
                 offset=offset,
             )
 
+    async def create_signal_with_date(self, impulse: ImpulseCreate) -> int:
+        """Create impulse with explicit received_at (for backfill).
+
+        Uses raw SQL INSERT to bypass server_default on received_at.
+
+        Args:
+            impulse: Impulse data with received_at
+
+        Returns:
+            Created impulse ID
+        """
+        if impulse.received_at is None:
+            # Fall back to regular create if no date provided
+            return await self.create_signal(impulse)
+
+        async with async_session_maker() as session:
+            result = await session.execute(
+                text("""
+                    INSERT INTO impulses (symbol, percent, max_percent, type, growth_ratio, fall_ratio, raw_message, received_at)
+                    VALUES (:symbol, :percent, :max_percent, :type, :growth_ratio, :fall_ratio, :raw_message, :received_at)
+                    RETURNING id
+                """),
+                {
+                    "symbol": impulse.symbol,
+                    "percent": float(impulse.percent),
+                    "max_percent": float(impulse.max_percent) if impulse.max_percent else None,
+                    "type": impulse.type,
+                    "growth_ratio": float(impulse.growth_ratio) if impulse.growth_ratio else None,
+                    "fall_ratio": float(impulse.fall_ratio) if impulse.fall_ratio else None,
+                    "raw_message": impulse.raw_message,
+                    "received_at": impulse.received_at,
+                }
+            )
+            await session.commit()
+            impulse_id = result.scalar_one()
+
+            logger.info(f"Created impulse (backfill): {impulse.symbol} {impulse.percent}% at {impulse.received_at}")
+            return impulse_id
+
     async def get_recent_signals(self, minutes: int = 15) -> list[Impulse]:
         """Get signals from recent time window.
 
