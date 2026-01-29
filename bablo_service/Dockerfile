@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy shared module
@@ -17,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY bablo_service /app
+
+# Set timezone
+ENV TZ=Europe/Moscow
 
 # Run service
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]

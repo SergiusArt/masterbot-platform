@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy shared module
@@ -20,6 +21,9 @@ COPY impulse_service /app
 
 # Set Python path
 ENV PYTHONPATH=/app
+
+# Set timezone
+ENV TZ=Europe/Moscow
 
 # Expose port
 EXPOSE 8001
