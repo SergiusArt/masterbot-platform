@@ -35,8 +35,12 @@ class SignalService:
                 growth_ratio=impulse.growth_ratio,
                 fall_ratio=impulse.fall_ratio,
                 raw_message=impulse.raw_message,
-                received_at=impulse.received_at if impulse.received_at else None,
             )
+
+            # Override server_default by setting attribute after creation
+            if impulse.received_at is not None:
+                db_impulse.received_at = impulse.received_at
+
             session.add(db_impulse)
             await session.commit()
             await session.refresh(db_impulse)
