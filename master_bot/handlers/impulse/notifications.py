@@ -54,7 +54,7 @@ async def notifications_menu(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(F.text.in_(["🔔 Включить уведомления", "🔕 Выключить уведомления"]))
+@router.message(F.text.in_(["🔔", "🔕", "🔔 Включить уведомления", "🔕 Выключить уведомления"]))
 async def toggle_notifications(message: Message) -> None:
     """Toggle notifications on/off.
 
@@ -91,7 +91,7 @@ async def toggle_notifications(message: Message) -> None:
         await message.answer(f"❌ Ошибка: {str(e)}")
 
 
-@router.message(F.text.startswith("📈 Рост:"))
+@router.message(F.text.startswith("📈"))
 async def change_growth_threshold(message: Message) -> None:
     """Show growth threshold selection.
 
@@ -113,7 +113,7 @@ async def change_growth_threshold(message: Message) -> None:
     )
 
 
-@router.message(F.text.startswith("📉 Падение:"))
+@router.message(F.text.startswith("📉"))
 async def change_fall_threshold(message: Message) -> None:
     """Show fall threshold selection.
 

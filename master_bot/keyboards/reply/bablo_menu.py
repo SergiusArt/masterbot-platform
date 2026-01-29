@@ -67,7 +67,7 @@ def get_bablo_settings_keyboard(
     Returns:
         Settings menu keyboard
     """
-    toggle_text = "🔕 Выключить Bablo" if notifications_enabled else "🔔 Включить Bablo"
+    toggle_text = "🔕" if notifications_enabled else "🔔"
 
     # Format timeframes display
     if timeframes:
@@ -83,12 +83,10 @@ def get_bablo_settings_keyboard(
 
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=toggle_text)],
-            [KeyboardButton(text=f"⭐ Качество: {min_quality}/10")],
-            [KeyboardButton(text=f"⏱ Таймфреймы: {tf_text}")],
-            [KeyboardButton(text=f"📈 Направления: {dir_text}")],
-            [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN)],
+            [KeyboardButton(text=toggle_text), KeyboardButton(text=f"⭐ {min_quality}/10")],
+            [KeyboardButton(text=f"⏱ {tf_text}")],
+            [KeyboardButton(text=f"📈 {dir_text}")],
+            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -234,8 +232,10 @@ def get_activity_menu_keyboard(
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=f"⏱ Окно: {window} мин")],
-            [KeyboardButton(text=f"📊 Порог: {threshold}")],
+            [
+                KeyboardButton(text=f"⏱ {window}м"),
+                KeyboardButton(text=f"📊 {threshold}"),
+            ],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN)],
         ],

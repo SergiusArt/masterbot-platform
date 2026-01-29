@@ -80,15 +80,16 @@ def get_notifications_menu_keyboard(
     Returns:
         Notifications menu keyboard
     """
-    toggle_text = "🔕 Выключить уведомления" if notifications_enabled else "🔔 Включить уведомления"
+    toggle_text = "🔕" if notifications_enabled else "🔔"
 
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=toggle_text)],
-            [KeyboardButton(text=f"📈 Рост: {growth_threshold}%")],
-            [KeyboardButton(text=f"📉 Падение: {fall_threshold}%")],
-            [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN)],
+            [
+                KeyboardButton(text=f"📈 {growth_threshold}%"),
+                KeyboardButton(text=f"📉 {fall_threshold}%"),
+            ],
+            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -149,8 +150,10 @@ def get_activity_menu_keyboard(
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=f"⏱ Окно: {window} мин")],
-            [KeyboardButton(text=f"📊 Порог: {threshold}")],
+            [
+                KeyboardButton(text=f"⏱ {window}м"),
+                KeyboardButton(text=f"📊 {threshold}"),
+            ],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN)],
         ],

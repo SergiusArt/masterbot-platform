@@ -110,7 +110,7 @@ async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
         await message.answer(f"❌ Ошибка: {str(e)}")
 
 
-@router.message(MenuState.bablo_settings, F.text.in_(["🔔 Включить Bablo", "🔕 Выключить Bablo"]))
+@router.message(MenuState.bablo_settings, F.text.in_(["🔔", "🔕", "🔔 Включить Bablo", "🔕 Выключить Bablo"]))
 async def toggle_bablo_notifications(message: Message, state: FSMContext) -> None:
     """Toggle Bablo notifications.
 
@@ -156,7 +156,7 @@ async def toggle_bablo_notifications(message: Message, state: FSMContext) -> Non
         await message.answer(f"❌ Ошибка: {str(e)}")
 
 
-@router.message(MenuState.bablo_settings, F.text.startswith("⭐ Качество:"))
+@router.message(MenuState.bablo_settings, F.text.startswith("⭐"))
 async def change_quality_threshold(message: Message) -> None:
     """Show quality threshold selection.
 
@@ -203,7 +203,7 @@ async def process_quality_callback(callback: CallbackQuery) -> None:
 
 
 # Timeframe settings handlers
-@router.message(MenuState.bablo_settings, F.text.startswith("⏱ Таймфреймы:"))
+@router.message(MenuState.bablo_settings, F.text.startswith("⏱"))
 async def open_timeframe_settings(message: Message, state: FSMContext) -> None:
     """Open timeframe selection for settings.
 
@@ -350,7 +350,7 @@ async def back_from_timeframe_settings(message: Message, state: FSMContext) -> N
 
 
 # Direction settings handlers
-@router.message(MenuState.bablo_settings, F.text.startswith("📈 Направления:"))
+@router.message(MenuState.bablo_settings, F.text.startswith("📈"))
 async def open_direction_settings(message: Message, state: FSMContext) -> None:
     """Open direction selection for settings.
 
