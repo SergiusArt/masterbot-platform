@@ -94,6 +94,13 @@ class BabloUserSettings(Base):
     weekly_report: Mapped[bool] = mapped_column(Boolean, default=True)
     monthly_report: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    # Activity alerts
+    activity_window_minutes: Mapped[int] = mapped_column(Integer, default=15)
+    activity_threshold: Mapped[int] = mapped_column(Integer, default=10)
+    last_activity_alert_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -23,6 +23,7 @@ class MenuState(StatesGroup):
     bablo_analytics = State()
     bablo_signals = State()
     bablo_signals_timeframe = State()  # Timeframe selection after direction
+    bablo_activity = State()
     bablo_settings = State()
     bablo_settings_timeframes = State()  # Editing timeframe filter
     bablo_settings_directions = State()  # Editing direction filter

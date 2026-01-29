@@ -25,6 +25,7 @@ from handlers.bablo import menu as bablo_menu
 from handlers.bablo import analytics as bablo_analytics
 from handlers.bablo import settings as bablo_settings
 from handlers.bablo import signals as bablo_signals
+from handlers.bablo import activity as bablo_activity
 from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from shared.database.connection import init_db, close_db
@@ -85,6 +86,7 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(bablo_analytics.router)
     dp.include_router(bablo_settings.router)
     dp.include_router(bablo_signals.router)
+    dp.include_router(bablo_activity.router)
 
     # Impulse handlers
     dp.include_router(impulse_menu.router)

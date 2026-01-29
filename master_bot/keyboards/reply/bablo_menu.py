@@ -2,7 +2,7 @@
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from shared.constants import MENU_MAIN, MENU_BACK, MENU_BABLO_ANALYTICS, MENU_BABLO_SIGNALS, MENU_BABLO_SETTINGS
+from shared.constants import MENU_MAIN, MENU_BACK, MENU_BABLO_ANALYTICS, MENU_BABLO_SIGNALS, MENU_BABLO_SETTINGS, MENU_ACTIVITY
 
 
 def get_bablo_menu_keyboard() -> ReplyKeyboardMarkup:
@@ -17,6 +17,7 @@ def get_bablo_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_BABLO_ANALYTICS),
                 KeyboardButton(text=MENU_BABLO_SIGNALS),
             ],
+            [KeyboardButton(text=MENU_ACTIVITY)],
             [KeyboardButton(text=MENU_BABLO_SETTINGS)],
             [KeyboardButton(text=MENU_MAIN)],
         ],
@@ -210,6 +211,31 @@ def get_settings_direction_keyboard(
                 KeyboardButton(text=f"{short_check} Short"),
             ],
             [KeyboardButton(text="✅ Сохранить")],
+            [KeyboardButton(text=MENU_BACK)],
+            [KeyboardButton(text=MENU_MAIN)],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def get_activity_menu_keyboard(
+    window: int = 15,
+    threshold: int = 10,
+) -> ReplyKeyboardMarkup:
+    """Build activity settings keyboard.
+
+    Args:
+        window: Activity window in minutes
+        threshold: Activity threshold (number of signals)
+
+    Returns:
+        Activity menu keyboard
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=f"⏱ Окно: {window} мин")],
+            [KeyboardButton(text=f"📊 Порог: {threshold}")],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN)],
         ],
