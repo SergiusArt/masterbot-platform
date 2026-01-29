@@ -5,6 +5,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from shared.constants import (
     MENU_IMPULSES,
     MENU_BABLO,
+    MENU_REPORTS,
     MENU_SETTINGS,
     MENU_ADMIN,
 )
@@ -21,6 +22,7 @@ def get_main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
     """
     buttons = [
         [KeyboardButton(text=MENU_IMPULSES), KeyboardButton(text=MENU_BABLO)],
+        [KeyboardButton(text=MENU_REPORTS)],
         [KeyboardButton(text=MENU_SETTINGS)],
     ]
 

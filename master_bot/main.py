@@ -25,6 +25,7 @@ from handlers.bablo import menu as bablo_menu
 from handlers.bablo import analytics as bablo_analytics
 from handlers.bablo import settings as bablo_settings
 from handlers.bablo import signals as bablo_signals
+from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
@@ -75,6 +76,9 @@ def register_routers(dp: Dispatcher) -> None:
     # Main handlers
     dp.include_router(start.router)
     dp.include_router(navigation.router)
+
+    # Reports handlers (unified reports menu)
+    dp.include_router(reports_menu.router)
 
     # Bablo handlers (registered before Impulse for proper back button handling)
     dp.include_router(bablo_menu.router)

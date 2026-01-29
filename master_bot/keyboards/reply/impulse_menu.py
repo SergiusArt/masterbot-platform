@@ -7,7 +7,6 @@ from shared.constants import (
     MENU_BACK,
     MENU_ANALYTICS,
     MENU_NOTIFICATIONS,
-    MENU_REPORTS,
     MENU_ACTIVITY,
     MENU_TODAY,
     MENU_YESTERDAY,
@@ -33,7 +32,6 @@ def get_impulse_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_NOTIFICATIONS),
             ],
             [
-                KeyboardButton(text=MENU_REPORTS),
                 KeyboardButton(text=MENU_ACTIVITY),
             ],
             [KeyboardButton(text=MENU_MAIN)],

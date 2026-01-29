@@ -10,7 +10,6 @@ from keyboards.reply.impulse_menu import (
 )
 from services.impulse_client import impulse_client
 from shared.constants import (
-    MENU_REPORTS,
     MENU_MORNING_REPORT,
     MENU_EVENING_REPORT,
     MENU_WEEKLY_REPORT,
@@ -22,7 +21,7 @@ from states.navigation import MenuState
 router = Router()
 
 
-REPORTS_HELP = """📋 <b>Отчёты</b>
+REPORTS_HELP = """📋 <b>Отчёты Импульсов</b>
 
 <b>Расписание отчётов:</b>
 🌅 <b>Утренний</b> — 08:00 (итоги за прошлый день)
@@ -33,35 +32,6 @@ REPORTS_HELP = """📋 <b>Отчёты</b>
 <i>Время указано по московскому часовому поясу (UTC+3)</i>
 
 Нажмите на кнопку, чтобы включить/выключить отчёт:"""
-
-
-@router.message(F.text == MENU_REPORTS)
-async def reports_menu(message: Message, state: FSMContext) -> None:
-    """Handle reports menu button.
-
-    Args:
-        message: Incoming message
-        state: FSM context
-    """
-    await state.set_state(MenuState.impulse_reports)
-    user_id = message.from_user.id
-
-    try:
-        settings = await impulse_client.get_user_settings(user_id)
-        await message.answer(
-            REPORTS_HELP,
-            reply_markup=get_reports_menu_keyboard(
-                morning=settings.get("morning_report", True),
-                evening=settings.get("evening_report", True),
-                weekly=settings.get("weekly_report", True),
-                monthly=settings.get("monthly_report", True),
-            ),
-        )
-    except Exception:
-        await message.answer(
-            REPORTS_HELP,
-            reply_markup=get_reports_menu_keyboard(),
-        )
 
 
 @router.message(F.text.startswith(MENU_MORNING_REPORT))

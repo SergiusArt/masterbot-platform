@@ -10,6 +10,7 @@ class MenuState(StatesGroup):
     main = State()
     impulse = State()
     bablo = State()
+    reports = State()
     settings = State()
 
     # Impulse sub-menus
