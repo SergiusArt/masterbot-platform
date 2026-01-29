@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.impulse import Impulse
@@ -37,11 +37,16 @@ class SignalService:
                 raw_message=impulse.raw_message,
             )
 
-            # Override server_default by setting attribute after creation
-            if impulse.received_at is not None:
-                db_impulse.received_at = impulse.received_at
-
             session.add(db_impulse)
+            await session.flush()  # Get the ID without committing
+
+            # Override server_default with raw SQL if received_at is provided
+            if impulse.received_at is not None:
+                await session.execute(
+                    text("UPDATE impulses SET received_at = :received_at WHERE id = :id"),
+                    {"received_at": impulse.received_at, "id": db_impulse.id}
+                )
+
             await session.commit()
             await session.refresh(db_impulse)
 
