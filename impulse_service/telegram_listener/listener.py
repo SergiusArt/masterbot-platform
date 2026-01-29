@@ -27,6 +27,8 @@ class TelegramListener:
 
     async def start(self) -> None:
         """Start listening to Telegram channel."""
+        logger.info("Initializing Telegram listener...")
+
         if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
             logger.warning("Telegram API credentials not configured. Listener disabled.")
             return
