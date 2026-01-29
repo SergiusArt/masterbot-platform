@@ -200,12 +200,7 @@ async def _go_to_timeframe_selection(message: Message, state: FSMContext, direct
 
     await message.answer(
         f"📋 <b>{direction_text} сигналы</b>\n\n"
-        "Выберите таймфреймы (можно несколько):\n"
-        "• 1м = 1 квадрат\n"
-        "• 5м = 2 квадрата\n"
-        "• 15м = 3 квадрата\n"
-        "• 30м = 4 квадрата\n"
-        "• 1ч = 5 квадратов\n\n"
+        "Выберите таймфреймы (можно несколько).\n\n"
         "Затем нажмите «Показать сигналы»",
         reply_markup=get_timeframe_selection_keyboard(),
     )
@@ -252,12 +247,14 @@ async def toggle_timeframe(message: Message, state: FSMContext) -> None:
 
     if timeframe in selected:
         selected.discard(timeframe)
+        status_text = f"❌ {timeframe} таймфрейм снят"
     else:
         selected.add(timeframe)
+        status_text = f"✅ {timeframe} таймфрейм выбран"
 
     await state.update_data(selected_timeframes=selected)
     await message.answer(
-        "Выберите таймфреймы:",
+        status_text,
         reply_markup=get_timeframe_selection_keyboard(selected),
     )
 

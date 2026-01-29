@@ -224,12 +224,7 @@ async def open_timeframe_settings(message: Message, state: FSMContext) -> None:
 
     await message.answer(
         "⏱ <b>Таймфреймы для уведомлений</b>\n\n"
-        "Выберите таймфреймы (можно несколько):\n"
-        "• 1м = 1 квадрат\n"
-        "• 5м = 2 квадрата\n"
-        "• 15м = 3 квадрата\n"
-        "• 30м = 4 квадрата\n"
-        "• 1ч = 5 квадратов\n\n"
+        "Выберите таймфреймы (можно несколько).\n\n"
         "Затем нажмите «Сохранить»",
         reply_markup=get_settings_timeframe_keyboard(timeframes),
     )
@@ -256,12 +251,14 @@ async def toggle_settings_timeframe(message: Message, state: FSMContext) -> None
 
     if timeframe in selected:
         selected.discard(timeframe)
+        status_text = f"❌ {timeframe} таймфрейм снят"
     else:
         selected.add(timeframe)
+        status_text = f"✅ {timeframe} таймфрейм"
 
     await state.update_data(selected_timeframes=selected)
     await message.answer(
-        "Выберите таймфреймы:",
+        status_text,
         reply_markup=get_settings_timeframe_keyboard(selected),
     )
 
