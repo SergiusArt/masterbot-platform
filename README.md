@@ -346,10 +346,133 @@ pytest tests/e2e/test_navigation.py -v
 - **FastAPI** — REST API
 - **SQLAlchemy 2.0** — Async ORM
 - **PostgreSQL 15** — База данных
-- **Redis 7** — Кэширование
-- **Telethon** — Telegram MTProto API
+- **Redis 7** — Кэширование и Pub/Sub
+- **Telethon** — Telegram MTProto API для прослушивания каналов
 - **Docker Compose** — Оркестрация
 - **pytest** — Тестирование
+
+## Troubleshooting
+
+### Уведомления не приходят
+
+**Проблема**: Пользователи не получают уведомления о новых импульсах или сигналах.
+
+**Причины и решения**:
+
+1. **Notification listener не запущен**
+   - Проверьте логи: `docker compose logs master_bot | grep notification`
+   - Должна быть строка: `✅ Subscribed to channels: impulse:notifications, bablo:notifications`
+   - Если нет, перезапустите: `docker compose restart master_bot`
+
+2. **Telegram listener отключился**
+   - Проверьте логи: `docker compose logs impulse_service | grep listener`
+   - Должна быть строка: `✅ Listening to channel: -1002313787119`
+   - Если нет, перезапустите: `docker compose restart impulse_service`
+
+3. **Настройки уведомлений выключены**
+   ```sql
+   -- Проверить настройки пользователя
+   docker compose exec postgres psql -U masterbot -d masterbot_db -c \
+     "SELECT user_id, notifications_enabled, growth_threshold, fall_threshold
+      FROM user_notification_settings WHERE user_id = YOUR_USER_ID;"
+   ```
+
+4. **Пороги фильтрации не достигнуты**
+   - Импульсы: по умолчанию рост ≥20%, падение ≤-20%
+   - Bablo: по умолчанию quality ≥7, strength ≥3
+
+### Навигация работает некорректно
+
+**Проблема**: Кнопка "Назад" возвращает в неправильное меню.
+
+**Решение**: Убедитесь, что используется последняя версия кода с исправлениями FSM states:
+```bash
+git pull origin main
+docker compose build --no-cache master_bot
+docker compose restart master_bot
+```
+
+**Критические исправления**:
+- Activity handlers теперь фильтруются по FSM state (MenuState.bablo_activity, MenuState.impulse_activity)
+- Admin service status button изменён с 📊 на 🔍 для устранения конфликта
+
+### Redis pub/sub не работает
+
+**Диагностика**:
+```bash
+# Проверить подключение к Redis
+docker compose exec redis redis-cli PING
+
+# Опубликовать тестовое сообщение
+docker compose exec redis redis-cli PUBLISH "bablo:notifications" \
+  '{"event":"test","user_id":123,"data":{"test":"message"}}'
+
+# Проверить логи master_bot
+docker compose logs master_bot --tail=20 | grep "Received notification"
+```
+
+### Telegram listener не получает сообщения
+
+**Диагностика**:
+```bash
+# Проверить статус подключения
+docker compose logs impulse_service | grep "Telegram client connected"
+
+# Проверить последние импульсы в БД
+docker compose exec postgres psql -U masterbot -d masterbot_db -c \
+  "SELECT symbol, percent, type, received_at FROM impulses
+   ORDER BY received_at DESC LIMIT 5;"
+```
+
+**Возможные причины**:
+- Истекла сессия Telegram (TELEGRAM_SESSION_STRING)
+- Изменился ID канала (SOURCE_CHANNEL_ID)
+- Канал неактивен (нет новых сообщений)
+
+**Решение**:
+```bash
+# Перезапустить listener
+docker compose restart impulse_service bablo_service
+
+# Проверить переменные окружения
+docker compose exec impulse_service env | grep TELEGRAM
+```
+
+## Мониторинг
+
+### Проверка здоровья сервисов
+
+```bash
+# Все сервисы
+docker compose ps
+
+# Health checks
+curl http://localhost:8001/health  # Impulse Service
+curl http://localhost:8002/health  # Bablo Service
+
+# Логи в реальном времени
+docker compose logs -f master_bot
+docker compose logs -f impulse_service
+docker compose logs -f bablo_service
+```
+
+### Полезные команды
+
+```bash
+# Пересобрать и перезапустить всё
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+
+# Очистить старые образы
+docker system prune -a
+
+# Бэкап базы данных
+docker compose exec postgres pg_dump -U masterbot masterbot_db > backup.sql
+
+# Восстановить базу данных
+docker compose exec -T postgres psql -U masterbot -d masterbot_db < backup.sql
+```
 
 ## Лицензия
 
