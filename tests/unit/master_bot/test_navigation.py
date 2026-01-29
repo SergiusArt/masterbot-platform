@@ -77,24 +77,66 @@ class TestBabloSignalsKeyboard:
     """Test Bablo signals keyboard."""
 
     @pytest.mark.unit
-    def test_signals_keyboard_has_timeframe_filters(self):
-        """Test signals keyboard includes timeframe filter buttons."""
+    def test_signals_keyboard_has_direction_buttons(self):
+        """Test signals keyboard includes direction selection buttons."""
         from keyboards.reply.bablo_menu import get_bablo_signals_keyboard
+        from shared.constants import MENU_MAIN
 
         keyboard = get_bablo_signals_keyboard()
 
         # Flatten all button texts
         all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
 
-        # Check timeframe buttons exist
-        assert "⏱ 15м" in all_buttons
-        assert "⏱ 1ч" in all_buttons
-        assert "⏱ 4ч" in all_buttons
-
         # Check direction buttons exist
         assert "🟢 Long сигналы" in all_buttons
         assert "🔴 Short сигналы" in all_buttons
         assert "📋 Все сигналы" in all_buttons
+
+        # Check main menu button exists
+        assert MENU_MAIN in all_buttons
+
+    @pytest.mark.unit
+    def test_timeframe_selection_keyboard(self):
+        """Test timeframe selection keyboard."""
+        from keyboards.reply.bablo_menu import get_timeframe_selection_keyboard
+        from shared.constants import MENU_MAIN
+
+        keyboard = get_timeframe_selection_keyboard()
+
+        # Flatten all button texts
+        all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
+
+        # Check timeframe buttons exist
+        assert "⬜ 1м" in all_buttons
+        assert "⬜ 5м" in all_buttons
+        assert "⬜ 15м" in all_buttons
+        assert "⬜ 30м" in all_buttons
+        assert "⬜ 1ч" in all_buttons
+
+        # Check show button exists
+        assert "📋 Показать сигналы" in all_buttons
+
+        # Check main menu button exists
+        assert MENU_MAIN in all_buttons
+
+    @pytest.mark.unit
+    def test_timeframe_selection_with_selected(self):
+        """Test timeframe selection keyboard with pre-selected items."""
+        from keyboards.reply.bablo_menu import get_timeframe_selection_keyboard
+
+        keyboard = get_timeframe_selection_keyboard(selected={"1м", "15м"})
+
+        # Flatten all button texts
+        all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
+
+        # Check selected timeframes have checkmark
+        assert "✅ 1м" in all_buttons
+        assert "✅ 15м" in all_buttons
+
+        # Check unselected timeframes have empty box
+        assert "⬜ 5м" in all_buttons
+        assert "⬜ 30м" in all_buttons
+        assert "⬜ 1ч" in all_buttons
 
 
 class TestSignalFormatting:
