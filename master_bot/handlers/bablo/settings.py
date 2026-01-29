@@ -2,29 +2,29 @@
 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 
-from keyboards.reply.bablo_menu import (
-    get_bablo_settings_keyboard,
-    get_bablo_menu_keyboard,
-)
+from keyboards.reply.bablo_menu import get_bablo_settings_keyboard
 from keyboards.inline.bablo import (
     get_quality_keyboard,
     get_strength_keyboard,
-    get_timeframe_keyboard,
 )
 from services.bablo_client import bablo_client
-from shared.constants import MENU_BABLO_SETTINGS, MENU_BABLO_QUALITY, MENU_BABLO_TIMEFRAMES
+from shared.constants import MENU_BABLO_SETTINGS
+from states.navigation import MenuState
 
 router = Router()
 
 
 @router.message(F.text == MENU_BABLO_SETTINGS)
-async def bablo_settings_menu(message: Message) -> None:
+async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
     """Show Bablo settings menu.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.bablo_settings)
     user_id = message.from_user.id
 
     try:

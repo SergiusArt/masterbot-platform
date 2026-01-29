@@ -20,8 +20,7 @@ def get_main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
         Main menu keyboard
     """
     buttons = [
-        [KeyboardButton(text=MENU_IMPULSES)],
-        [KeyboardButton(text=MENU_BABLO)],
+        [KeyboardButton(text=MENU_IMPULSES), KeyboardButton(text=MENU_BABLO)],
         [KeyboardButton(text=MENU_SETTINGS)],
     ]
 

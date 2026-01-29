@@ -2,29 +2,25 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.bablo_menu import get_bablo_analytics_keyboard
-from keyboards.reply.impulse_menu import get_analytics_menu_keyboard
 from services.bablo_client import bablo_client
-from shared.constants import (
-    MENU_BABLO_ANALYTICS,
-    MENU_TODAY,
-    MENU_YESTERDAY,
-    MENU_WEEK,
-    MENU_MONTH,
-    MENU_BACK,
-)
+from shared.constants import MENU_BABLO_ANALYTICS
+from states.navigation import MenuState
 
 router = Router()
 
 
 @router.message(F.text == MENU_BABLO_ANALYTICS)
-async def bablo_analytics_menu(message: Message) -> None:
+async def bablo_analytics_menu(message: Message, state: FSMContext) -> None:
     """Handle Bablo analytics menu.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.bablo_analytics)
     await message.answer(
         "📊 <b>Статистика Bablo</b>\n\n"
         "Выберите период:",
@@ -92,25 +88,25 @@ async def _show_analytics(message: Message, period: str) -> None:
         )
 
 
-@router.message(F.text == "💰 " + MENU_TODAY[2:])  # За сегодня (Bablo context)
+@router.message(F.text == "💰 За сегодня")
 async def bablo_analytics_today(message: Message) -> None:
     """Show today's Bablo analytics."""
     await _show_analytics(message, "today")
 
 
-@router.message(F.text == "💰 " + MENU_YESTERDAY[2:])  # За вчера (Bablo context)
+@router.message(F.text == "💰 За вчера")
 async def bablo_analytics_yesterday(message: Message) -> None:
     """Show yesterday's Bablo analytics."""
     await _show_analytics(message, "yesterday")
 
 
-@router.message(F.text == "💰 " + MENU_WEEK[2:])  # За неделю (Bablo context)
+@router.message(F.text == "💰 За неделю")
 async def bablo_analytics_week(message: Message) -> None:
     """Show week's Bablo analytics."""
     await _show_analytics(message, "week")
 
 
-@router.message(F.text == "💰 " + MENU_MONTH[2:])  # За месяц (Bablo context)
+@router.message(F.text == "💰 За месяц")
 async def bablo_analytics_month(message: Message) -> None:
     """Show month's Bablo analytics."""
     await _show_analytics(message, "month")

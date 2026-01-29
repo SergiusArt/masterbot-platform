@@ -13,6 +13,9 @@ from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
 
+# Import models to register them with Base.metadata before init_db
+from models import BabloSignal, BabloUserSettings  # noqa: F401
+
 logger = get_logger("bablo_service")
 
 

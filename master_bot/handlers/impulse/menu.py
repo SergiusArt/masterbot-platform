@@ -2,20 +2,24 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.impulse_menu import get_impulse_menu_keyboard
 from shared.constants import MENU_IMPULSES
+from states.navigation import MenuState
 
 router = Router()
 
 
 @router.message(F.text == MENU_IMPULSES)
-async def impulse_menu(message: Message) -> None:
+async def impulse_menu(message: Message, state: FSMContext) -> None:
     """Handle impulse menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse)
     await message.answer(
         "📊 <b>Раздел: Импульсы</b>\n\n"
         "Здесь вы можете просматривать аналитику по криптовалютам, "

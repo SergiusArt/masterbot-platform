@@ -30,6 +30,10 @@ async def send_morning_reports():
         )
         user_ids = [row[0] for row in result.all()]
 
+    if not user_ids:
+        logger.info("No users subscribed to morning reports")
+        return
+
     redis = await get_redis_client()
 
     for user_id in user_ids:
@@ -41,12 +45,14 @@ async def send_morning_reports():
                     "event": EVENT_REPORT_READY,
                     "user_id": user_id,
                     "data": {
-                        "type": "morning",
+                        "report_type": "morning",
                         "text": report.text,
+                        "content": report.text,
                         "timestamp": report.generated_at.isoformat(),
                     },
                 },
             )
+            logger.debug(f"Morning report sent to user {user_id}")
         except Exception as e:
             logger.error(f"Failed to send morning report to {user_id}: {e}")
 
@@ -69,6 +75,10 @@ async def send_evening_reports():
         )
         user_ids = [row[0] for row in result.all()]
 
+    if not user_ids:
+        logger.info("No users subscribed to evening reports")
+        return
+
     redis = await get_redis_client()
 
     for user_id in user_ids:
@@ -80,12 +90,14 @@ async def send_evening_reports():
                     "event": EVENT_REPORT_READY,
                     "user_id": user_id,
                     "data": {
-                        "type": "evening",
+                        "report_type": "evening",
                         "text": report.text,
+                        "content": report.text,
                         "timestamp": report.generated_at.isoformat(),
                     },
                 },
             )
+            logger.debug(f"Evening report sent to user {user_id}")
         except Exception as e:
             logger.error(f"Failed to send evening report to {user_id}: {e}")
 
@@ -108,6 +120,10 @@ async def send_weekly_reports():
         )
         user_ids = [row[0] for row in result.all()]
 
+    if not user_ids:
+        logger.info("No users subscribed to weekly reports")
+        return
+
     redis = await get_redis_client()
 
     for user_id in user_ids:
@@ -119,12 +135,14 @@ async def send_weekly_reports():
                     "event": EVENT_REPORT_READY,
                     "user_id": user_id,
                     "data": {
-                        "type": "weekly",
+                        "report_type": "weekly",
                         "text": report.text,
+                        "content": report.text,
                         "timestamp": report.generated_at.isoformat(),
                     },
                 },
             )
+            logger.debug(f"Weekly report sent to user {user_id}")
         except Exception as e:
             logger.error(f"Failed to send weekly report to {user_id}: {e}")
 
@@ -158,7 +176,7 @@ def start_scheduler():
     )
 
     scheduler.start()
-    logger.info("Scheduler started")
+    logger.info("Scheduler started with jobs: morning (8:00), evening (20:00), weekly (Mon 9:00)")
 
 
 def stop_scheduler():

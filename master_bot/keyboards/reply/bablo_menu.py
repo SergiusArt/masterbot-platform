@@ -96,6 +96,11 @@ def get_bablo_signals_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="🔴 Short сигналы"),
             ],
             [KeyboardButton(text="📋 Все сигналы")],
+            [
+                KeyboardButton(text="⏱ 15м"),
+                KeyboardButton(text="⏱ 1ч"),
+                KeyboardButton(text="⏱ 4ч"),
+            ],
             [KeyboardButton(text=MENU_BACK)],
         ],
         resize_keyboard=True,

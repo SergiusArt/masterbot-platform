@@ -2,6 +2,7 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.impulse_menu import (
     get_analytics_menu_keyboard,
@@ -16,18 +17,21 @@ from shared.constants import (
     MENU_WEEK,
     MENU_MONTH,
 )
+from states.navigation import MenuState
 from utils.formatters import format_analytics
 
 router = Router()
 
 
 @router.message(F.text == MENU_ANALYTICS)
-async def analytics_menu(message: Message) -> None:
+async def analytics_menu(message: Message, state: FSMContext) -> None:
     """Handle analytics menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse_analytics)
     await message.answer(
         "📈 <b>Аналитика</b>\n\nВыберите период:",
         reply_markup=get_analytics_menu_keyboard(),
@@ -101,13 +105,15 @@ async def _send_analytics(message: Message, period: str, period_name: str) -> No
         )
 
 
-@router.message(F.text == MENU_BACK)
-async def back_from_analytics(message: Message) -> None:
-    """Handle back from analytics menu.
+@router.message(MenuState.impulse_analytics, F.text == MENU_BACK)
+async def back_from_analytics(message: Message, state: FSMContext) -> None:
+    """Handle back from impulse analytics menu.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse)
     await message.answer(
         "📊 <b>Раздел: Импульсы</b>\n\nВыберите действие:",
         reply_markup=get_impulse_menu_keyboard(),

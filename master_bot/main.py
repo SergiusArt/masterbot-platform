@@ -76,18 +76,18 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(start.router)
     dp.include_router(navigation.router)
 
+    # Bablo handlers (registered before Impulse for proper back button handling)
+    dp.include_router(bablo_menu.router)
+    dp.include_router(bablo_analytics.router)
+    dp.include_router(bablo_settings.router)
+    dp.include_router(bablo_signals.router)
+
     # Impulse handlers
     dp.include_router(impulse_menu.router)
     dp.include_router(impulse_analytics.router)
     dp.include_router(impulse_reports.router)
     dp.include_router(impulse_notifications.router)
     dp.include_router(impulse_activity.router)
-
-    # Bablo handlers
-    dp.include_router(bablo_menu.router)
-    dp.include_router(bablo_analytics.router)
-    dp.include_router(bablo_settings.router)
-    dp.include_router(bablo_signals.router)
 
     # Admin handlers
     dp.include_router(admin_menu.router)
