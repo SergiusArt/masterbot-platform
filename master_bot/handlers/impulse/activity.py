@@ -24,7 +24,7 @@ class ActivitySettingsState(StatesGroup):
     waiting_for_threshold = State()
 
 
-@router.message(F.text == MENU_ACTIVITY)
+@router.message(MenuState.impulse, F.text == MENU_ACTIVITY)
 async def activity_menu(message: Message, state: FSMContext) -> None:
     """Handle activity menu button.
 
