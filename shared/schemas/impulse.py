@@ -33,6 +33,7 @@ class ImpulseCreate(BaseSchema):
     growth_ratio: Optional[Decimal] = None
     fall_ratio: Optional[Decimal] = None
     raw_message: Optional[str] = None
+    received_at: Optional[datetime] = None
 
 
 class TopImpulse(BaseSchema):
