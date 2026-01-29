@@ -30,26 +30,31 @@ class BabloTelegramListener:
 
     async def start(self) -> None:
         """Start listening to channel."""
+        logger.info("Initializing Bablo Telegram listener...")
+
         if not settings.TELEGRAM_SESSION_STRING:
             logger.warning("No Telegram session string configured, skipping listener")
             return
 
         try:
+            logger.info("Creating Telegram client for Bablo...")
             self.client = TelegramClient(
                 StringSession(settings.TELEGRAM_SESSION_STRING),
                 settings.TELEGRAM_API_ID,
                 settings.TELEGRAM_API_HASH,
             )
 
+            logger.info("Connecting to Telegram...")
             await self.client.start()
             self._running = True
+            logger.info("Telegram client connected successfully!")
 
             # Register handler for new messages
             @self.client.on(events.NewMessage(chats=[settings.BABLO_CHANNEL_ID]))
             async def handler(event):
                 await self._handle_message(event)
 
-            logger.info(f"Bablo listener started for channel {settings.BABLO_CHANNEL_ID}")
+            logger.info(f"✅ Bablo listener started for channel {settings.BABLO_CHANNEL_ID}")
 
             # Keep running
             while self._running:

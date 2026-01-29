@@ -40,23 +40,26 @@ class TelegramListener:
             return
 
         self._running = True
-        logger.info("Starting Telegram listener...")
+        logger.info(f"Starting Telegram listener for channel {settings.SOURCE_CHANNEL_ID}...")
 
         try:
+            logger.info("Creating Telegram client...")
             self._client = TelegramClient(
                 StringSession(settings.TELEGRAM_SESSION_STRING),
                 settings.TELEGRAM_API_ID,
                 settings.TELEGRAM_API_HASH,
             )
 
+            logger.info("Connecting to Telegram...")
             await self._client.start()
+            logger.info("Telegram client connected successfully!")
 
             # Register message handler
             @self._client.on(events.NewMessage(chats=settings.SOURCE_CHANNEL_ID))
             async def handler(event):
                 await self._handle_message(event)
 
-            logger.info(f"Listening to channel: {settings.SOURCE_CHANNEL_ID}")
+            logger.info(f"✅ Listening to channel: {settings.SOURCE_CHANNEL_ID}")
 
             # Keep running
             while self._running:
