@@ -54,7 +54,7 @@ async def activity_menu(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(F.text.startswith("⏱"))
+@router.message(MenuState.impulse_activity, F.text.startswith("⏱"))
 async def change_activity_window(message: Message, state: FSMContext) -> None:
     """Start changing activity window.
 
@@ -70,7 +70,7 @@ async def change_activity_window(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(F.text.startswith("📊"))
+@router.message(MenuState.impulse_activity, F.text.startswith("📊"))
 async def change_activity_threshold(message: Message, state: FSMContext) -> None:
     """Start changing activity threshold.
 
