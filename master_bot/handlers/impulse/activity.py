@@ -5,10 +5,14 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from keyboards.reply.impulse_menu import get_activity_menu_keyboard
+from keyboards.reply.impulse_menu import (
+    get_activity_menu_keyboard,
+    get_impulse_menu_keyboard,
+)
 from keyboards.reply.back import get_back_keyboard
 from services.impulse_client import impulse_client
-from shared.constants import MENU_ACTIVITY
+from shared.constants import MENU_ACTIVITY, MENU_BACK
+from states.navigation import MenuState
 
 router = Router()
 
@@ -21,12 +25,14 @@ class ActivitySettingsState(StatesGroup):
 
 
 @router.message(F.text == MENU_ACTIVITY)
-async def activity_menu(message: Message) -> None:
+async def activity_menu(message: Message, state: FSMContext) -> None:
     """Handle activity menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse_activity)
     user_id = message.from_user.id
 
     try:
@@ -152,3 +158,18 @@ async def process_threshold_input(message: Message, state: FSMContext) -> None:
         await message.answer(
             "❌ Введите число от 1 до 100.\n\nПопробуйте ещё раз:"
         )
+
+
+@router.message(MenuState.impulse_activity, F.text == MENU_BACK)
+async def back_from_activity(message: Message, state: FSMContext) -> None:
+    """Handle back button from activity menu.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.impulse)
+    await message.answer(
+        "📊 <b>Раздел: Импульсы</b>",
+        reply_markup=get_impulse_menu_keyboard(),
+    )

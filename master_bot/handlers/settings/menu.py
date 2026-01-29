@@ -2,9 +2,11 @@
 
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.main_menu import get_main_menu_keyboard
 from shared.constants import MENU_SETTINGS, MENU_BACK
+from states.navigation import MenuState
 
 router = Router()
 
@@ -23,12 +25,14 @@ def get_settings_keyboard() -> ReplyKeyboardMarkup:
 
 
 @router.message(F.text == MENU_SETTINGS)
-async def settings_menu(message: Message) -> None:
+async def settings_menu(message: Message, state: FSMContext) -> None:
     """Handle settings menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.settings)
     await message.answer(
         "⚙️ <b>Настройки</b>\n\nВыберите раздел:",
         reply_markup=get_settings_keyboard(),
@@ -60,4 +64,19 @@ async def language_settings(message: Message) -> None:
         "🌐 <b>Язык</b>\n\n"
         "Текущий язык: <b>Русский</b>\n\n"
         "В данный момент поддерживается только русский язык."
+    )
+
+
+@router.message(MenuState.settings, F.text == MENU_BACK)
+async def back_from_settings(message: Message, state: FSMContext) -> None:
+    """Handle back button from settings menu.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.main)
+    await message.answer(
+        "📱 <b>Главное меню</b>",
+        reply_markup=get_main_menu_keyboard(),
     )

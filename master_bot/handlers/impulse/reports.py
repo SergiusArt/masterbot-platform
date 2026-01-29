@@ -2,8 +2,12 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
-from keyboards.reply.impulse_menu import get_reports_menu_keyboard
+from keyboards.reply.impulse_menu import (
+    get_reports_menu_keyboard,
+    get_impulse_menu_keyboard,
+)
 from services.impulse_client import impulse_client
 from shared.constants import (
     MENU_REPORTS,
@@ -11,7 +15,9 @@ from shared.constants import (
     MENU_EVENING_REPORT,
     MENU_WEEKLY_REPORT,
     MENU_MONTHLY_REPORT,
+    MENU_BACK,
 )
+from states.navigation import MenuState
 
 router = Router()
 
@@ -30,12 +36,14 @@ REPORTS_HELP = """📋 <b>Отчёты</b>
 
 
 @router.message(F.text == MENU_REPORTS)
-async def reports_menu(message: Message) -> None:
+async def reports_menu(message: Message, state: FSMContext) -> None:
     """Handle reports menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse_reports)
     user_id = message.from_user.id
 
     try:
@@ -132,3 +140,18 @@ async def _toggle_report(message: Message, setting: str, name: str) -> None:
 
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
+
+
+@router.message(MenuState.impulse_reports, F.text == MENU_BACK)
+async def back_from_reports(message: Message, state: FSMContext) -> None:
+    """Handle back button from reports menu.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.impulse)
+    await message.answer(
+        "📊 <b>Раздел: Импульсы</b>",
+        reply_markup=get_impulse_menu_keyboard(),
+    )

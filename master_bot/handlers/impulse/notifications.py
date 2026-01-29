@@ -2,25 +2,32 @@
 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 
-from keyboards.reply.impulse_menu import get_notifications_menu_keyboard
+from keyboards.reply.impulse_menu import (
+    get_notifications_menu_keyboard,
+    get_impulse_menu_keyboard,
+)
 from keyboards.inline.thresholds import (
     get_growth_threshold_keyboard,
     get_fall_threshold_keyboard,
 )
 from services.impulse_client import impulse_client
-from shared.constants import MENU_NOTIFICATIONS
+from shared.constants import MENU_NOTIFICATIONS, MENU_BACK
+from states.navigation import MenuState
 
 router = Router()
 
 
 @router.message(F.text == MENU_NOTIFICATIONS)
-async def notifications_menu(message: Message) -> None:
+async def notifications_menu(message: Message, state: FSMContext) -> None:
     """Handle notifications menu button.
 
     Args:
         message: Incoming message
+        state: FSM context
     """
+    await state.set_state(MenuState.impulse_notifications)
     user_id = message.from_user.id
 
     try:
@@ -159,3 +166,18 @@ async def process_threshold_callback(callback: CallbackQuery) -> None:
 
     except Exception as e:
         await callback.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.message(MenuState.impulse_notifications, F.text == MENU_BACK)
+async def back_from_notifications(message: Message, state: FSMContext) -> None:
+    """Handle back button from notifications menu.
+
+    Args:
+        message: Incoming message
+        state: FSM context
+    """
+    await state.set_state(MenuState.impulse)
+    await message.answer(
+        "📊 <b>Раздел: Импульсы</b>",
+        reply_markup=get_impulse_menu_keyboard(),
+    )
