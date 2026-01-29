@@ -32,7 +32,24 @@ async def lifespan(app: FastAPI):
     await get_redis_client()
 
     logger.info("Starting Telegram listener...")
-    asyncio.create_task(bablo_listener.start())
+
+    # Create task with error handling
+    async def run_listener():
+        try:
+            await bablo_listener.start()
+        except Exception as e:
+            logger.error(f"Fatal error in Telegram listener: {e}", exc_info=True)
+
+    listener_task = asyncio.create_task(run_listener())
+
+    # Add callback to log task completion/errors
+    def task_done_callback(task):
+        try:
+            task.result()
+        except Exception as e:
+            logger.error(f"Telegram listener task failed: {e}", exc_info=True)
+
+    listener_task.add_done_callback(task_done_callback)
 
     logger.info("Bablo Service started successfully!")
 

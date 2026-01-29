@@ -36,7 +36,24 @@ async def lifespan(app: FastAPI):
 
     logger.info("Starting Telegram listener...")
     listener = TelegramListener()
-    asyncio.create_task(listener.start())
+
+    # Create task with error handling
+    async def run_listener():
+        try:
+            await listener.start()
+        except Exception as e:
+            logger.error(f"Fatal error in Telegram listener: {e}", exc_info=True)
+
+    listener_task = asyncio.create_task(run_listener())
+
+    # Add callback to log task completion/errors
+    def task_done_callback(task):
+        try:
+            task.result()
+        except Exception as e:
+            logger.error(f"Telegram listener task failed: {e}", exc_info=True)
+
+    listener_task.add_done_callback(task_done_callback)
 
     logger.info("Impulse Service started successfully!")
 
