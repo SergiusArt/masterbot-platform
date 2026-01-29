@@ -86,26 +86,19 @@ async def backfill_impulses():
         logger.info(f"Channel: {getattr(channel, 'title', 'Unknown')}")
 
         # Determine how many messages to fetch
-        # If we have last_date, fetch from that point
-        # Otherwise, fetch last 100 messages
-        if last_date:
-            # Make last_date timezone-aware if it isn't
-            if last_date.tzinfo is None:
-                last_date = last_date.replace(tzinfo=timezone.utc)
+        # Fetch last 1000 messages to get recent history
+        logger.info("Fetching last 1000 messages from channel...")
+        messages = await client.get_messages(
+            settings.SOURCE_CHANNEL_ID,
+            limit=1000,
+        )
 
-            logger.info(f"Fetching messages since {last_date}...")
-            # Get all messages since last_date
-            messages = await client.get_messages(
-                settings.SOURCE_CHANNEL_ID,
-                limit=None,  # Get all
-                offset_date=last_date,
-            )
-        else:
-            logger.info("Fetching last 100 messages...")
-            messages = await client.get_messages(
-                settings.SOURCE_CHANNEL_ID,
-                limit=100,
-            )
+        # Make last_date timezone-aware if it isn't
+        if last_date and last_date.tzinfo is None:
+            last_date = last_date.replace(tzinfo=timezone.utc)
+
+        if last_date:
+            logger.info(f"Will skip messages older than {last_date}")
 
         logger.info(f"Retrieved {len(messages)} messages from channel")
 
@@ -138,7 +131,7 @@ async def backfill_impulses():
                     skipped_count += 1
                     continue
 
-                # Create impulse in database
+                # Create impulse in database with historical date
                 impulse_create = ImpulseCreate(
                     symbol=parsed.symbol,
                     percent=parsed.percent,
@@ -147,9 +140,10 @@ async def backfill_impulses():
                     growth_ratio=parsed.growth_ratio,
                     fall_ratio=parsed.fall_ratio,
                     raw_message=message.text,
+                    received_at=message_date,  # Use message date from Telegram
                 )
 
-                await signal_service.create_signal(impulse_create)
+                await signal_service.create_signal_with_date(impulse_create)
                 saved_count += 1
 
                 logger.info(
