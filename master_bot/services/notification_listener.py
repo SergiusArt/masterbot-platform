@@ -40,18 +40,24 @@ class NotificationListener:
         logger.info("Starting notification listener...")
 
         try:
+            logger.info("Getting Redis client...")
             redis = await get_redis_client()
+            logger.info("Redis client obtained")
             pubsub = await redis.subscribe(
                 REDIS_CHANNEL_NOTIFICATIONS,
                 REDIS_CHANNEL_BABLO,
             )
+            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}")
 
             async for message in pubsub.listen():
                 if not self._running:
                     break
 
+                logger.debug(f"Received message type: {message['type']}")
                 if message["type"] != "message":
                     continue
+
+                logger.info(f"📨 Received notification on channel: {message.get('channel')}")
 
                 try:
                     data = json.loads(message["data"])

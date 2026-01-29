@@ -132,11 +132,20 @@ async def main() -> None:
 
     # Start notification listener
     notification_listener = NotificationListener(bot)
-    asyncio.create_task(notification_listener.start())
+    listener_task = asyncio.create_task(notification_listener.start())
 
     # Start polling
     logger.info("Starting bot polling...")
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    try:
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    finally:
+        # Stop listener on shutdown
+        await notification_listener.stop()
+        listener_task.cancel()
+        try:
+            await listener_task
+        except asyncio.CancelledError:
+            pass
 
 
 if __name__ == "__main__":
