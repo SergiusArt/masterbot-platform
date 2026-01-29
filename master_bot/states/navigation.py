@@ -12,6 +12,7 @@ class MenuState(StatesGroup):
     bablo = State()
     reports = State()
     settings = State()
+    admin = State()
 
     # Impulse sub-menus
     impulse_analytics = State()

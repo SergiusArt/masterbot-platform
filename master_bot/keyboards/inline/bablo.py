@@ -13,7 +13,7 @@ def get_quality_keyboard(current: int = 7) -> InlineKeyboardMarkup:
         Quality selection inline keyboard
     """
     buttons = []
-    for value in [5, 6, 7, 8, 9]:
+    for value in [7, 8, 9, 10]:
         style = "✓ " if value == current else ""
         buttons.append(
             InlineKeyboardButton(
@@ -24,7 +24,7 @@ def get_quality_keyboard(current: int = 7) -> InlineKeyboardMarkup:
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            buttons[:3],
-            buttons[3:],
+            buttons[:2],
+            buttons[2:],
         ]
     )

@@ -2,6 +2,7 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.admin_menu import (
     get_admin_menu_keyboard,
@@ -14,6 +15,7 @@ from shared.constants import (
     MENU_RESTART_SERVICE,
     MENU_BACK,
 )
+from states.navigation import MenuState
 
 router = Router()
 
@@ -94,17 +96,19 @@ async def restart_service(message: Message, is_admin: bool = False) -> None:
     )
 
 
-@router.message(F.text == MENU_BACK)
-async def back_from_admin(message: Message, is_admin: bool = False) -> None:
+@router.message(MenuState.admin, F.text == MENU_BACK)
+async def back_from_admin(message: Message, state: FSMContext, is_admin: bool = False) -> None:
     """Handle back from admin sections.
 
     Args:
         message: Incoming message
+        state: FSM context
         is_admin: Whether user is admin
     """
     if not is_admin:
         return
 
+    await state.set_state(MenuState.admin)
     await message.answer(
         "👑 <b>Админ-панель</b>",
         reply_markup=get_admin_menu_keyboard(),
