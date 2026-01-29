@@ -1,6 +1,7 @@
 """Telegram channel listener using Telethon."""
 
 import asyncio
+import traceback
 from typing import Optional
 
 from telethon import TelegramClient, events
@@ -29,6 +30,12 @@ class TelegramListener:
         """Start listening to Telegram channel."""
         logger.info("Initializing Telegram listener...")
 
+        # Log credentials status (without revealing values)
+        logger.info(f"TELEGRAM_API_ID present: {bool(settings.TELEGRAM_API_ID)}")
+        logger.info(f"TELEGRAM_API_HASH present: {bool(settings.TELEGRAM_API_HASH)}")
+        logger.info(f"TELEGRAM_SESSION_STRING present: {bool(settings.TELEGRAM_SESSION_STRING)}")
+        logger.info(f"SOURCE_CHANNEL_ID: {settings.SOURCE_CHANNEL_ID}")
+
         if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
             logger.warning("Telegram API credentials not configured. Listener disabled.")
             return
@@ -46,17 +53,25 @@ class TelegramListener:
 
         try:
             logger.info("Creating Telegram client...")
+            logger.info(f"Session string length: {len(settings.TELEGRAM_SESSION_STRING)}")
+
             self._client = TelegramClient(
                 StringSession(settings.TELEGRAM_SESSION_STRING),
                 settings.TELEGRAM_API_ID,
                 settings.TELEGRAM_API_HASH,
             )
+            logger.info("Telegram client object created successfully")
 
-            logger.info("Connecting to Telegram...")
-            await self._client.start()
-            logger.info("Telegram client connected successfully!")
+            logger.info("Connecting to Telegram (this may take a few seconds)...")
+            try:
+                await asyncio.wait_for(self._client.start(), timeout=30.0)
+                logger.info("Telegram client connected successfully!")
+            except asyncio.TimeoutError:
+                logger.error("Timeout while connecting to Telegram (30 seconds)")
+                raise
 
             # Register message handler
+            logger.info(f"Registering message handler for channel {settings.SOURCE_CHANNEL_ID}...")
             @self._client.on(events.NewMessage(chats=settings.SOURCE_CHANNEL_ID))
             async def handler(event):
                 await self._handle_message(event)
@@ -69,8 +84,11 @@ class TelegramListener:
 
         except Exception as e:
             logger.error(f"Telegram listener error: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Full traceback:\n{traceback.format_exc()}")
             if self._running:
                 # Reconnect after delay
+                logger.info("Will attempt to reconnect in 10 seconds...")
                 await asyncio.sleep(10)
                 asyncio.create_task(self.start())
 

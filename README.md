@@ -438,6 +438,45 @@ docker compose restart impulse_service bablo_service
 docker compose exec impulse_service env | grep TELEGRAM
 ```
 
+### Тестирование Telegram подключения
+
+Используйте скрипт диагностики для комплексной проверки:
+
+```bash
+# В контейнере impulse_service
+docker compose exec impulse_service python scripts/test_telegram_connection.py
+
+# Или локально
+cd masterbot-platform
+python scripts/test_telegram_connection.py
+```
+
+**Скрипт проверяет**:
+1. ✅ Наличие всех credentials в .env
+2. ✅ Подключение к Telegram API
+3. ✅ Валидность сессии
+4. ✅ Доступ к целевому каналу
+5. ✅ Возможность получения сообщений
+
+**Типичные ошибки**:
+
+- `Connection timeout (30 seconds)` - проблема с сетью или firewall
+- `Failed to access channel` - сессия revoked или нет доступа к каналу
+- `Invalid channel ID format` - неверный SOURCE_CHANNEL_ID в .env
+- `Session has been revoked` - нужно пересоздать TELEGRAM_SESSION_STRING
+
+**Детальные логи**:
+```bash
+# Посмотреть полные логи запуска listener
+docker compose logs impulse_service | grep -A 20 "Starting Telegram listener"
+
+# Должны быть такие строки:
+# ✅ TELEGRAM_API_ID present: True
+# ✅ TELEGRAM_SESSION_STRING present: True
+# ✅ Telegram client connected successfully!
+# ✅ Listening to channel: -1002313787119
+```
+
 ## Мониторинг
 
 ### Проверка здоровья сервисов
