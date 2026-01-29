@@ -27,6 +27,7 @@ class TelegramListener:
 
     async def start(self) -> None:
         """Start listening to Telegram channel."""
+        print("!!! TELEGRAM LISTENER START() CALLED !!!")
         logger.info("Initializing Telegram listener...")
 
         if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:

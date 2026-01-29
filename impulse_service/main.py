@@ -40,8 +40,11 @@ async def lifespan(app: FastAPI):
     # Create task with error handling
     async def run_listener():
         logger.info("run_listener() started, calling listener.start()...")
+        print("!!! ABOUT TO CALL listener.start() !!!")
         try:
+            print("!!! CALLING await listener.start() NOW !!!")
             await listener.start()
+            print("!!! listener.start() RETURNED !!!")
         except Exception as e:
             logger.error(f"Fatal error in Telegram listener: {e}", exc_info=True)
 
