@@ -1,7 +1,6 @@
 """Telegram channel listener for Bablo signals."""
 
 import asyncio
-import json
 from typing import Optional
 
 from telethon import TelegramClient, events
@@ -141,7 +140,7 @@ class BabloTelegramListener:
                 },
             }
 
-            await redis.publish(REDIS_CHANNEL, json.dumps(notification))
+            await redis.publish(REDIS_CHANNEL, notification)
 
         logger.info(f"Published notification to {len(user_ids)} users")
 
