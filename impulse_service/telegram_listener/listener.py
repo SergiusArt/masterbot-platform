@@ -72,11 +72,14 @@ class TelegramListener:
 
             # Register message handler
             logger.info(f"Registering message handler for channel {settings.SOURCE_CHANNEL_ID}...")
+
             @self._client.on(events.NewMessage(chats=[settings.SOURCE_CHANNEL_ID]))
             async def handler(event):
+                logger.info(f"🔥 HANDLER TRIGGERED! Chat: {event.chat_id}")
                 await self._handle_message(event)
 
             logger.info(f"✅ Listening to channel: {settings.SOURCE_CHANNEL_ID}")
+            logger.info("Handler is now active and waiting for messages...")
 
             # Keep running
             while self._running:
@@ -106,8 +109,10 @@ class TelegramListener:
             event: Telethon event
         """
         try:
+            logger.info(f"📩 Processing message from chat {event.chat_id}")
             message_text = event.message.message
             if not message_text:
+                logger.debug("Message has no text, skipping")
                 return
 
             # Parse the message
