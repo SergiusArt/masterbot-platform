@@ -27,6 +27,8 @@ class ImpulseParser:
 
     # Common patterns for impulse messages
     PATTERNS = [
+        # Pattern: 🟢SYNUSDT.P 10% or 🔴AXSUSDT.P -15% (with emoji prefix, no space before %)
+        r"[🟢🔴]\s*([A-Z0-9]+(?:USDT|BUSD)?\.?P?)\s*([+-]?\d+\.?\d*)%",
         # Pattern: 🟢[SYNUSDT.P](link) **10%** or 🔴[AXSUSDT.P](link) **-15%**
         r"\[([A-Z0-9]+(?:USDT|BUSD)?\.?P?)\]\([^)]+\)\s*\*\*([+-]?\d+\.?\d*)%\*\*",
         # Pattern: BTCUSDT +15.5%
