@@ -72,7 +72,7 @@ class TelegramListener:
 
             # Register message handler
             logger.info(f"Registering message handler for channel {settings.SOURCE_CHANNEL_ID}...")
-            @self._client.on(events.NewMessage(chats=settings.SOURCE_CHANNEL_ID))
+            @self._client.on(events.NewMessage(chats=[settings.SOURCE_CHANNEL_ID]))
             async def handler(event):
                 await self._handle_message(event)
 
