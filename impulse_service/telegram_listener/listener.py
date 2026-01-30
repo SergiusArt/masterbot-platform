@@ -115,9 +115,12 @@ class TelegramListener:
                 logger.debug("Message has no text, skipping")
                 return
 
+            logger.info(f"📝 Message text: {message_text[:200]}")
+
             # Parse the message
             parsed = impulse_parser.parse(message_text)
             if not parsed:
+                logger.info(f"⚠️ Parser could not recognize impulse format")
                 return
 
             logger.info(f"Parsed impulse: {parsed.symbol} {parsed.percent}%")
