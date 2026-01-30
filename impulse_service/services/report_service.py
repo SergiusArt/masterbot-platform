@@ -37,7 +37,6 @@ class ReportService:
         analytics = await analytics_service.get_analytics("yesterday")
 
         lines = [
-            "🌅 <b>Утренний отчёт</b>\n",
             f"📊 Импульсов за вчера: <b>{analytics.total_impulses}</b>",
             f"🟢 Рост: <b>{analytics.growth_count}</b>",
             f"🔴 Падение: <b>{analytics.fall_count}</b>",
@@ -67,7 +66,6 @@ class ReportService:
         analytics = await analytics_service.get_analytics("today")
 
         lines = [
-            "🌆 <b>Вечерний отчёт</b>\n",
             f"📊 Импульсов за сегодня: <b>{analytics.total_impulses}</b>",
             f"🟢 Рост: <b>{analytics.growth_count}</b>",
             f"🔴 Падение: <b>{analytics.fall_count}</b>",
@@ -99,7 +97,6 @@ class ReportService:
         analytics = await analytics_service.get_analytics("week")
 
         lines = [
-            "📊 <b>Недельный отчёт</b>\n",
             f"📈 Всего импульсов: <b>{analytics.total_impulses}</b>",
             f"🟢 Рост: <b>{analytics.growth_count}</b>",
             f"🔴 Падение: <b>{analytics.fall_count}</b>",
@@ -126,7 +123,6 @@ class ReportService:
         analytics = await analytics_service.get_analytics("month")
 
         lines = [
-            "📊 <b>Месячный отчёт</b>\n",
             f"📈 Всего импульсов: <b>{analytics.total_impulses}</b>",
             f"🟢 Рост: <b>{analytics.growth_count}</b>",
             f"🔴 Падение: <b>{analytics.fall_count}</b>",
