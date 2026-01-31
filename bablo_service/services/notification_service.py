@@ -84,7 +84,7 @@ class NotificationService:
             direction: Signal direction ('long' or 'short')
             timeframe: Signal timeframe
             quality: Signal quality score
-            strength: Signal strength (1-5)
+            strength: Signal strength (1-5) - not used for filtering
 
         Returns:
             List of user IDs
@@ -92,7 +92,6 @@ class NotificationService:
         query = select(BabloUserSettings.user_id).where(
             BabloUserSettings.notifications_enabled == True,
             BabloUserSettings.min_quality <= quality,
-            BabloUserSettings.min_strength <= strength,
         )
 
         # Direction filter

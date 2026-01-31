@@ -51,9 +51,11 @@ class BabloTelegramListener:
             # Register handler for new messages
             @self.client.on(events.NewMessage(chats=[settings.BABLO_CHANNEL_ID]))
             async def handler(event):
+                logger.info(f"🔥 BABLO HANDLER TRIGGERED! Chat: {event.chat_id}")
                 await self._handle_message(event)
 
             logger.info(f"✅ Bablo listener started for channel {settings.BABLO_CHANNEL_ID}")
+            logger.info("Handler is now active and waiting for messages...")
 
             # Keep running
             while self._running:
@@ -74,14 +76,21 @@ class BabloTelegramListener:
 
     async def _handle_message(self, event) -> None:
         """Handle incoming message."""
+        logger.info(f"📩 Processing Bablo message from chat {event.chat_id}")
         message = event.message
         if not message.text:
+            logger.debug("Message has no text, skipping")
             return
+
+        logger.info(f"📝 Bablo message text: {message.text[:200]}")
 
         # Parse message
         signal_data = bablo_parser.parse(message.text)
         if not signal_data:
+            logger.info(f"⚠️ Bablo parser could not recognize signal format")
             return
+
+        logger.info(f"✅ Parsed Bablo signal: {signal_data.symbol} {signal_data.direction} strength={signal_data.strength}")
 
         try:
             # Save to database
@@ -135,7 +144,7 @@ class BabloTelegramListener:
                     "direction": signal_data.direction,
                     "strength": signal_data.strength,
                     "timeframe": signal_data.timeframe,
-                    "quality": signal_data.quality_total,
+                    "quality_total": signal_data.quality_total,
                     "message": message_text,
                 },
             }

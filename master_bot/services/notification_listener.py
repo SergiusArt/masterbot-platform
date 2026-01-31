@@ -57,18 +57,16 @@ class NotificationListener:
                 if message["type"] != "message":
                     continue
 
-                logger.info(f"📨 Received notification on channel: {message.get('channel')}")
-
                 try:
                     data = json.loads(message["data"])
                     channel = message.get("channel", "")
                     if isinstance(channel, bytes):
                         channel = channel.decode()
                     await self._handle_notification(data, channel)
-                except json.JSONDecodeError:
-                    logger.error(f"Invalid JSON in notification: {message['data']}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON in notification: {message['data'][:200]} - Error: {e}")
                 except Exception as e:
-                    logger.error(f"Error handling notification: {e}")
+                    logger.error(f"Error handling notification: {e}", exc_info=True)
 
         except Exception as e:
             logger.error(f"Notification listener error: {e}")
@@ -94,6 +92,7 @@ class NotificationListener:
         event_data = data.get("data", {})
 
         if not event or not user_id:
+            logger.warning(f"Missing event or user_id in notification: event={event}, user_id={user_id}")
             return
 
         if event == EVENT_IMPULSE_ALERT:
