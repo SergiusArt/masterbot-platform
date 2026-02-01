@@ -104,6 +104,11 @@ class NotificationService:
         tf_column = getattr(BabloUserSettings, f"timeframe_{timeframe}", None)
         if tf_column is not None:
             query = query.where(tf_column == True)
+        else:
+            # If timeframe column doesn't exist, don't send notifications
+            # This prevents sending signals for unsupported timeframes
+            logger.warning(f"Unsupported timeframe: {timeframe}, skipping notifications")
+            return []
 
         result = await session.execute(query)
         return [row[0] for row in result.all()]
@@ -130,6 +135,33 @@ class NotificationService:
 
         result = await session.execute(query)
         return [row[0] for row in result.all()]
+
+    async def get_users_for_activity_alert(
+        self,
+        session: AsyncSession,
+        signal_count: int,
+    ) -> dict[int, tuple[int, int]]:
+        """Get users who should receive activity alert.
+
+        Args:
+            session: Database session
+            signal_count: Current signal count in the window
+
+        Returns:
+            Dictionary mapping user_id to (threshold, window_minutes)
+        """
+        query = select(
+            BabloUserSettings.user_id,
+            BabloUserSettings.activity_threshold,
+            BabloUserSettings.activity_window_minutes,
+        ).where(
+            BabloUserSettings.notifications_enabled == True,
+            BabloUserSettings.activity_threshold > 0,
+            BabloUserSettings.activity_threshold <= signal_count,
+        )
+
+        result = await session.execute(query)
+        return {row[0]: (row[1], row[2]) for row in result.all()}
 
 
 # Global service instance

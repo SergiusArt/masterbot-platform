@@ -119,6 +119,18 @@ services:
     networks:
       - masterbot_network
 
+  # Dozzle - Docker logs viewer
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9999:8080"
+    environment:
+      - DOZZLE_LEVEL=info
+      - DOZZLE_TAILSIZE=300
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

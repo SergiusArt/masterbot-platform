@@ -78,9 +78,10 @@ class BabloUserSettings(Base):
 
     # Timeframe filters
     timeframe_1m: Mapped[bool] = mapped_column(Boolean, default=False)
+    timeframe_5m: Mapped[bool] = mapped_column(Boolean, default=True)
     timeframe_15m: Mapped[bool] = mapped_column(Boolean, default=True)
+    timeframe_30m: Mapped[bool] = mapped_column(Boolean, default=True)
     timeframe_1h: Mapped[bool] = mapped_column(Boolean, default=True)
-    timeframe_4h: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Direction filters
     long_signals: Mapped[bool] = mapped_column(Boolean, default=True)

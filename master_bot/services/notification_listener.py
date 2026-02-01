@@ -15,6 +15,7 @@ from shared.constants import (
     EVENT_ACTIVITY_ALERT,
     EVENT_REPORT_READY,
     EVENT_BABLO_SIGNAL,
+    EVENT_BABLO_ACTIVITY,
 )
 
 logger = get_logger("notification_listener")
@@ -101,6 +102,8 @@ class NotificationListener:
             await self._send_activity_alert(user_id, event_data)
         elif event == EVENT_BABLO_SIGNAL:
             await self._send_bablo_signal(user_id, event_data)
+        elif event == EVENT_BABLO_ACTIVITY:
+            await self._send_bablo_activity_alert(user_id, event_data)
         elif event == EVENT_REPORT_READY:
             source = "impulse" if channel == REDIS_CHANNEL_NOTIFICATIONS else "bablo"
             await self._handle_report_part(user_id, event_data, source)
@@ -163,30 +166,49 @@ class NotificationListener:
             user_id: Telegram user ID
             data: Signal data
         """
-        symbol = data.get("symbol", "N/A")
-        direction = data.get("direction", "long")
-        strength = data.get("strength", 3)
-        timeframe = data.get("timeframe", "")
-        quality = data.get("quality_total", 0)
+        # Use original text from TradingView (Markdown formatted)
+        original_text = data.get("original_text")
 
-        direction_emoji = "🟢" if direction == "long" else "🔴"
-        direction_text = "Long" if direction == "long" else "Short"
-        strength_squares = "🟩" * strength + "⬜" * (5 - strength)
+        if not original_text:
+            # Fallback to basic format if original text is not available
+            symbol = data.get("symbol", "N/A")
+            direction = data.get("direction", "long")
+            strength = data.get("strength", 3)
+            timeframe = data.get("timeframe", "")
+            quality = data.get("quality_total", 0)
+
+            strength_squares = ("🟩" if direction == "long" else "🟥") * strength + "⬜" * (5 - strength)
+            text = f"{strength_squares} {symbol}\n⏱: {timeframe} | ⭐: {quality}/10"
+        else:
+            text = original_text
+
+        try:
+            # Send with Markdown parse mode to preserve TradingView formatting
+            await self.bot.send_message(user_id, text, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
+
+    async def _send_bablo_activity_alert(self, user_id: int, data: dict) -> None:
+        """Send Bablo activity alert to user.
+
+        Args:
+            user_id: Telegram user ID
+            data: Activity data
+        """
+        signal_count = data.get("signal_count", 0)
+        window_minutes = data.get("window_minutes", 15)
+        threshold = data.get("threshold", 10)
 
         text = (
-            f"{direction_emoji} <b>Bablo сигнал: {symbol}</b>\n\n"
-            f"{strength_squares} {direction_text}\n"
-            f"⏱ Таймфрейм: {timeframe}\n"
-            f"⭐ Качество: {quality}/10"
+            f"📈 <b>Высокая активность Bablo!</b>\n\n"
+            f"За последние {window_minutes} мин: <b>{signal_count}</b> сигналов\n"
+            f"Порог срабатывания: {threshold} сигналов"
         )
-
-        if data.get("max_drawdown"):
-            text += f"\n📉 Макс. просадка: {data['max_drawdown']}%"
 
         try:
             await self.bot.send_message(user_id, text)
         except Exception as e:
-            logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
+            logger.error(f"Failed to send Bablo activity alert to {user_id}: {e}")
 
     async def _handle_report_part(
         self, user_id: int, data: dict, source: str

@@ -1,6 +1,7 @@
 """Telegram channel listener for Bablo signals."""
 
 import asyncio
+from datetime import datetime, timedelta
 from typing import Optional
 
 from telethon import TelegramClient, events
@@ -13,11 +14,11 @@ from services.notification_service import notification_service
 from shared.database.connection import async_session_maker
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
+from shared.constants import EVENT_BABLO_SIGNAL, EVENT_BABLO_ACTIVITY
 
 logger = get_logger("bablo_listener")
 
 REDIS_CHANNEL = "bablo:notifications"
-EVENT_BABLO_SIGNAL = "bablo_signal"
 
 
 class BabloTelegramListener:
@@ -112,29 +113,19 @@ class BabloTelegramListener:
 
             # Publish notifications
             if users:
-                await self._publish_notifications(signal_data, users)
+                await self._publish_notifications(signal_data, users, message.text)
+
+            # Check and notify about high activity
+            await self._check_and_notify_activity()
 
         except Exception as e:
             logger.error(f"Error handling message: {e}")
 
-    async def _publish_notifications(self, signal_data, user_ids: list[int]) -> None:
+    async def _publish_notifications(self, signal_data, user_ids: list[int], original_text: str) -> None:
         """Publish notifications to Redis for users."""
         redis = await get_redis_client()
 
-        # Format signal message
-        direction_emoji = "🟢" if signal_data.direction == "long" else "🔴"
-        direction_text = "Long" if signal_data.direction == "long" else "Short"
-        strength_squares = "🟩" * signal_data.strength if signal_data.direction == "long" else "🟥" * signal_data.strength
-
-        message_text = (
-            f"{strength_squares} <b>{signal_data.symbol}</b>\n"
-            f"{direction_emoji} {direction_text} | {signal_data.timeframe} ТФ\n"
-            f"⭐ Качество: {signal_data.quality_total}/10\n"
-        )
-
-        if signal_data.max_drawdown:
-            message_text += f"📉 Макс. просадка: {signal_data.max_drawdown}%"
-
+        # Use original Telegram message text (from TradingView with Markdown formatting)
         for user_id in user_ids:
             notification = {
                 "event": EVENT_BABLO_SIGNAL,
@@ -145,13 +136,97 @@ class BabloTelegramListener:
                     "strength": signal_data.strength,
                     "timeframe": signal_data.timeframe,
                     "quality_total": signal_data.quality_total,
-                    "message": message_text,
+                    "original_text": original_text,
                 },
             }
 
             await redis.publish(REDIS_CHANNEL, notification)
 
         logger.info(f"Published notification to {len(user_ids)} users")
+
+    async def _check_and_notify_activity(self) -> None:
+        """Check for high activity and notify users."""
+        try:
+            async with async_session_maker() as session:
+                # Get users with activity alerts enabled
+                # First, get a user with minimum window to check signal count
+                users_settings = await notification_service.get_users_for_activity_alert(
+                    session,
+                    signal_count=1,  # Get all users with activity enabled
+                )
+
+                if not users_settings:
+                    return
+
+                # Find the maximum window among all users
+                max_window = max(window for _, window in users_settings.values())
+
+                # Count signals in the maximum window
+                now = datetime.utcnow()
+                from_time = now - timedelta(minutes=max_window)
+
+                signal_count = await signal_service.get_signals_count(
+                    session,
+                    from_date=from_time,
+                    to_date=now,
+                )
+
+                if signal_count == 0:
+                    return
+
+                # Get users whose threshold is met
+                users_to_notify_settings = await notification_service.get_users_for_activity_alert(
+                    session,
+                    signal_count=signal_count,
+                )
+
+                if not users_to_notify_settings:
+                    return
+
+                # Check Redis to avoid spamming
+                redis = await get_redis_client()
+                users_to_notify = []
+
+                for user_id, (threshold, window) in users_to_notify_settings.items():
+                    # Check if we already sent notification recently
+                    redis_key = f"bablo:activity_notified:{user_id}"
+                    last_notified = await redis.get(redis_key)
+
+                    if last_notified is None:
+                        users_to_notify.append((user_id, threshold, window))
+                        # Set cooldown to prevent spam (half of the user's window)
+                        await redis.setex(redis_key, window * 30, "1")
+
+                if not users_to_notify:
+                    logger.info(f"Activity alert: {signal_count} signals, but all users recently notified")
+                    return
+
+                # Publish activity notifications
+                for user_id, threshold, window in users_to_notify:
+                    # Count signals specifically for this user's window
+                    user_from_time = now - timedelta(minutes=window)
+                    user_signal_count = await signal_service.get_signals_count(
+                        session,
+                        from_date=user_from_time,
+                        to_date=now,
+                    )
+
+                    notification = {
+                        "event": EVENT_BABLO_ACTIVITY,
+                        "user_id": user_id,
+                        "data": {
+                            "signal_count": user_signal_count,
+                            "window_minutes": window,
+                            "threshold": threshold,
+                        },
+                    }
+
+                    await redis.publish(REDIS_CHANNEL, notification)
+
+                logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users ({signal_count} signals)")
+
+        except Exception as e:
+            logger.error(f"Error checking activity: {e}")
 
 
 # Global listener instance
