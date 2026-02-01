@@ -193,10 +193,11 @@ async def process_quality_callback(callback: CallbackQuery) -> None:
         await bablo_client.update_user_settings(user_id, {"min_quality": value})
         await callback.answer(f"✅ Минимальное качество: {value}/10")
 
+        # Update the inline keyboard to show new selection
         await callback.message.edit_text(
-            f"⭐ <b>Качество</b>\n\n"
-            f"✅ Установлено: <b>{value}/10</b>\n\n"
-            f"Вы будете получать только сигналы с качеством {value} и выше."
+            "⭐ <b>Минимальное качество</b>\n\n"
+            "Выберите минимальный показатель качества для уведомлений:",
+            reply_markup=get_quality_keyboard(value),
         )
 
     except Exception as e:
