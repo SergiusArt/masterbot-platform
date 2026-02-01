@@ -98,3 +98,6 @@ Thumbs.db
 # Project specific
 data/
 backups/
+
+# AI Assistant documentation (contains internal/sensitive info)
+CLAUDE.md
