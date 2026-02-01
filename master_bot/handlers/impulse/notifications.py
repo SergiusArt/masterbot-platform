@@ -19,7 +19,7 @@ from states.navigation import MenuState
 router = Router()
 
 
-@router.message(F.text == MENU_NOTIFICATIONS)
+@router.message(MenuState.impulse, F.text == MENU_NOTIFICATIONS)
 async def notifications_menu(message: Message, state: FSMContext) -> None:
     """Handle notifications menu button.
 

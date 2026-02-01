@@ -23,7 +23,7 @@ from utils.formatters import format_analytics
 router = Router()
 
 
-@router.message(F.text == MENU_ANALYTICS)
+@router.message(MenuState.impulse, F.text == MENU_ANALYTICS)
 async def analytics_menu(message: Message, state: FSMContext) -> None:
     """Handle analytics menu button.
 

@@ -32,7 +32,7 @@ TIMEFRAME_STRENGTH = {
 STRENGTH_TIMEFRAME = {v: k for k, v in TIMEFRAME_STRENGTH.items()}
 
 
-@router.message(F.text == MENU_BABLO_SIGNALS)
+@router.message(MenuState.bablo, F.text == MENU_BABLO_SIGNALS)
 async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
     """Handle Bablo signals menu - direction selection.
 

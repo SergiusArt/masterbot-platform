@@ -12,7 +12,7 @@ from states.navigation import MenuState
 router = Router()
 
 
-@router.message(F.text == MENU_BABLO_ANALYTICS)
+@router.message(MenuState.bablo, F.text == MENU_BABLO_ANALYTICS)
 async def bablo_analytics_menu(message: Message, state: FSMContext) -> None:
     """Handle Bablo analytics menu.
 

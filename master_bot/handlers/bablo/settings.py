@@ -64,7 +64,7 @@ def _timeframes_to_settings(timeframes: set[str]) -> dict:
     }
 
 
-@router.message(F.text == MENU_BABLO_SETTINGS)
+@router.message(MenuState.bablo, F.text == MENU_BABLO_SETTINGS)
 async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
     """Show Bablo settings menu.
 
