@@ -147,63 +147,38 @@ class BabloTelegramListener:
     async def _check_and_notify_activity(self) -> None:
         """Check for high activity and notify users."""
         try:
+            now = datetime.utcnow()
+
             async with async_session_maker() as session:
-                # Get users with activity alerts enabled
-                # First, get a user with minimum window to check signal count
-                users_settings = await notification_service.get_users_for_activity_alert(
-                    session,
-                    signal_count=1,  # Get all users with activity enabled
-                )
-
-                if not users_settings:
-                    return
-
-                # Find the maximum window among all users
-                max_window = max(window for _, window in users_settings.values())
-
-                # Count signals in the maximum window
-                now = datetime.utcnow()
-                from_time = now - timedelta(minutes=max_window)
-
+                # Count signals in the max possible window (60 min)
+                from_time = now - timedelta(minutes=60)
                 signal_count = await signal_service.get_signals_count(
                     session,
                     from_date=from_time,
                     to_date=now,
                 )
 
+                logger.info(f"Activity check: {signal_count} signals in last 60 min")
+
                 if signal_count == 0:
                     return
 
                 # Get users whose threshold is met
-                users_to_notify_settings = await notification_service.get_users_for_activity_alert(
+                users_settings = await notification_service.get_users_for_activity_alert(
                     session,
                     signal_count=signal_count,
                 )
 
-                if not users_to_notify_settings:
+                if not users_settings:
+                    logger.info(f"Activity check: no users with threshold <= {signal_count}")
                     return
 
                 # Check Redis to avoid spamming
                 redis = await get_redis_client()
                 users_to_notify = []
 
-                for user_id, (threshold, window) in users_to_notify_settings.items():
-                    # Check if we already sent notification recently
-                    redis_key = f"bablo:activity_notified:{user_id}"
-                    last_notified = await redis.get(redis_key)
-
-                    if last_notified is None:
-                        users_to_notify.append((user_id, threshold, window))
-                        # Set cooldown to prevent spam (half of the user's window)
-                        await redis.setex(redis_key, window * 30, "1")
-
-                if not users_to_notify:
-                    logger.info(f"Activity alert: {signal_count} signals, but all users recently notified")
-                    return
-
-                # Publish activity notifications
-                for user_id, threshold, window in users_to_notify:
-                    # Count signals specifically for this user's window
+                for user_id, (threshold, window) in users_settings.items():
+                    # Count signals for this user's specific window
                     user_from_time = now - timedelta(minutes=window)
                     user_signal_count = await signal_service.get_signals_count(
                         session,
@@ -211,11 +186,30 @@ class BabloTelegramListener:
                         to_date=now,
                     )
 
+                    if user_signal_count < threshold:
+                        continue
+
+                    # Check cooldown
+                    redis_key = f"bablo:activity_notified:{user_id}"
+                    last_notified = await redis.get(redis_key)
+
+                    if last_notified is not None:
+                        continue
+
+                    users_to_notify.append((user_id, threshold, window, user_signal_count))
+                    # Set cooldown (half of user's window in seconds)
+                    await redis.set(redis_key, "1", expire=window * 30)
+
+                if not users_to_notify:
+                    return
+
+                # Publish activity notifications
+                for user_id, threshold, window, count in users_to_notify:
                     notification = {
                         "event": EVENT_BABLO_ACTIVITY,
                         "user_id": user_id,
                         "data": {
-                            "signal_count": user_signal_count,
+                            "signal_count": count,
                             "window_minutes": window,
                             "threshold": threshold,
                         },
@@ -223,7 +217,7 @@ class BabloTelegramListener:
 
                     await redis.publish(REDIS_CHANNEL, notification)
 
-                logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users ({signal_count} signals)")
+                logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users")
 
         except Exception as e:
             logger.error(f"Error checking activity: {e}")
