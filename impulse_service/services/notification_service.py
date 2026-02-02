@@ -135,6 +135,24 @@ class NotificationService:
             result = await session.execute(query)
             return [row[0] for row in result.all()]
 
+    async def get_users_for_activity_alert(self) -> dict[int, tuple[int, int]]:
+        """Get users who have activity alerts enabled.
+
+        Returns:
+            Dictionary mapping user_id to (threshold, window_minutes)
+        """
+        async with async_session_maker() as session:
+            query = select(
+                UserNotificationSettings.user_id,
+                UserNotificationSettings.activity_threshold,
+                UserNotificationSettings.activity_window_minutes,
+            ).where(
+                UserNotificationSettings.activity_threshold > 0,
+            )
+
+            result = await session.execute(query)
+            return {row[0]: (row[1], row[2]) for row in result.all()}
+
     async def get_users_for_report(self, report_type: str) -> list[int]:
         """Get users subscribed to specific report type.
 

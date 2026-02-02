@@ -147,6 +147,30 @@ class SignalService:
             logger.info(f"Created impulse (backfill): {impulse.symbol} {impulse.percent}% at {impulse.received_at}")
             return impulse_id
 
+    async def get_signals_count(
+        self,
+        from_date: datetime,
+        to_date: Optional[datetime] = None,
+    ) -> int:
+        """Get count of signals in a time window.
+
+        Args:
+            from_date: Start of time window
+            to_date: End of time window
+
+        Returns:
+            Number of signals in the window
+        """
+        async with async_session_maker() as session:
+            query = select(func.count(Impulse.id)).where(
+                Impulse.received_at >= from_date
+            )
+            if to_date:
+                query = query.where(Impulse.received_at < to_date)
+
+            result = await session.scalar(query)
+            return result or 0
+
     async def get_recent_signals(self, minutes: int = 15) -> list[Impulse]:
         """Get signals from recent time window.
 

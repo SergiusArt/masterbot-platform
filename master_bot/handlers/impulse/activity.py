@@ -17,8 +17,8 @@ from states.navigation import MenuState
 router = Router()
 
 
-class ActivitySettingsState(StatesGroup):
-    """States for activity settings."""
+class ImpulseActivitySettingsState(StatesGroup):
+    """States for impulse activity settings input."""
 
     waiting_for_window = State()
     waiting_for_threshold = State()
@@ -62,7 +62,7 @@ async def change_activity_window(message: Message, state: FSMContext) -> None:
         message: Incoming message
         state: FSM context
     """
-    await state.set_state(ActivitySettingsState.waiting_for_window)
+    await state.set_state(ImpulseActivitySettingsState.waiting_for_window)
     await message.answer(
         "⏱ <b>Окно активности</b>\n\n"
         "Введите количество минут (от 5 до 60):",
@@ -78,7 +78,7 @@ async def change_activity_threshold(message: Message, state: FSMContext) -> None
         message: Incoming message
         state: FSM context
     """
-    await state.set_state(ActivitySettingsState.waiting_for_threshold)
+    await state.set_state(ImpulseActivitySettingsState.waiting_for_threshold)
     await message.answer(
         "📊 <b>Порог активности</b>\n\n"
         "Введите количество импульсов (от 1 до 100):",
@@ -86,7 +86,7 @@ async def change_activity_threshold(message: Message, state: FSMContext) -> None
     )
 
 
-@router.message(ActivitySettingsState.waiting_for_window, F.text == MENU_BACK)
+@router.message(ImpulseActivitySettingsState.waiting_for_window, F.text == MENU_BACK)
 async def back_from_window_input(message: Message, state: FSMContext) -> None:
     """Handle back button when waiting for window input.
 
@@ -111,7 +111,7 @@ async def back_from_window_input(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(ActivitySettingsState.waiting_for_window)
+@router.message(ImpulseActivitySettingsState.waiting_for_window)
 async def process_window_input(message: Message, state: FSMContext) -> None:
     """Process activity window input.
 
@@ -148,7 +148,7 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
         )
 
 
-@router.message(ActivitySettingsState.waiting_for_threshold, F.text == MENU_BACK)
+@router.message(ImpulseActivitySettingsState.waiting_for_threshold, F.text == MENU_BACK)
 async def back_from_threshold_input(message: Message, state: FSMContext) -> None:
     """Handle back button when waiting for threshold input.
 
@@ -173,7 +173,7 @@ async def back_from_threshold_input(message: Message, state: FSMContext) -> None
     )
 
 
-@router.message(ActivitySettingsState.waiting_for_threshold)
+@router.message(ImpulseActivitySettingsState.waiting_for_threshold)
 async def process_threshold_input(message: Message, state: FSMContext) -> None:
     """Process activity threshold input.
 

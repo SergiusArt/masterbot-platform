@@ -2,6 +2,7 @@
 
 import asyncio
 import traceback
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from telethon import TelegramClient, events
@@ -13,7 +14,7 @@ from services.notification_service import notification_service
 from shared.schemas.impulse import ImpulseCreate
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
-from shared.constants import REDIS_CHANNEL_NOTIFICATIONS, EVENT_IMPULSE_ALERT
+from shared.constants import REDIS_CHANNEL_NOTIFICATIONS, EVENT_IMPULSE_ALERT, EVENT_ACTIVITY_ALERT
 from config import settings
 
 logger = get_logger("telegram_listener")
@@ -141,6 +142,9 @@ class TelegramListener:
             # Send notifications to users
             await self._send_notifications(parsed)
 
+            # Check and notify about high activity
+            await self._check_and_notify_activity()
+
         except Exception as e:
             logger.error(f"Error handling message: {e}")
 
@@ -179,3 +183,82 @@ class TelegramListener:
 
         except Exception as e:
             logger.error(f"Error sending notifications: {e}")
+
+    async def _check_and_notify_activity(self) -> None:
+        """Check for high activity and notify users.
+
+        Logic: count only NEW impulses since last notification.
+        After sending alert, remember the timestamp so next time
+        only impulses after that point are counted.
+        """
+        try:
+            now = datetime.now(timezone.utc)
+
+            # Get users with activity tracking enabled
+            users_settings = await notification_service.get_users_for_activity_alert()
+
+            if not users_settings:
+                return
+
+            redis = await get_redis_client()
+            users_to_notify = []
+
+            for user_id, (threshold, window) in users_settings.items():
+                # Get timestamp of last notification for this user
+                redis_key = f"impulse:activity_last:{user_id}"
+                last_notified_str = await redis.get(redis_key)
+
+                # Count impulses since last notification (or within window)
+                window_start = now - timedelta(minutes=window)
+                if last_notified_str:
+                    last_notified_at = datetime.fromisoformat(last_notified_str)
+                    # Use the later of: window start or last notification
+                    count_from = max(window_start, last_notified_at)
+                else:
+                    count_from = window_start
+
+                user_impulse_count = await signal_service.get_signals_count(
+                    from_date=count_from,
+                    to_date=now,
+                )
+
+                logger.debug(
+                    f"Activity check user {user_id}: "
+                    f"{user_impulse_count} new impulses since "
+                    f"{count_from.strftime('%H:%M:%S')} "
+                    f"(threshold={threshold}, window={window}m)"
+                )
+
+                if user_impulse_count < threshold:
+                    continue
+
+                users_to_notify.append((user_id, threshold, window, user_impulse_count))
+                # Mark notification time — counter resets from this point
+                await redis.set(
+                    redis_key,
+                    now.isoformat(),
+                    expire=window * 60,  # expire after full window
+                )
+
+            if not users_to_notify:
+                return
+
+            # Publish activity notifications
+            for user_id, threshold, window, count in users_to_notify:
+                await redis.publish(
+                    REDIS_CHANNEL_NOTIFICATIONS,
+                    {
+                        "event": EVENT_ACTIVITY_ALERT,
+                        "user_id": user_id,
+                        "data": {
+                            "count": count,
+                            "window_minutes": window,
+                            "threshold": threshold,
+                        },
+                    },
+                )
+
+            logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users")
+
+        except Exception as e:
+            logger.error(f"Error checking activity: {e}", exc_info=True)

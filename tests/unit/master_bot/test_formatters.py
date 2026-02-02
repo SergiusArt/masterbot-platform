@@ -4,17 +4,27 @@ import pytest
 
 import sys
 import os
+import importlib.util
 
-# Add project paths — master_bot MUST be added AFTER shared
-# so it ends up at position 0 (shared/utils/ shadows master_bot/utils/ otherwise)
-_base = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-sys.path.insert(0, os.path.join(_base, "shared"))
-sys.path.insert(0, os.path.join(_base, "master_bot"))
 
-# Clear cached utils module to avoid shared/utils shadowing master_bot/utils
-for mod_name in list(sys.modules.keys()):
-    if mod_name == "utils" or mod_name.startswith("utils."):
-        del sys.modules[mod_name]
+def _load_formatters_module():
+    """Load master_bot/utils/formatters.py directly by file path.
+
+    This avoids sys.path conflicts where shared/utils shadows master_bot/utils.
+    """
+    _base = os.path.join(os.path.dirname(__file__), "..", "..", "..")
+    formatters_path = os.path.join(_base, "master_bot", "utils", "formatters.py")
+
+    spec = importlib.util.spec_from_file_location("master_bot_formatters", formatters_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load the formatters module once at import time
+_formatters = _load_formatters_module()
+format_analytics = _formatters.format_analytics
+format_impulse = _formatters.format_impulse
 
 
 class TestFormatAnalytics:
@@ -23,8 +33,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_basic_format(self):
         """Test basic analytics formatting with period, totals."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -42,8 +51,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_yesterday_period_name(self):
         """Test yesterday period name is correct."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "yesterday",
             "total_impulses": 50,
@@ -57,8 +65,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_week_period_name(self):
         """Test week period name is correct."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "week",
             "total_impulses": 500,
@@ -72,8 +79,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_month_period_name(self):
         """Test month period name is correct."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "month",
             "total_impulses": 2000,
@@ -87,8 +93,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_top_growth_displayed(self):
         """Test top growth impulses are displayed."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -109,8 +114,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_top_fall_displayed(self):
         """Test top fall impulses are displayed."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -129,8 +133,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_comparison_today_shows_vs_yesterday(self):
         """Test today comparison shows 'со вчера'."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -150,8 +153,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_comparison_yesterday_shows_vs_day_before(self):
         """Test yesterday comparison shows 'с позавчера'."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "yesterday",
             "total_impulses": 92,
@@ -173,8 +175,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_comparison_none_not_displayed(self):
         """Test that None comparison values are not displayed."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "yesterday",
             "total_impulses": 92,
@@ -194,8 +195,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_week_median_displayed(self):
         """Test weekly median comparison line is displayed."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -216,8 +216,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_week_median_none_not_displayed(self):
         """Test that None week median is not displayed."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -236,8 +235,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_no_comparison_data(self):
         """Test formatting when no comparison data exists."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 10,
@@ -252,8 +250,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_empty_top_growth_not_shown(self):
         """Test that empty top_growth list doesn't show header."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 0,
@@ -270,8 +267,7 @@ class TestFormatAnalytics:
     @pytest.mark.unit
     def test_top_items_limited_to_5(self):
         """Test that top items are limited to 5."""
-        from utils.formatters import format_analytics
-
+        
         data = {
             "period": "today",
             "total_impulses": 100,
@@ -296,8 +292,7 @@ class TestFormatImpulse:
     @pytest.mark.unit
     def test_growth_impulse(self):
         """Test formatting growth impulse."""
-        from utils.formatters import format_impulse
-
+        
         data = {
             "symbol": "BTCUSDT",
             "percent": 15.5,
@@ -313,8 +308,7 @@ class TestFormatImpulse:
     @pytest.mark.unit
     def test_fall_impulse(self):
         """Test formatting fall impulse."""
-        from utils.formatters import format_impulse
-
+        
         data = {
             "symbol": "ETHUSDT",
             "percent": -10.2,
@@ -330,8 +324,7 @@ class TestFormatImpulse:
     @pytest.mark.unit
     def test_with_max_percent(self):
         """Test formatting with max_percent field."""
-        from utils.formatters import format_impulse
-
+        
         data = {
             "symbol": "BTCUSDT",
             "percent": 15.5,
