@@ -63,6 +63,7 @@ class SignalService:
         from_date: Optional[datetime] = None,
         direction: Optional[str] = None,
         timeframe: Optional[str] = None,
+        timeframes: Optional[list[str]] = None,
         min_quality: Optional[int] = None,
     ) -> list[BabloSignal]:
         """Get signals with optional filters.
@@ -73,7 +74,8 @@ class SignalService:
             offset: Number of signals to skip
             from_date: Filter signals from this date
             direction: Filter by direction ('long' or 'short')
-            timeframe: Filter by timeframe
+            timeframe: Filter by single timeframe
+            timeframes: Filter by multiple timeframes (e.g. ["1m", "1h"])
             min_quality: Minimum quality threshold
 
         Returns:
@@ -87,7 +89,9 @@ class SignalService:
         if direction:
             query = query.where(BabloSignal.direction == direction)
 
-        if timeframe:
+        if timeframes:
+            query = query.where(BabloSignal.timeframe.in_(timeframes))
+        elif timeframe:
             query = query.where(BabloSignal.timeframe == timeframe)
 
         if min_quality:
@@ -103,6 +107,9 @@ class SignalService:
         session: AsyncSession,
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None,
+        direction: Optional[str] = None,
+        timeframes: Optional[list[str]] = None,
+        min_quality: Optional[int] = None,
     ) -> int:
         """Get total count of signals."""
         query = select(func.count(BabloSignal.id))
@@ -111,6 +118,12 @@ class SignalService:
             query = query.where(BabloSignal.received_at >= from_date)
         if to_date:
             query = query.where(BabloSignal.received_at < to_date)
+        if direction:
+            query = query.where(BabloSignal.direction == direction)
+        if timeframes:
+            query = query.where(BabloSignal.timeframe.in_(timeframes))
+        if min_quality:
+            query = query.where(BabloSignal.quality_total >= min_quality)
 
         result = await session.execute(query)
         return result.scalar() or 0

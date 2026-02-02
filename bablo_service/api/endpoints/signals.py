@@ -19,6 +19,7 @@ async def list_signals(
     from_date: Optional[str] = None,
     direction: Optional[str] = None,
     timeframe: Optional[str] = None,
+    timeframes: Optional[str] = Query(default=None, description="Comma-separated timeframes: 1m,5m,1h"),
     min_quality: Optional[int] = None,
     session: AsyncSession = Depends(get_db_session),
 ):
@@ -27,17 +28,30 @@ async def list_signals(
     if from_date:
         from_dt = datetime.fromisoformat(from_date)
 
+    # Parse comma-separated timeframes list
+    tf_list = None
+    if timeframes:
+        tf_list = [t.strip() for t in timeframes.split(",") if t.strip()]
+    elif timeframe:
+        tf_list = [timeframe]
+
     signals = await signal_service.get_signals(
         session,
         limit=limit,
         offset=offset,
         from_date=from_dt,
         direction=direction,
-        timeframe=timeframe,
+        timeframes=tf_list,
         min_quality=min_quality,
     )
 
-    total = await signal_service.get_signals_count(session, from_dt)
+    total = await signal_service.get_signals_count(
+        session,
+        from_date=from_dt,
+        direction=direction,
+        timeframes=tf_list,
+        min_quality=min_quality,
+    )
 
     return {
         "signals": [

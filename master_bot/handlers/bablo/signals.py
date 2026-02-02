@@ -26,17 +26,17 @@ router = Router()
 
 SIGNALS_PER_PAGE = 10
 
-# Timeframe to strength mapping
-TIMEFRAME_STRENGTH = {
-    "1м": 1,
-    "5м": 2,
-    "15м": 3,
-    "30м": 4,
-    "1ч": 5,
+# Button label to DB timeframe value
+TIMEFRAME_TO_DB = {
+    "1м": "1m",
+    "5м": "5m",
+    "15м": "15m",
+    "30м": "30m",
+    "1ч": "1h",
 }
 
-# Strength to timeframe mapping
-STRENGTH_TIMEFRAME = {v: k for k, v in TIMEFRAME_STRENGTH.items()}
+# DB timeframe value to button label
+DB_TO_TIMEFRAME = {v: k for k, v in TIMEFRAME_TO_DB.items()}
 
 # Default timezone (fallback)
 _default_tz = pytz.timezone(settings.TIMEZONE)
@@ -113,8 +113,9 @@ def _format_signal(signal: dict, user_tz: str | None = None) -> str:
     filled = "🟩" if is_long else "🟥"
     strength_squares = filled * strength + "⬜" * (5 - strength)
 
-    # Get timeframe from strength
-    timeframe = STRENGTH_TIMEFRAME.get(strength, signal.get("timeframe", ""))
+    # Get display timeframe from DB value
+    db_timeframe = signal.get("timeframe", "")
+    timeframe = DB_TO_TIMEFRAME.get(db_timeframe, db_timeframe)
 
     time_str = _format_time(signal.get("received_at", ""), user_tz)
     time_part = f" | {time_str}" if time_str else ""
@@ -160,29 +161,19 @@ async def _fetch_and_format_signals(
     Returns:
         (formatted_text, total_count, shown_count)
     """
-    strengths = None
+    # Convert button labels to DB timeframe values
+    db_timeframes = None
     if timeframes:
-        strengths = [TIMEFRAME_STRENGTH[tf] for tf in timeframes if tf in TIMEFRAME_STRENGTH]
+        db_timeframes = [TIMEFRAME_TO_DB[tf] for tf in timeframes if tf in TIMEFRAME_TO_DB]
 
-    # Fetch more than needed so we can filter by exact strengths
-    fetch_limit = SIGNALS_PER_PAGE * 3 if strengths else SIGNALS_PER_PAGE
     data = await bablo_client.get_signals(
-        limit=fetch_limit,
-        offset=page * SIGNALS_PER_PAGE if not strengths else 0,
+        limit=SIGNALS_PER_PAGE,
+        offset=page * SIGNALS_PER_PAGE,
         direction=direction,
-        min_strength=min(strengths) if strengths else None,
-        max_strength=max(strengths) if strengths else None,
+        timeframes=db_timeframes if db_timeframes else None,
     )
     signals = data.get("signals", [])
     total = data.get("total", len(signals))
-
-    # Filter by exact strengths if specified
-    if strengths:
-        signals = [s for s in signals if s.get("strength") in strengths]
-        total = len(signals)
-        # Manual pagination after filtering
-        start = page * SIGNALS_PER_PAGE
-        signals = signals[start : start + SIGNALS_PER_PAGE]
 
     if not signals:
         return "", total, 0

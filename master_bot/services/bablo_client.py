@@ -29,9 +29,8 @@ class BabloServiceClient(BaseServiceClient):
         offset: int = 0,
         direction: Optional[str] = None,
         timeframe: Optional[str] = None,
+        timeframes: Optional[list[str]] = None,
         min_quality: Optional[int] = None,
-        min_strength: Optional[int] = None,
-        max_strength: Optional[int] = None,
     ) -> dict:
         """Get list of signals.
 
@@ -39,10 +38,9 @@ class BabloServiceClient(BaseServiceClient):
             limit: Maximum number of signals
             offset: Number of signals to skip
             direction: Filter by direction
-            timeframe: Filter by timeframe
+            timeframe: Filter by single timeframe
+            timeframes: Filter by multiple timeframes (e.g. ["1m", "1h"])
             min_quality: Filter by minimum quality
-            min_strength: Filter by minimum strength (1-5)
-            max_strength: Filter by maximum strength (1-5)
 
         Returns:
             Signals list response
@@ -50,14 +48,12 @@ class BabloServiceClient(BaseServiceClient):
         params = {"limit": limit, "offset": offset}
         if direction:
             params["direction"] = direction
-        if timeframe:
+        if timeframes:
+            params["timeframes"] = ",".join(timeframes)
+        elif timeframe:
             params["timeframe"] = timeframe
         if min_quality:
             params["min_quality"] = min_quality
-        if min_strength:
-            params["min_strength"] = min_strength
-        if max_strength:
-            params["max_strength"] = max_strength
 
         return await self.get("/api/v1/signals", params=params)
 
