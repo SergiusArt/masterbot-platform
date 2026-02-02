@@ -131,6 +131,23 @@ class NotificationService:
             result = await session.execute(query)
             return [row[0] for row in result.all()]
 
+    async def get_users_for_report(self, report_type: str) -> list[int]:
+        """Get users subscribed to specific report type.
+
+        Args:
+            report_type: Report type (morning, evening, weekly, monthly)
+
+        Returns:
+            List of user IDs
+        """
+        report_field = f"{report_type}_report"
+        async with async_session_maker() as session:
+            query = select(UserNotificationSettings.user_id).where(
+                getattr(UserNotificationSettings, report_field) == True
+            )
+            result = await session.execute(query)
+            return [row[0] for row in result.all()]
+
 
 # Global service instance
 notification_service = NotificationService()

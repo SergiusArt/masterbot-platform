@@ -292,52 +292,60 @@ docker compose --env-file .env.production up -d
 
 ## Тестирование
 
-Проект использует pytest для автоматизированного тестирования.
+Проект использует pytest для автоматизированного тестирования. Тесты организованы по сервисам и запускаются с изоляцией модулей (каждый сервис в отдельном pytest-процессе).
 
 ### Структура тестов
 
 ```
 tests/
-├── unit/                    # Юнит-тесты
-│   ├── test_parsers.py      # Тесты парсеров сообщений
-│   └── test_validators.py   # Тесты валидаторов
-├── integration/             # Интеграционные тесты
-│   ├── test_impulse_api.py  # Тесты API импульсов
-│   └── test_bablo_api.py    # Тесты API Bablo
-└── e2e/                     # End-to-end тесты
-    ├── test_navigation.py   # Тесты навигации бота
-    ├── test_impulse_flow.py # Тесты всего флоу импульсов
-    └── test_bablo_flow.py   # Тесты всего флоу Bablo
+├── unit/                           # Юнит-тесты (205 тестов)
+│   ├── shared/                     # Тесты общих модулей (14)
+│   │   └── test_constants.py       # Константы, enum-ы, кнопки
+│   ├── master_bot/                 # Тесты бота (43)
+│   │   ├── test_navigation.py      # FSM навигация, меню, форматирование
+│   │   ├── test_scheduler.py       # Report scheduler, комбинированные отчёты
+│   │   └── test_service_clients.py # HTTP-клиенты к микросервисам
+│   ├── impulse_service/            # Тесты импульсов (67)
+│   │   ├── test_parser.py          # Парсер импульсных сообщений
+│   │   ├── test_scheduler.py       # Формат отчётов, уникальные монеты, лидеры
+│   │   ├── test_signal_service.py  # Pydantic-схемы, аналитика, периоды
+│   │   └── test_api.py             # FastAPI endpoints (skip без fastapi)
+│   └── bablo_service/              # Тесты Bablo (70)
+│       ├── test_parser.py          # Парсер торговых сигналов
+│       ├── test_signal_service.py  # Сервис сигналов, фильтрация, аналитика
+│       ├── test_activity_notifications.py # Алерты активности, Redis ключи
+│       └── test_api.py             # FastAPI endpoints (skip без fastapi)
+├── e2e/                            # Навигационные тесты (11)
+│   └── test_navigation.py         # FSM state transitions через handlers
+└── conftest.py                     # Общий conftest (пути к сервисам)
 ```
 
 ### Запуск тестов
 
 ```bash
-# Все тесты
-pytest
+# Все тесты (рекомендуемый способ — изоляция по сервисам)
+./run_tests.sh all
 
 # Только юнит-тесты
-pytest tests/unit/
+./run_tests.sh unit
 
 # Только e2e тесты
-pytest tests/e2e/
+./run_tests.sh e2e
+
+# Тесты конкретного сервиса
+pytest tests/unit/master_bot/ -v
+pytest tests/unit/impulse_service/ -v
+pytest tests/unit/bablo_service/ -v
 
 # С покрытием кода
-pytest --cov=master_bot --cov=impulse_service --cov=bablo_service
-
-# Конкретный тест
-pytest tests/e2e/test_navigation.py -v
+pytest --cov=master_bot --cov=impulse_service --cov=bablo_service tests/unit/shared/ tests/unit/master_bot/
 ```
 
-### Использование test script
+### Особенности тестирования
 
-Проект включает удобный скрипт для запуска тестов:
-
-```bash
-./run_tests.sh           # Запустить все тесты
-./run_tests.sh unit      # Только юнит-тесты
-./run_tests.sh e2e       # Только e2e тесты
-```
+- **Изоляция модулей**: Сервисы имеют одинаковые имена пакетов (`services/`, `core/`, `models/`), поэтому тесты каждого сервиса запускаются в отдельном pytest-процессе через `run_tests.sh`
+- **conftest.py**: В директориях `impulse_service/` и `bablo_service/` есть conftest-файлы, настраивающие `sys.path` для корректного импорта модулей
+- **fastapi skip**: Тесты API автоматически пропускаются если fastapi не установлен (`pytest.importorskip`)
 
 ## Технологии
 

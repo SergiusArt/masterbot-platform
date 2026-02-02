@@ -86,5 +86,18 @@ class ImpulseServiceClient(BaseServiceClient):
         return await self.get("/api/v1/signals", params=params)
 
 
+    async def get_users_for_report(self, report_type: str) -> list[int]:
+        """Get users subscribed to specific report type.
+
+        Args:
+            report_type: Report type (morning, evening, weekly, monthly)
+
+        Returns:
+            List of user IDs
+        """
+        result = await self.get(f"/api/v1/notifications/reports/{report_type}/users")
+        return result.get("users", [])
+
+
 # Global client instance
 impulse_client = ImpulseServiceClient()

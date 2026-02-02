@@ -1,10 +1,11 @@
 """Analytics service for impulse data analysis."""
 
+import statistics
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, cast, Date
 
 from models.impulse import Impulse
 from shared.database.connection import async_session_maker
@@ -47,6 +48,15 @@ class AnalyticsService:
 
             fall_count = total - growth_count
 
+            # Get unique coins count
+            unique_query = select(func.count(func.distinct(Impulse.symbol))).where(
+                and_(
+                    Impulse.received_at >= start_date,
+                    Impulse.received_at <= end_date,
+                )
+            )
+            unique_coins = await session.scalar(unique_query) or 0
+
             # Get top growth
             top_growth = await self._get_top_impulses(
                 session, start_date, end_date, "growth", 5
@@ -67,6 +77,7 @@ class AnalyticsService:
             total_impulses=total,
             growth_count=growth_count,
             fall_count=fall_count,
+            unique_coins=unique_coins,
             top_growth=top_growth,
             top_fall=top_fall,
             comparison=comparison,
@@ -153,51 +164,104 @@ class AnalyticsService:
             for row in rows
         ]
 
+    async def _get_daily_counts(
+        self, session, start_date: datetime, end_date: datetime
+    ) -> list[int]:
+        """Get impulse counts per day for a date range."""
+        query = (
+            select(
+                cast(Impulse.received_at, Date).label("day"),
+                func.count().label("cnt"),
+            )
+            .where(
+                and_(
+                    Impulse.received_at >= start_date,
+                    Impulse.received_at <= end_date,
+                )
+            )
+            .group_by(cast(Impulse.received_at, Date))
+        )
+        result = await session.execute(query)
+        return [row.cnt for row in result.all()]
+
     async def _get_comparison(
         self,
         session,
         period: str,
         current_total: int,
     ) -> Optional[ComparisonData]:
-        """Get comparison data.
-
-        Args:
-            session: Database session
-            period: Current period
-            current_total: Current period total
-
-        Returns:
-            Comparison data or None
-        """
-        if period != AnalyticsPeriod.TODAY.value:
-            return None
-
+        """Get comparison data for any period."""
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # Yesterday's total
-        yesterday_start = today_start - timedelta(days=1)
-        yesterday_end = today_start - timedelta(seconds=1)
+        yesterday_total = None
+        vs_yesterday = None
+        week_median = None
+        vs_week_median = None
+        month_median = None
+        vs_month_median = None
 
-        yesterday_query = select(func.count()).where(
-            and_(
-                Impulse.received_at >= yesterday_start,
-                Impulse.received_at <= yesterday_end,
+        if period in (AnalyticsPeriod.TODAY.value, AnalyticsPeriod.YESTERDAY.value):
+            # Yesterday's total
+            yesterday_start = today_start - timedelta(days=1)
+            yesterday_end = today_start - timedelta(seconds=1)
+            yq = select(func.count()).where(
+                and_(
+                    Impulse.received_at >= yesterday_start,
+                    Impulse.received_at <= yesterday_end,
+                )
             )
-        )
-        yesterday_total = await session.scalar(yesterday_query) or 0
+            yesterday_total = await session.scalar(yq) or 0
 
-        # Calculate comparison
-        if yesterday_total > 0:
-            change = ((current_total - yesterday_total) / yesterday_total) * 100
-            vs_yesterday = f"{change:+.0f}%"
+            if period == AnalyticsPeriod.TODAY.value and yesterday_total > 0:
+                change = ((current_total - yesterday_total) / yesterday_total) * 100
+                vs_yesterday = f"{change:+.1f}%"
+            elif period == AnalyticsPeriod.TODAY.value:
+                vs_yesterday = "нет данных"
+
+        # Week median (daily counts for last 7 days)
+        week_start = today_start - timedelta(days=7)
+        week_counts = await self._get_daily_counts(session, week_start, today_start - timedelta(seconds=1))
+        if week_counts:
+            week_median = int(statistics.median(week_counts))
+            if week_median > 0:
+                if current_total > week_median * 1.5:
+                    vs_week_median = "высокая активность"
+                elif current_total < week_median * 0.5:
+                    vs_week_median = "низкая активность"
+                else:
+                    vs_week_median = "в норме"
+            else:
+                vs_week_median = "нет данных"
         else:
-            vs_yesterday = "N/A"
+            week_median = 0
+            vs_week_median = "нет данных"
+
+        # Month median (daily counts for last 30 days)
+        month_start = today_start - timedelta(days=30)
+        month_counts = await self._get_daily_counts(session, month_start, today_start - timedelta(seconds=1))
+        if month_counts:
+            month_median = int(statistics.median(month_counts))
+            if month_median > 0:
+                if current_total > month_median * 1.5:
+                    vs_month_median = "высокая активность"
+                elif current_total < month_median * 0.5:
+                    vs_month_median = "низкая активность"
+                else:
+                    vs_month_median = "в норме"
+            else:
+                vs_month_median = "нет данных"
+        else:
+            month_median = 0
+            vs_month_median = "нет данных"
 
         return ComparisonData(
             vs_yesterday=vs_yesterday,
-            vs_week_median="N/A",
-            vs_month_median="N/A",
+            yesterday_total=yesterday_total,
+            vs_week_median=vs_week_median,
+            week_median=week_median,
+            vs_month_median=vs_month_median,
+            month_median=month_median,
         )
 
 

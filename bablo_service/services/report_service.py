@@ -115,8 +115,6 @@ class ReportService:
         avg_quality = analytics.get("average_quality")
 
         lines = [
-            f"💰 <b>BABLO СИГНАЛЫ</b>",
-            "",
             f"📊 Сигналов {period_label}: <b>{total}</b>",
             f"🟢 Long: {long_count} | 🔴 Short: {short_count}",
         ]

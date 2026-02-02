@@ -42,16 +42,50 @@ install_deps() {
     pip install -r requirements-test.txt -q
 }
 
-# Run all tests
+# Run all tests (per-service isolation to avoid module conflicts)
 run_all() {
-    echo -e "${GREEN}Running all tests...${NC}"
-    python -m pytest tests/ -v --tb=short
+    echo -e "${GREEN}Running all tests (per-service isolation)...${NC}"
+    local exit_code=0
+
+    echo -e "\n${YELLOW}=== Shared tests ===${NC}"
+    python -m pytest tests/unit/shared/ -v --tb=short || exit_code=1
+
+    echo -e "\n${YELLOW}=== Master Bot tests ===${NC}"
+    python -m pytest tests/unit/master_bot/ -v --tb=short || exit_code=1
+
+    echo -e "\n${YELLOW}=== Impulse Service tests ===${NC}"
+    python -m pytest tests/unit/impulse_service/ -v --tb=short || exit_code=1
+
+    echo -e "\n${YELLOW}=== Bablo Service tests ===${NC}"
+    python -m pytest tests/unit/bablo_service/ -v --tb=short || exit_code=1
+
+    if [[ -d "tests/e2e" && "$(ls tests/e2e/test_*.py 2>/dev/null)" ]]; then
+        echo -e "\n${YELLOW}=== E2E tests ===${NC}"
+        python -m pytest tests/e2e/ -v --tb=short || exit_code=1
+    fi
+
+    if [[ $exit_code -ne 0 ]]; then
+        echo -e "\n${RED}Some tests failed!${NC}"
+        exit 1
+    fi
 }
 
-# Run unit tests only
+# Run unit tests only (per-service isolation)
 run_unit() {
-    echo -e "${GREEN}Running unit tests...${NC}"
-    python -m pytest tests/unit/ -v --tb=short -m unit
+    echo -e "${GREEN}Running unit tests (per-service isolation)...${NC}"
+    local exit_code=0
+
+    for dir in tests/unit/shared tests/unit/master_bot tests/unit/impulse_service tests/unit/bablo_service; do
+        if [[ -d "$dir" ]]; then
+            echo -e "\n${YELLOW}=== $(basename $dir) ===${NC}"
+            python -m pytest "$dir" -v --tb=short -m unit || exit_code=1
+        fi
+    done
+
+    if [[ $exit_code -ne 0 ]]; then
+        echo -e "\n${RED}Some tests failed!${NC}"
+        exit 1
+    fi
 }
 
 # Run integration tests only

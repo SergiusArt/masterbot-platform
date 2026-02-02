@@ -68,9 +68,10 @@ class BaseServiceClient:
         self,
         endpoint: str,
         json: Optional[dict] = None,
+        params: Optional[dict] = None,
     ) -> dict:
         """Make POST request."""
-        return await self._request("POST", endpoint, json=json)
+        return await self._request("POST", endpoint, json=json, params=params)
 
     async def put(
         self,

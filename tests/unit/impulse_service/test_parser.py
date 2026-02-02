@@ -3,27 +3,21 @@
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 import sys
-import os
 
 import pytest
-
-# Add project paths for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "impulse_service"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
 
 # Mock the logger before importing parser
 sys.modules['shared.utils.logger'] = MagicMock()
 sys.modules['shared.utils'] = MagicMock()
-
-from core.parser import ImpulseParser, ParsedImpulse
 
 
 class TestImpulseParser:
     """Test suite for ImpulseParser class."""
 
     @pytest.fixture
-    def parser(self) -> ImpulseParser:
+    def parser(self):
         """Create parser instance."""
+        from core.parser import ImpulseParser
         return ImpulseParser()
 
     # =========================================================================
@@ -431,6 +425,8 @@ class TestParsedImpulseDataclass:
     @pytest.mark.unit
     def test_default_values(self):
         """Test default values of ParsedImpulse."""
+        from core.parser import ParsedImpulse
+
         impulse = ParsedImpulse(
             symbol="BTCUSDT",
             percent=Decimal("10"),
@@ -446,6 +442,8 @@ class TestParsedImpulseDataclass:
     @pytest.mark.unit
     def test_all_values(self):
         """Test ParsedImpulse with all values set."""
+        from core.parser import ParsedImpulse
+
         impulse = ParsedImpulse(
             symbol="SYNUSDT.P",
             percent=Decimal("15.5"),

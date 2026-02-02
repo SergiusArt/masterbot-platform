@@ -28,6 +28,7 @@ from handlers.bablo import signals as bablo_signals
 from handlers.bablo import activity as bablo_activity
 from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
+from services.scheduler import init_scheduler
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import setup_logger
@@ -134,12 +135,17 @@ async def main() -> None:
     notification_listener = NotificationListener(bot)
     listener_task = asyncio.create_task(notification_listener.start())
 
+    # Start report scheduler
+    scheduler = init_scheduler(bot)
+    scheduler.start()
+
     # Start polling
     logger.info("Starting bot polling...")
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
-        # Stop listener on shutdown
+        # Stop scheduler and listener on shutdown
+        scheduler.stop()
         await notification_listener.stop()
         listener_task.cancel()
         try:

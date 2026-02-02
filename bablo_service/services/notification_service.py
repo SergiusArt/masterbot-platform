@@ -150,12 +150,12 @@ class NotificationService:
         Returns:
             Dictionary mapping user_id to (threshold, window_minutes)
         """
+        # Activity alerts work independently of signal notifications
         query = select(
             BabloUserSettings.user_id,
             BabloUserSettings.activity_threshold,
             BabloUserSettings.activity_window_minutes,
         ).where(
-            BabloUserSettings.notifications_enabled == True,
             BabloUserSettings.activity_threshold > 0,
             BabloUserSettings.activity_threshold <= signal_count,
         )

@@ -86,22 +86,30 @@ class TestRedisChannels:
     @pytest.mark.unit
     def test_redis_channels_defined(self):
         """Test Redis channels are defined."""
-        from shared.constants import RedisChannels
+        from shared.constants import (
+            REDIS_CHANNEL_NOTIFICATIONS,
+            REDIS_CHANNEL_ACTIVITY,
+            REDIS_CHANNEL_REPORTS,
+            REDIS_CHANNEL_BABLO,
+        )
 
-        # Check impulse channel exists
-        assert hasattr(RedisChannels, "IMPULSE_SIGNALS")
-        assert hasattr(RedisChannels, "IMPULSE_REPORTS")
+        assert isinstance(REDIS_CHANNEL_NOTIFICATIONS, str)
+        assert isinstance(REDIS_CHANNEL_ACTIVITY, str)
+        assert isinstance(REDIS_CHANNEL_REPORTS, str)
+        assert isinstance(REDIS_CHANNEL_BABLO, str)
 
     @pytest.mark.unit
     def test_redis_channel_values_are_strings(self):
-        """Test Redis channel values are strings."""
-        from shared.constants import RedisChannels
+        """Test Redis channel values contain service prefixes."""
+        from shared.constants import (
+            REDIS_CHANNEL_NOTIFICATIONS,
+            REDIS_CHANNEL_REPORTS,
+            REDIS_CHANNEL_BABLO,
+        )
 
-        for attr in dir(RedisChannels):
-            if not attr.startswith("_"):
-                value = getattr(RedisChannels, attr)
-                if not callable(value):
-                    assert isinstance(value, str), f"{attr} should be a string"
+        assert "impulse" in REDIS_CHANNEL_NOTIFICATIONS
+        assert "impulse" in REDIS_CHANNEL_REPORTS
+        assert "bablo" in REDIS_CHANNEL_BABLO
 
 
 class TestDefaultThresholds:
@@ -124,28 +132,42 @@ class TestDefaultThresholds:
         assert DEFAULT_FALL_THRESHOLD >= -100
 
 
-class TestMenuTexts:
-    """Tests for menu text constants."""
+class TestMenuButtons:
+    """Tests for menu button text constants."""
 
     @pytest.mark.unit
-    def test_menu_texts_defined(self):
-        """Test menu texts are defined."""
-        from shared.constants import MenuTexts
+    def test_main_menu_buttons_defined(self):
+        """Test main menu button texts are defined."""
+        from shared.constants import (
+            MENU_MAIN,
+            MENU_BACK,
+            MENU_IMPULSES,
+            MENU_BABLO,
+            MENU_REPORTS,
+            MENU_SETTINGS,
+            MENU_ADMIN,
+        )
 
-        # Check main menu texts
-        assert hasattr(MenuTexts, "MAIN_MENU")
-        assert hasattr(MenuTexts, "IMPULSE_MENU")
+        assert isinstance(MENU_MAIN, str) and len(MENU_MAIN) > 0
+        assert isinstance(MENU_BACK, str) and len(MENU_BACK) > 0
+        assert isinstance(MENU_IMPULSES, str) and len(MENU_IMPULSES) > 0
+        assert isinstance(MENU_BABLO, str) and len(MENU_BABLO) > 0
+        assert isinstance(MENU_REPORTS, str) and len(MENU_REPORTS) > 0
+        assert isinstance(MENU_SETTINGS, str) and len(MENU_SETTINGS) > 0
+        assert isinstance(MENU_ADMIN, str) and len(MENU_ADMIN) > 0
 
     @pytest.mark.unit
-    def test_menu_texts_not_empty(self):
-        """Test menu texts are not empty strings."""
-        from shared.constants import MenuTexts
+    def test_impulse_menu_buttons_defined(self):
+        """Test impulse sub-menu button texts are defined."""
+        from shared.constants import (
+            MENU_ANALYTICS,
+            MENU_NOTIFICATIONS,
+            MENU_ACTIVITY,
+        )
 
-        for attr in dir(MenuTexts):
-            if not attr.startswith("_"):
-                value = getattr(MenuTexts, attr)
-                if isinstance(value, str):
-                    assert len(value) > 0, f"{attr} should not be empty"
+        assert isinstance(MENU_ANALYTICS, str) and len(MENU_ANALYTICS) > 0
+        assert isinstance(MENU_NOTIFICATIONS, str) and len(MENU_NOTIFICATIONS) > 0
+        assert isinstance(MENU_ACTIVITY, str) and len(MENU_ACTIVITY) > 0
 
 
 class TestEventTypes:
@@ -154,18 +176,27 @@ class TestEventTypes:
     @pytest.mark.unit
     def test_event_types_defined(self):
         """Test event types are defined."""
-        from shared.constants import EventTypes
+        from shared.constants import (
+            EVENT_IMPULSE_ALERT,
+            EVENT_ACTIVITY_ALERT,
+            EVENT_REPORT_READY,
+            EVENT_BABLO_SIGNAL,
+            EVENT_BABLO_ACTIVITY,
+        )
 
-        assert hasattr(EventTypes, "NEW_SIGNAL")
-        assert hasattr(EventTypes, "REPORT_GENERATED")
+        assert isinstance(EVENT_IMPULSE_ALERT, str)
+        assert isinstance(EVENT_ACTIVITY_ALERT, str)
+        assert isinstance(EVENT_REPORT_READY, str)
+        assert isinstance(EVENT_BABLO_SIGNAL, str)
+        assert isinstance(EVENT_BABLO_ACTIVITY, str)
 
     @pytest.mark.unit
     def test_event_types_are_strings(self):
-        """Test event types are strings."""
-        from shared.constants import EventTypes
+        """Test event type values follow naming convention."""
+        from shared.constants import (
+            EVENT_IMPULSE_ALERT,
+            EVENT_BABLO_SIGNAL,
+        )
 
-        for attr in dir(EventTypes):
-            if not attr.startswith("_"):
-                value = getattr(EventTypes, attr)
-                if not callable(value):
-                    assert isinstance(value, str)
+        assert "impulse" in EVENT_IMPULSE_ALERT
+        assert "bablo" in EVENT_BABLO_SIGNAL

@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.router import api_router
-from core.scheduler import start_scheduler, stop_scheduler
+# Scheduler disabled - reports are now sent from master_bot
+# from core.scheduler import start_scheduler, stop_scheduler
 from telegram_listener.listener import TelegramListener
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
@@ -31,8 +32,9 @@ async def lifespan(app: FastAPI):
     logger.info("Connecting to Redis...")
     await get_redis_client()
 
-    logger.info("Starting scheduler...")
-    start_scheduler()
+    # Scheduler disabled - reports are now sent from master_bot
+    # logger.info("Starting scheduler...")
+    # start_scheduler()
 
     logger.info("Starting Telegram listener...")
     listener = TelegramListener()
@@ -61,7 +63,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down Impulse Service...")
-    stop_scheduler()
+    # stop_scheduler()  # Scheduler disabled - reports are now sent from master_bot
     await listener.stop()
     await close_db()
     logger.info("Impulse Service stopped.")

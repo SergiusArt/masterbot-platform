@@ -33,6 +33,8 @@ async def get_user_settings(
         "evening_report": settings.evening_report,
         "weekly_report": settings.weekly_report,
         "monthly_report": settings.monthly_report,
+        "activity_window_minutes": settings.activity_window_minutes,
+        "activity_threshold": settings.activity_threshold,
     }
 
 
@@ -52,3 +54,24 @@ async def update_user_settings(
         "user_id": settings.user_id,
         "updated": True,
     }
+
+
+@router.get("/reports/{report_type}/users")
+async def get_users_for_report(
+    report_type: str,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Get users subscribed to specific report type.
+
+    Args:
+        report_type: Report type (morning, evening, weekly, monthly)
+
+    Returns:
+        List of user IDs
+    """
+    if report_type not in ["morning", "evening", "weekly", "monthly"]:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Invalid report type")
+
+    users = await notification_service.get_users_for_report(session, report_type)
+    return {"users": users}

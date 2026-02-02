@@ -42,9 +42,9 @@ class TestMainMenuKeyboard:
 
     @pytest.mark.unit
     def test_main_menu_layout(self):
-        """Test Impulses and Bablo buttons are on the same row."""
+        """Test main menu layout with Reports button."""
         from keyboards.reply.main_menu import get_main_menu_keyboard
-        from shared.constants import MENU_IMPULSES, MENU_BABLO, MENU_SETTINGS
+        from shared.constants import MENU_IMPULSES, MENU_BABLO, MENU_REPORTS, MENU_SETTINGS
 
         keyboard = get_main_menu_keyboard(is_admin=False)
 
@@ -54,10 +54,15 @@ class TestMainMenuKeyboard:
         assert first_row[0].text == MENU_IMPULSES
         assert first_row[1].text == MENU_BABLO
 
-        # Second row should have Settings
+        # Second row should have Reports
         second_row = keyboard.keyboard[1]
         assert len(second_row) == 1
-        assert second_row[0].text == MENU_SETTINGS
+        assert second_row[0].text == MENU_REPORTS
+
+        # Third row should have Settings
+        third_row = keyboard.keyboard[2]
+        assert len(third_row) == 1
+        assert third_row[0].text == MENU_SETTINGS
 
     @pytest.mark.unit
     def test_main_menu_with_admin(self):
@@ -67,9 +72,9 @@ class TestMainMenuKeyboard:
 
         keyboard = get_main_menu_keyboard(is_admin=True)
 
-        # Should have 3 rows: [Impulses, Bablo], [Settings], [Admin]
-        assert len(keyboard.keyboard) == 3
-        admin_row = keyboard.keyboard[2]
+        # Should have 4 rows: [Impulses, Bablo], [Reports], [Settings], [Admin]
+        assert len(keyboard.keyboard) == 4
+        admin_row = keyboard.keyboard[3]
         assert admin_row[0].text == MENU_ADMIN
 
 

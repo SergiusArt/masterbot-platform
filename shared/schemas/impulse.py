@@ -47,9 +47,12 @@ class TopImpulse(BaseSchema):
 class ComparisonData(BaseSchema):
     """Analytics comparison data."""
 
-    vs_yesterday: str
-    vs_week_median: str
-    vs_month_median: str
+    vs_yesterday: Optional[str] = None
+    yesterday_total: Optional[int] = None
+    vs_week_median: Optional[str] = None
+    week_median: Optional[int] = None
+    vs_month_median: Optional[str] = None
+    month_median: Optional[int] = None
 
 
 class AnalyticsResponse(BaseSchema):
@@ -61,6 +64,7 @@ class AnalyticsResponse(BaseSchema):
     total_impulses: int
     growth_count: int
     fall_count: int
+    unique_coins: int = 0
     top_growth: list[TopImpulse]
     top_fall: list[TopImpulse]
     comparison: Optional[ComparisonData] = None

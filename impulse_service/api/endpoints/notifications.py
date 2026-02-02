@@ -41,3 +41,23 @@ async def update_user_settings(user_id: int, settings: NotificationSettingsUpdat
         return updated
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/reports/{report_type}/users")
+async def get_users_for_report(report_type: str):
+    """Get users subscribed to specific report type.
+
+    Args:
+        report_type: Report type (morning, evening, weekly, monthly)
+
+    Returns:
+        List of user IDs
+    """
+    if report_type not in ["morning", "evening", "weekly", "monthly"]:
+        raise HTTPException(status_code=400, detail="Invalid report type")
+
+    try:
+        users = await notification_service.get_users_for_report(report_type)
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

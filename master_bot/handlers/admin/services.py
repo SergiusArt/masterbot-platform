@@ -2,6 +2,7 @@
 
 from aiogram import Router, F
 from aiogram.types import Message
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.admin_menu import (
@@ -9,6 +10,7 @@ from keyboards.reply.admin_menu import (
     get_admin_services_keyboard,
 )
 from services.service_registry import service_registry
+from services.scheduler import trigger_report_manually
 from shared.constants import (
     MENU_SERVICES,
     MENU_SERVICE_STATUS,
@@ -113,3 +115,44 @@ async def back_from_admin(message: Message, state: FSMContext, is_admin: bool = 
         "👑 <b>Админ-панель</b>",
         reply_markup=get_admin_menu_keyboard(),
     )
+
+
+# Temporary test commands for reports
+@router.message(Command("test_morning"))
+async def test_morning_report(message: Message, is_admin: bool = False) -> None:
+    """Test morning report."""
+    if not is_admin:
+        return
+    await message.answer("⏳ Отправляю утренний отчёт...")
+    result = await trigger_report_manually("morning")
+    await message.answer(f"✅ {result}")
+
+
+@router.message(Command("test_evening"))
+async def test_evening_report(message: Message, is_admin: bool = False) -> None:
+    """Test evening report."""
+    if not is_admin:
+        return
+    await message.answer("⏳ Отправляю вечерний отчёт...")
+    result = await trigger_report_manually("evening")
+    await message.answer(f"✅ {result}")
+
+
+@router.message(Command("test_weekly"))
+async def test_weekly_report(message: Message, is_admin: bool = False) -> None:
+    """Test weekly report."""
+    if not is_admin:
+        return
+    await message.answer("⏳ Отправляю недельный отчёт...")
+    result = await trigger_report_manually("weekly")
+    await message.answer(f"✅ {result}")
+
+
+@router.message(Command("test_monthly"))
+async def test_monthly_report(message: Message, is_admin: bool = False) -> None:
+    """Test monthly report."""
+    if not is_admin:
+        return
+    await message.answer("⏳ Отправляю месячный отчёт...")
+    result = await trigger_report_manually("monthly")
+    await message.answer(f"✅ {result}")

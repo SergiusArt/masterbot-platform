@@ -3,22 +3,12 @@
 from decimal import Decimal
 from unittest.mock import MagicMock
 import sys
-import os
 
 import pytest
 
 # Mock the logger before importing parser
 sys.modules['shared.utils.logger'] = MagicMock()
 sys.modules['shared.utils'] = MagicMock()
-
-# Get the absolute path to bablo_service
-BABLO_SERVICE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "bablo_service"))
-SHARED_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
-
-# Remove any conflicting paths and add our paths first
-sys.path = [p for p in sys.path if 'impulse_service' not in p]
-sys.path.insert(0, BABLO_SERVICE_PATH)
-sys.path.insert(0, SHARED_PATH)
 
 from core.parser import BabloParser, ParsedBabloSignal
 

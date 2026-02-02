@@ -1,43 +1,14 @@
-"""Tests for scheduler and report functionality."""
+"""Tests for impulse service scheduler and report functionality."""
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import sys
-import os
-
-# Add project paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "impulse_service"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared"))
 
 # Mock logger before imports
 sys.modules['shared.utils.logger'] = MagicMock()
-
-
-class TestSchedulerConfiguration:
-    """Test scheduler configuration."""
-
-    @pytest.mark.unit
-    def test_scheduler_jobs_configured(self):
-        """Test scheduler has correct jobs configured."""
-        from core.scheduler import scheduler, start_scheduler, stop_scheduler
-
-        # Start scheduler (it adds jobs)
-        with patch('core.scheduler.scheduler.start'):
-            start_scheduler()
-
-        # Check jobs are configured
-        jobs = scheduler.get_jobs()
-        job_ids = [job.id for job in jobs]
-
-        assert "morning_reports" in job_ids
-        assert "evening_reports" in job_ids
-        assert "weekly_reports" in job_ids
-
-        # Stop scheduler
-        with patch('core.scheduler.scheduler.shutdown'):
-            stop_scheduler()
 
 
 class TestReportDataFormat:
@@ -46,7 +17,6 @@ class TestReportDataFormat:
     @pytest.mark.unit
     def test_report_data_has_correct_keys(self):
         """Test report data contains required keys for notification listener."""
-        # Simulated report data as sent by scheduler
         report_data = {
             "event": "report_ready",
             "user_id": 123,
@@ -58,12 +28,10 @@ class TestReportDataFormat:
             },
         }
 
-        # Check required keys
         assert "event" in report_data
         assert "user_id" in report_data
         assert "data" in report_data
 
-        # Check data keys (notification listener expects these)
         data = report_data["data"]
         assert "report_type" in data
         assert "text" in data
@@ -76,88 +44,189 @@ class TestReportDataFormat:
         valid_types = ["morning", "evening", "weekly", "monthly"]
 
         for report_type in valid_types:
-            report_data = {
-                "data": {
-                    "report_type": report_type,
-                }
-            }
+            report_data = {"data": {"report_type": report_type}}
             assert report_data["data"]["report_type"] in valid_types
 
 
 class TestReportService:
-    """Tests for report service."""
+    """Tests for impulse report service with improved format."""
+
+    def _mock_analytics(self, **kwargs):
+        """Create mock analytics with defaults."""
+        defaults = {
+            "total_impulses": 10,
+            "growth_count": 6,
+            "fall_count": 4,
+            "unique_coins": 8,
+            "top_growth": [
+                MagicMock(symbol="BTCUSDT.P", percent=Decimal("33.8")),
+                MagicMock(symbol="ETHUSDT.P", percent=Decimal("22.5")),
+            ],
+            "top_fall": [
+                MagicMock(symbol="XRPUSDT.P", percent=Decimal("-15.0")),
+            ],
+            "comparison": MagicMock(
+                yesterday_total=20,
+                vs_yesterday="-50.0%",
+                week_median=15,
+                vs_week_median="низкая активность",
+                month_median=12,
+                vs_month_median="в норме",
+            ),
+        }
+        defaults.update(kwargs)
+        return MagicMock(**defaults)
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_generate_morning_report(self):
-        """Test morning report generation."""
+    async def test_morning_report_contains_unique_coins(self):
+        """Test morning report includes unique coins count."""
         with patch('services.report_service.analytics_service') as mock_analytics:
             from services.report_service import ReportService
 
-            mock_analytics.get_analytics = AsyncMock(return_value=MagicMock(
-                total_impulses=10,
-                growth_count=6,
-                fall_count=4,
-                top_growth=[
-                    MagicMock(symbol="BTC", percent=15.5),
-                    MagicMock(symbol="ETH", percent=10.2),
-                ],
-                top_fall=[
-                    MagicMock(symbol="XRP", percent=-8.3),
-                ],
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("morning", user_id=123)
+
+            assert "Уникальных монет" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_morning_report_contains_comparisons(self):
+        """Test morning report includes comparison section."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("morning", user_id=123)
+
+            assert "Сравнения" in report.text
+            assert "Медиана недели" in report.text
+            assert "Медиана месяца" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_report_contains_numbered_leaders(self):
+        """Test report uses numbered list for leaders."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("morning", user_id=123)
+
+            assert "1." in report.text
+            assert "2." in report.text
+            assert "Лидеры дня (рост)" in report.text
+            assert "Лидеры дня (падение)" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_evening_report_format(self):
+        """Test evening report with correct period label."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("evening", user_id=123)
+
+            assert "за сегодня" in report.text
+            assert "Лидеры дня" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_weekly_report_format(self):
+        """Test weekly report with correct labels."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("weekly", user_id=123)
+
+            assert "за неделю" in report.text
+            assert "Лидеры недели" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_monthly_report_format(self):
+        """Test monthly report with correct labels."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("monthly", user_id=123)
+
+            assert "за месяц" in report.text
+            assert "Лидеры месяца" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_report_no_closing_greeting(self):
+        """Test reports no longer contain closing greetings (moved to scheduler)."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("morning", user_id=123)
+
+            assert "Хорошего дня" not in report.text
+            assert "Хорошего вечера" not in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_report_uses_genitive_case(self):
+        """Test report uses correct Russian grammar (Роста/Падения)."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics())
+
+            service = ReportService()
+            report = await service.generate_report("morning", user_id=123)
+
+            assert "Роста:" in report.text
+            assert "Падения:" in report.text
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_report_empty_leaders_when_no_data(self):
+        """Test report omits leader section when no data."""
+        with patch('services.report_service.analytics_service') as mock_analytics:
+            from services.report_service import ReportService
+
+            mock_analytics.get_analytics = AsyncMock(return_value=self._mock_analytics(
+                total_impulses=0,
+                growth_count=0,
+                fall_count=0,
+                unique_coins=0,
+                top_growth=[],
+                top_fall=[],
+                comparison=MagicMock(
+                    yesterday_total=None,
+                    vs_yesterday=None,
+                    week_median=0,
+                    vs_week_median="нет данных",
+                    month_median=0,
+                    vs_month_median="нет данных",
+                ),
             ))
 
             service = ReportService()
             report = await service.generate_report("morning", user_id=123)
 
-            assert report is not None
-            assert "Утренний отчёт" in report.text
-            assert "10" in report.text  # total impulses
-            assert report.generated_at is not None
-
-    @pytest.mark.unit
-    @pytest.mark.asyncio
-    async def test_generate_evening_report(self):
-        """Test evening report generation."""
-        with patch('services.report_service.analytics_service') as mock_analytics:
-            from services.report_service import ReportService
-
-            mock_analytics.get_analytics = AsyncMock(return_value=MagicMock(
-                total_impulses=25,
-                growth_count=15,
-                fall_count=10,
-                top_growth=[],
-                top_fall=[],
-                comparison=MagicMock(vs_yesterday="+5"),
-            ))
-
-            service = ReportService()
-            report = await service.generate_report("evening", user_id=123)
-
-            assert report is not None
-            assert "Вечерний отчёт" in report.text
-            assert "25" in report.text
-
-    @pytest.mark.unit
-    @pytest.mark.asyncio
-    async def test_generate_weekly_report(self):
-        """Test weekly report generation."""
-        with patch('services.report_service.analytics_service') as mock_analytics:
-            from services.report_service import ReportService
-
-            mock_analytics.get_analytics = AsyncMock(return_value=MagicMock(
-                total_impulses=150,
-                growth_count=90,
-                fall_count=60,
-                top_growth=[],
-                top_fall=[],
-            ))
-
-            service = ReportService()
-            report = await service.generate_report("weekly", user_id=123)
-
-            assert report is not None
-            assert "Недельный отчёт" in report.text
+            assert "Лидеры" not in report.text
 
     @pytest.mark.unit
     @pytest.mark.asyncio
@@ -171,3 +240,28 @@ class TestReportService:
             await service.generate_report("invalid", user_id=123)
 
         assert "Unknown report type" in str(exc_info.value)
+
+
+class TestActivityEmoji:
+    """Test activity level emoji mapping."""
+
+    @pytest.mark.unit
+    def test_activity_emoji_mapping(self):
+        """Test all activity levels have correct emoji."""
+        from services.report_service import ReportService
+
+        service = ReportService()
+
+        assert "🟡" in service._activity_emoji("высокая активность")
+        assert "🔵" in service._activity_emoji("низкая активность")
+        assert "🟢" in service._activity_emoji("в норме")
+        assert "📊" in service._activity_emoji("нет данных")
+
+    @pytest.mark.unit
+    def test_activity_emoji_unknown_returns_as_is(self):
+        """Test unknown label is returned unchanged."""
+        from services.report_service import ReportService
+
+        service = ReportService()
+
+        assert service._activity_emoji("unknown") == "unknown"
