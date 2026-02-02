@@ -269,6 +269,21 @@ class TelegramListener:
                 if user_impulse_count < threshold:
                     continue
 
+                # Cooldown: don't notify if we just notified within last 60 seconds
+                # This prevents race condition when multiple signals arrive quickly
+                if last_notified_str:
+                    try:
+                        last_notified_at = datetime.fromisoformat(last_notified_str)
+                        seconds_since_last = (now - last_notified_at).total_seconds()
+                        if seconds_since_last < 60:
+                            logger.debug(
+                                f"Skipping activity alert for {user_id}: "
+                                f"cooldown ({seconds_since_last:.0f}s < 60s)"
+                            )
+                            continue
+                    except ValueError:
+                        pass
+
                 users_to_notify.append((user_id, threshold, window, user_impulse_count))
                 # Queue Redis update
                 redis_key = f"impulse:activity_last:{user_id}"
