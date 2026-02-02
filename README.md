@@ -138,6 +138,8 @@ docker compose exec postgres psql -U masterbot -d masterbot
 \i /migrations/002_add_bablo_tables.sql
 \i /migrations/003_add_notifications_enabled.sql
 \i /migrations/004_add_bablo_activity_fields.sql
+\i /migrations/005_add_user_timezone.sql
+\i /migrations/006_add_bablo_timeframe_columns.sql
 ```
 
 Или выполните все миграции одной командой:
@@ -266,7 +268,7 @@ docker compose --env-file .env.production up -d
 ### Импульсы
 
 - Автоматический сбор сигналов из Telegram-канала
-- Аналитика по периодам (день, неделя, месяц)
+- Аналитика по периодам (день, вчера, неделя, месяц) со сравнением с предыдущим периодом
 - Настраиваемые пороги уведомлений (рост/падение в %)
 - Уведомления при повышенной активности (настраиваемый порог за временное окно)
 - Автоматические отчеты (утренний 8:00, вечерний 20:00, недельный, месячный)
@@ -276,7 +278,7 @@ docker compose --env-file .env.production up -d
 - Мониторинг канала с торговыми сигналами
 - Парсинг параметров: направление (long/short), сила (1-5), таймфрейм, качество
 - Фильтрация по минимальному качеству сигнала (1-10)
-- Фильтрация по таймфреймам (1м, 5м, 15м, 30м, 1ч, 4ч)
+- Фильтрация по таймфреймам (1м, 5м, 15м, 30м, 1ч)
 - Фильтрация по направлениям (long/short)
 - Уведомления при повышенной активности
 - Статистика и отчёты
@@ -324,12 +326,13 @@ docker compose --env-file .env.production up -d
 
 ```
 tests/
-├── unit/                           # Юнит-тесты (~250 тестов)
+├── unit/                           # Юнит-тесты (~270 тестов)
 │   ├── shared/                     # Тесты общих модулей (~43)
 │   │   ├── test_constants.py       # Константы, enum-ы, кнопки
 │   │   └── test_timezone.py        # Timezone utilities (parse, validate, convert)
-│   ├── master_bot/                 # Тесты бота (~55)
+│   ├── master_bot/                 # Тесты бота (~76)
 │   │   ├── test_navigation.py      # FSM навигация, меню, timezone keyboards
+│   │   ├── test_formatters.py      # format_analytics, format_impulse, comparison text
 │   │   ├── test_scheduler.py       # Report scheduler, комбинированные отчёты
 │   │   └── test_service_clients.py # HTTP-клиенты к микросервисам
 │   ├── impulse_service/            # Тесты импульсов (67)
