@@ -1,6 +1,9 @@
 """Bablo signals handlers."""
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -239,10 +242,9 @@ async def _show_signals(
         await message.answer(text, reply_markup=keyboard)
 
     except Exception as e:
+        logger.error(f"Signals fetch error: {e}")
         await message.answer(
-            f"❌ <b>Ошибка</b>\n\n"
-            f"Не удалось получить сигналы: {str(e)}\n\n"
-            "Попробуйте позже."
+            "❌ Не удалось получить сигналы. Попробуйте позже."
         )
 
 

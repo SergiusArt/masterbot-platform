@@ -1,6 +1,10 @@
 """Impulse notifications settings handlers."""
 
+import logging
+
 from aiogram import Router, F
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -88,7 +92,8 @@ async def toggle_notifications(message: Message) -> None:
         )
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка: {str(e)}")
+        logger.error(f"Toggle notifications error for user {user_id}: {e}")
+        await message.answer("❌ Не удалось обновить настройки. Попробуйте позже.")
 
 
 @router.message(F.text.startswith("📈"))
@@ -165,7 +170,8 @@ async def process_threshold_callback(callback: CallbackQuery) -> None:
         )
 
     except Exception as e:
-        await callback.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+        logger.error(f"Threshold update error for user {user_id}: {e}")
+        await callback.answer("❌ Не удалось сохранить. Попробуйте позже.", show_alert=True)
 
 
 @router.message(MenuState.impulse_notifications, F.text == MENU_BACK)

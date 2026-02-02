@@ -1,6 +1,10 @@
 """General settings handlers."""
 
+import logging
+
 from aiogram import Router, F
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
@@ -98,9 +102,9 @@ async def set_timezone(callback: CallbackQuery, state: FSMContext) -> None:
             "в вашем часовом поясе."
         )
     except Exception as e:
+        logger.error(f"Timezone save error for user {user_id}: {e}")
         await callback.message.edit_text(
-            f"❌ Ошибка при сохранении: {e}\n\n"
-            "Попробуйте ещё раз позже."
+            "❌ Не удалось сохранить часовой пояс. Попробуйте позже."
         )
 
     await state.set_state(MenuState.settings)
@@ -161,9 +165,9 @@ async def process_custom_timezone(message: Message, state: FSMContext) -> None:
             reply_markup=get_settings_keyboard(),
         )
     except Exception as e:
+        logger.error(f"Custom timezone save error for user {user_id}: {e}")
         await message.answer(
-            f"❌ Ошибка при сохранении: {e}\n\n"
-            "Попробуйте ещё раз позже.",
+            "❌ Не удалось сохранить часовой пояс. Попробуйте позже.",
             reply_markup=get_settings_keyboard(),
         )
 
@@ -231,8 +235,10 @@ async def set_language(callback: CallbackQuery, state: FSMContext) -> None:
                 "Все сообщения теперь будут отображаться на русском языке."
             )
     except Exception as e:
+        logger.error(f"Language save error for user {user_id}: {e}")
         await callback.message.edit_text(
-            f"❌ Error: {e}" if new_lang == "en" else f"❌ Ошибка: {e}"
+            "❌ Failed to save. Try again later." if new_lang == "en"
+            else "❌ Не удалось сохранить. Попробуйте позже."
         )
 
     await state.set_state(MenuState.settings)

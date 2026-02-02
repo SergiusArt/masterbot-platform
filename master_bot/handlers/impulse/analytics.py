@@ -1,6 +1,10 @@
 """Impulse analytics handlers."""
 
+import logging
+
 from aiogram import Router, F
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
@@ -98,10 +102,9 @@ async def _send_analytics(message: Message, period: str, period_name: str) -> No
         await loading_msg.edit_text(text)
 
     except Exception as e:
+        logger.error(f"Impulse analytics error for period {period}: {e}")
         await message.answer(
-            f"❌ <b>Ошибка</b>\n\n"
-            f"Не удалось получить аналитику: {str(e)}\n\n"
-            f"Попробуйте позже."
+            "❌ Не удалось получить аналитику. Попробуйте позже."
         )
 
 

@@ -1,6 +1,10 @@
 """Impulse reports handlers."""
 
+import logging
+
 from aiogram import Router, F
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
@@ -109,7 +113,8 @@ async def _toggle_report(message: Message, setting: str, name: str) -> None:
         )
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка: {str(e)}")
+        logger.error(f"Report toggle error for user {user_id}: {e}")
+        await message.answer("❌ Не удалось обновить настройки. Попробуйте позже.")
 
 
 @router.message(MenuState.impulse_reports, F.text == MENU_BACK)

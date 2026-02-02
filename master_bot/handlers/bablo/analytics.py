@@ -1,6 +1,10 @@
 """Bablo analytics handlers."""
 
+import logging
+
 from aiogram import Router, F
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
@@ -81,10 +85,9 @@ async def _show_analytics(message: Message, period: str) -> None:
         await message.answer("\n".join(lines))
 
     except Exception as e:
+        logger.error(f"Bablo analytics error for period {period}: {e}")
         await message.answer(
-            f"❌ <b>Ошибка</b>\n\n"
-            f"Не удалось получить аналитику: {str(e)}\n\n"
-            "Попробуйте позже."
+            "❌ Не удалось получить аналитику. Попробуйте позже."
         )
 
 
