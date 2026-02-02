@@ -57,6 +57,18 @@ class RedisClient:
         """Delete key."""
         return await self.client.delete(key)
 
+    async def mget(self, keys: list[str]) -> list[Optional[str]]:
+        """Get multiple values by keys (batch operation)."""
+        if not keys:
+            return []
+        return await self.client.mget(keys)
+
+    async def mset(self, mapping: dict[str, str]) -> bool:
+        """Set multiple key-value pairs (batch operation)."""
+        if not mapping:
+            return True
+        return await self.client.mset(mapping)
+
     async def get_json(self, key: str) -> Optional[Any]:
         """Get JSON value by key."""
         value = await self.get(key)

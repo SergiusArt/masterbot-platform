@@ -187,6 +187,11 @@ class TelegramListener:
     async def _check_and_notify_activity(self) -> None:
         """Check for high activity and notify users.
 
+        Optimized version:
+        - Uses MGET to batch-fetch last notification times from Redis
+        - Groups COUNT queries by unique time windows to minimize DB calls
+        - Uses batch Redis SET for updating notification times
+
         Logic: count only NEW impulses since last notification.
         After sending alert, remember the timestamp so next time
         only impulses after that point are counted.
@@ -201,31 +206,58 @@ class TelegramListener:
                 return
 
             redis = await get_redis_client()
-            users_to_notify = []
+            user_ids = list(users_settings.keys())
 
-            for user_id, (threshold, window) in users_settings.items():
-                # Get timestamp of last notification for this user
-                redis_key = f"impulse:activity_last:{user_id}"
-                last_notified_str = await redis.get(redis_key)
+            # Step 1: Batch fetch last notification times (1 Redis call instead of N)
+            redis_keys = [f"impulse:activity_last:{uid}" for uid in user_ids]
+            last_notified_values = await redis.mget(redis_keys)
+            last_notified_map = dict(zip(user_ids, last_notified_values))
 
-                # Count impulses since last notification (or within window)
+            # Step 2: Group users by unique windows and get counts
+            # Find unique windows to minimize COUNT queries
+            unique_windows = set(window for _, (_, window) in users_settings.items())
+            counts_by_window: dict[int, int] = {}
+
+            for window in unique_windows:
                 window_start = now - timedelta(minutes=window)
-                if last_notified_str:
-                    last_notified_at = datetime.fromisoformat(last_notified_str)
-                    # Use the later of: window start or last notification
-                    count_from = max(window_start, last_notified_at)
-                else:
-                    count_from = window_start
-
-                user_impulse_count = await signal_service.get_signals_count(
-                    from_date=count_from,
+                counts_by_window[window] = await signal_service.get_signals_count(
+                    from_date=window_start,
                     to_date=now,
                 )
 
+            # Step 3: Check each user against their threshold
+            users_to_notify = []
+            redis_updates: dict[str, str] = {}
+
+            for user_id, (threshold, window) in users_settings.items():
+                window_start = now - timedelta(minutes=window)
+                last_notified_str = last_notified_map.get(user_id)
+
+                # Determine count_from based on last notification
+                if last_notified_str:
+                    try:
+                        last_notified_at = datetime.fromisoformat(last_notified_str)
+                        count_from = max(window_start, last_notified_at)
+                    except ValueError:
+                        count_from = window_start
+                else:
+                    count_from = window_start
+
+                # If user was notified recently, we need individual count
+                # Otherwise use the cached window count
+                if count_from > window_start:
+                    # User was notified within the window - need individual count
+                    user_impulse_count = await signal_service.get_signals_count(
+                        from_date=count_from,
+                        to_date=now,
+                    )
+                else:
+                    # Use cached count for this window
+                    user_impulse_count = counts_by_window[window]
+
                 logger.debug(
                     f"Activity check user {user_id}: "
-                    f"{user_impulse_count} new impulses since "
-                    f"{count_from.strftime('%H:%M:%S')} "
+                    f"{user_impulse_count} impulses "
                     f"(threshold={threshold}, window={window}m)"
                 )
 
@@ -233,17 +265,23 @@ class TelegramListener:
                     continue
 
                 users_to_notify.append((user_id, threshold, window, user_impulse_count))
-                # Mark notification time — counter resets from this point
-                await redis.set(
-                    redis_key,
-                    now.isoformat(),
-                    expire=window * 60,  # expire after full window
-                )
+                # Queue Redis update
+                redis_key = f"impulse:activity_last:{user_id}"
+                redis_updates[redis_key] = now.isoformat()
 
             if not users_to_notify:
                 return
 
-            # Publish activity notifications
+            # Step 4: Batch update Redis (notification times)
+            if redis_updates:
+                await redis.mset(redis_updates)
+                # Set expiration for each key individually (MSET doesn't support TTL)
+                for user_id, (_, window) in users_settings.items():
+                    redis_key = f"impulse:activity_last:{user_id}"
+                    if redis_key in redis_updates:
+                        await redis.client.expire(redis_key, window * 60)
+
+            # Step 5: Publish activity notifications
             for user_id, threshold, window, count in users_to_notify:
                 await redis.publish(
                     REDIS_CHANNEL_NOTIFICATIONS,
