@@ -8,6 +8,7 @@ from typing import Optional
 
 from aiogram import Bot
 
+from services.message_queue import get_message_queue
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
 from shared.constants import (
@@ -136,11 +137,17 @@ class NotificationListener:
             f"Изменение: <b>{percent:+.2f}%</b>"
         )
 
-        try:
-            await self.bot.send_message(user_id, text)
-            logger.info(f"✅ Impulse alert sent to {user_id}: {symbol} {percent:+.2f}%")
-        except Exception as e:
-            logger.error(f"Failed to send impulse alert to {user_id}: {e}")
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text)
+            logger.info(f"✅ Impulse alert queued for {user_id}: {symbol} {percent:+.2f}%")
+        else:
+            # Fallback to direct send if queue not initialized
+            try:
+                await self.bot.send_message(user_id, text)
+                logger.info(f"✅ Impulse alert sent to {user_id}: {symbol} {percent:+.2f}%")
+            except Exception as e:
+                logger.error(f"Failed to send impulse alert to {user_id}: {e}")
 
     async def _send_activity_alert(self, user_id: int, data: dict) -> None:
         """Send activity alert to user.
@@ -159,11 +166,16 @@ class NotificationListener:
             f"Рекомендуется проверить ситуацию на рынке."
         )
 
-        try:
-            await self.bot.send_message(user_id, text)
-            logger.info(f"✅ Activity alert sent to {user_id}: {count} impulses in {window}m")
-        except Exception as e:
-            logger.error(f"Failed to send activity alert to {user_id}: {e}")
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text)
+            logger.info(f"✅ Activity alert queued for {user_id}: {count} impulses in {window}m")
+        else:
+            try:
+                await self.bot.send_message(user_id, text)
+                logger.info(f"✅ Activity alert sent to {user_id}: {count} impulses in {window}m")
+            except Exception as e:
+                logger.error(f"Failed to send activity alert to {user_id}: {e}")
 
     @staticmethod
     def _convert_tv_markdown_to_html(text: str) -> str:
@@ -224,12 +236,16 @@ class NotificationListener:
             # Convert TradingView markdown (**bold**, __em__, [link](url)) to HTML
             text = self._convert_tv_markdown_to_html(original_text)
 
-        try:
-            # Bot default parse_mode is HTML
-            await self.bot.send_message(user_id, text)
-            logger.info(f"✅ Bablo signal sent to {user_id}: {symbol}")
-        except Exception as e:
-            logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text)
+            logger.info(f"✅ Bablo signal queued for {user_id}: {symbol}")
+        else:
+            try:
+                await self.bot.send_message(user_id, text)
+                logger.info(f"✅ Bablo signal sent to {user_id}: {symbol}")
+            except Exception as e:
+                logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
 
     async def _send_bablo_activity_alert(self, user_id: int, data: dict) -> None:
         """Send Bablo activity alert to user.
@@ -248,11 +264,16 @@ class NotificationListener:
             f"Порог срабатывания: {threshold} сигналов"
         )
 
-        try:
-            await self.bot.send_message(user_id, text)
-            logger.info(f"✅ Bablo activity alert sent to {user_id}: {signal_count} signals in {window_minutes}m")
-        except Exception as e:
-            logger.error(f"Failed to send Bablo activity alert to {user_id}: {e}")
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text)
+            logger.info(f"✅ Bablo activity alert queued for {user_id}: {signal_count} signals in {window_minutes}m")
+        else:
+            try:
+                await self.bot.send_message(user_id, text)
+                logger.info(f"✅ Bablo activity alert sent to {user_id}: {signal_count} signals in {window_minutes}m")
+            except Exception as e:
+                logger.error(f"Failed to send Bablo activity alert to {user_id}: {e}")
 
     async def _handle_report_part(
         self, user_id: int, data: dict, source: str
@@ -343,8 +364,13 @@ class NotificationListener:
 
         text = "\n".join(sections)
 
-        try:
-            await self.bot.send_message(user_id, text)
-            logger.info(f"✅ Report ({report_type}) sent to {user_id}")
-        except Exception as e:
-            logger.error(f"Failed to send report to {user_id}: {e}")
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text)
+            logger.info(f"✅ Report ({report_type}) queued for {user_id}")
+        else:
+            try:
+                await self.bot.send_message(user_id, text)
+                logger.info(f"✅ Report ({report_type}) sent to {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to send report to {user_id}: {e}")

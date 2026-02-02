@@ -29,6 +29,7 @@ from handlers.bablo import activity as bablo_activity
 from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from services.scheduler import init_scheduler
+from services.message_queue import init_message_queue
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import setup_logger
@@ -131,6 +132,10 @@ async def main() -> None:
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
+    # Start message queue (must be before notification listener)
+    message_queue = init_message_queue(bot)
+    queue_task = asyncio.create_task(message_queue.start())
+
     # Start notification listener
     notification_listener = NotificationListener(bot)
     listener_task = asyncio.create_task(notification_listener.start())
@@ -144,12 +149,18 @@ async def main() -> None:
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
-        # Stop scheduler and listener on shutdown
+        # Stop scheduler, listener, and queue on shutdown
         scheduler.stop()
         await notification_listener.stop()
+        await message_queue.stop()
         listener_task.cancel()
+        queue_task.cancel()
         try:
             await listener_task
+        except asyncio.CancelledError:
+            pass
+        try:
+            await queue_task
         except asyncio.CancelledError:
             pass
 

@@ -1,4 +1,9 @@
-"""Unified scheduler for sending reports from all services."""
+"""Unified scheduler for sending reports from all services.
+
+Optimizations:
+- Report caching: generates report content once, sends to all users
+- Rate-limited queue: respects Telegram API limits (30 msg/sec)
+"""
 
 from typing import Optional
 
@@ -9,6 +14,7 @@ from aiogram import Bot
 
 from services.impulse_client import impulse_client
 from services.bablo_client import bablo_client
+from services.message_queue import get_message_queue
 from config import settings
 from shared.utils.logger import get_logger
 
@@ -87,6 +93,11 @@ class ReportScheduler:
     async def _send_reports(self, report_type: str, title: str) -> None:
         """Send reports to all subscribed users.
 
+        Optimized version:
+        - Generates report content once per service (cached)
+        - Groups users by their service subscriptions
+        - Uses rate-limited queue for sending
+
         Args:
             report_type: Report type (morning, evening, weekly, monthly)
             title: Report title
@@ -100,19 +111,112 @@ class ReportScheduler:
             logger.info(f"No users subscribed to {report_type} reports")
             return
 
-        sent_count = 0
-        for user_id, services in users_to_notify.items():
-            try:
-                report_text = await self._generate_combined_report(
-                    user_id, report_type, title, services
-                )
-                if report_text:
-                    await self.bot.send_message(user_id, report_text)
-                    sent_count += 1
-            except Exception as e:
-                logger.error(f"Failed to send {report_type} report to {user_id}: {e}")
+        # Cache report content - generate once, send to many
+        impulse_content = await self._get_cached_report("impulse", report_type)
+        bablo_content = await self._get_cached_report("bablo", report_type)
 
-        logger.info(f"{report_type.capitalize()} reports sent to {sent_count} users")
+        # Group users by their subscription type
+        impulse_only_users: list[int] = []
+        bablo_only_users: list[int] = []
+        both_users: list[int] = []
+
+        for user_id, services in users_to_notify.items():
+            has_impulse = services.get("impulse") and impulse_content
+            has_bablo = services.get("bablo") and bablo_content
+
+            if has_impulse and has_bablo:
+                both_users.append(user_id)
+            elif has_impulse:
+                impulse_only_users.append(user_id)
+            elif has_bablo:
+                bablo_only_users.append(user_id)
+
+        # Generate report texts (once per group)
+        closings = {
+            "morning": "\nХорошего дня!",
+            "evening": "\nХорошего вечера!",
+            "weekly": "",
+            "monthly": "",
+        }
+        closing = closings.get(report_type, "")
+
+        queue = get_message_queue()
+        queued_count = 0
+
+        # Send to users with both services
+        if both_users and impulse_content and bablo_content:
+            text = (
+                f"<b>{title}</b>\n\n"
+                f"── <b>Импульсы</b> ──\n{impulse_content}\n\n"
+                f"── <b>Bablo</b> ──\n{bablo_content}"
+                f"{closing}"
+            )
+            if queue:
+                await queue.send_bulk(both_users, text)
+                queued_count += len(both_users)
+            else:
+                for user_id in both_users:
+                    try:
+                        await self.bot.send_message(user_id, text)
+                        queued_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to send report to {user_id}: {e}")
+
+        # Send to impulse-only users
+        if impulse_only_users and impulse_content:
+            text = f"<b>{title}</b>\n\n{impulse_content}{closing}"
+            if queue:
+                await queue.send_bulk(impulse_only_users, text)
+                queued_count += len(impulse_only_users)
+            else:
+                for user_id in impulse_only_users:
+                    try:
+                        await self.bot.send_message(user_id, text)
+                        queued_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to send report to {user_id}: {e}")
+
+        # Send to bablo-only users
+        if bablo_only_users and bablo_content:
+            text = f"<b>{title}</b>\n\n{bablo_content}{closing}"
+            if queue:
+                await queue.send_bulk(bablo_only_users, text)
+                queued_count += len(bablo_only_users)
+            else:
+                for user_id in bablo_only_users:
+                    try:
+                        await self.bot.send_message(user_id, text)
+                        queued_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to send report to {user_id}: {e}")
+
+        logger.info(f"{report_type.capitalize()} reports queued for {queued_count} users")
+
+    async def _get_cached_report(self, service: str, report_type: str) -> Optional[str]:
+        """Get report content from service (cached per report cycle).
+
+        Reports are the same for all users (market data, not personalized),
+        so we generate once and send to all subscribers.
+
+        Args:
+            service: Service name (impulse or bablo)
+            report_type: Report type
+
+        Returns:
+            Report text content or None
+        """
+        try:
+            if service == "impulse":
+                # user_id is required by API but not used in report generation
+                report = await impulse_client.generate_report(report_type, user_id=0)
+            else:
+                report = await bablo_client.generate_report(report_type)
+
+            report_data = report.get("report", {})
+            return report_data.get("text") if report_data else None
+        except Exception as e:
+            logger.error(f"Error getting {service} report: {e}")
+            return None
 
     async def _get_users_for_report(
         self, report_type: str
