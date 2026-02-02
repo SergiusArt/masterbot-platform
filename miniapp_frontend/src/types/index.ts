@@ -1,0 +1,87 @@
+// Signal types
+export interface Impulse {
+  id: number
+  symbol: string
+  percent: number
+  max_percent?: number
+  type: 'growth' | 'fall'
+  growth_ratio?: number
+  fall_ratio?: number
+  received_at: string
+}
+
+export interface BabloSignal {
+  id: number
+  symbol: string
+  direction: 'long' | 'short'
+  strength: number
+  timeframe: string
+  time_horizon?: string
+  quality_total: number
+  quality_profit?: number
+  quality_drawdown?: number
+  quality_accuracy?: number
+  received_at: string
+}
+
+// Activity zones
+export type ActivityZone = 'low' | 'medium' | 'high'
+export type MarketPulse = 'calm' | 'normal' | 'active' | 'very_active'
+
+// Dashboard summary
+export interface ImpulseStats {
+  today_count: number
+  growth_count: number
+  fall_count: number
+  activity_zone: ActivityZone
+}
+
+export interface BabloStats {
+  today_count: number
+  long_count: number
+  short_count: number
+  avg_quality: number
+  activity_zone: ActivityZone
+}
+
+export interface DashboardSummary {
+  impulses: ImpulseStats
+  bablo: BabloStats
+  market_pulse: MarketPulse
+  timestamp: string
+}
+
+// Chart data
+export interface HourlyActivity {
+  hour: string
+  count: number
+}
+
+export interface ActivityChartData {
+  impulses: HourlyActivity[]
+  bablo: HourlyActivity[]
+  medians: {
+    impulse_weekly: number
+    bablo_weekly: number
+  }
+}
+
+// WebSocket messages
+export type WSMessageType =
+  | 'impulse:new'
+  | 'impulse:stats'
+  | 'bablo:new'
+  | 'bablo:stats'
+  | 'activity:zone'
+  | 'connected'
+  | 'error'
+  | 'pong'
+
+export interface WSMessage {
+  type: WSMessageType
+  data: Record<string, unknown>
+  timestamp: string
+}
+
+// Tab navigation
+export type TabType = 'combined' | 'impulse' | 'bablo'

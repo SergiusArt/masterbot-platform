@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
+  min-height: 100vh;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but allow scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Card component */
+@layer components {
+  .card {
+    @apply bg-tg-section-bg rounded-xl p-4 shadow-sm;
+  }
+
+  .card-header {
+    @apply text-tg-section-header text-xs uppercase font-medium mb-2;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-tg-text;
+  }
+
+  .stat-label {
+    @apply text-xs text-tg-hint;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-growth {
+    @apply bg-growth/10 text-growth;
+  }
+
+  .badge-fall {
+    @apply bg-fall/10 text-fall;
+  }
+
+  .badge-long {
+    @apply bg-long/10 text-long;
+  }
+
+  .badge-short {
+    @apply bg-short/10 text-short;
+  }
+
+  .badge-zone-low {
+    @apply bg-zone-low/10 text-zone-low;
+  }
+
+  .badge-zone-medium {
+    @apply bg-zone-medium/10 text-zone-medium;
+  }
+
+  .badge-zone-high {
+    @apply bg-zone-high/10 text-zone-high;
+  }
+
+  .tab {
+    @apply flex-1 py-3 text-center text-sm font-medium transition-colors;
+  }
+
+  .tab-active {
+    @apply text-tg-accent border-b-2 border-tg-accent;
+  }
+
+  .tab-inactive {
+    @apply text-tg-hint border-b-2 border-transparent;
+  }
+}
+
+/* Activity zone indicator animation */
+@keyframes pulse-zone {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.zone-pulse {
+  animation: pulse-zone 2s ease-in-out infinite;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-6 h-6 border-2 border-tg-hint rounded-full;
+  border-top-color: var(--tg-theme-accent-text-color, #2481cc);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

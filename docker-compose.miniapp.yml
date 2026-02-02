@@ -1,0 +1,136 @@
+# Docker Compose для локального тестирования Mini App
+# Использование: docker compose -f docker-compose.miniapp.yml up
+#
+# Запускает:
+# - PostgreSQL и Redis (зависимости)
+# - impulse_service и bablo_service (API)
+# - miniapp_gateway (WebSocket gateway)
+#
+# Frontend запускается отдельно: cd miniapp_frontend && npm run dev
+
+version: '3.8'
+
+services:
+  # База данных
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-masterbot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-masterbot_pass}
+      POSTGRES_DB: ${DB_NAME:-masterbot_db}
+    volumes:
+      - miniapp_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-masterbot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - miniapp_network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - miniapp_network
+
+  # Impulse Service (для API)
+  impulse_service:
+    build:
+      context: .
+      dockerfile: impulse_service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-masterbot}:${DB_PASSWORD:-masterbot_pass}@postgres:5432/${DB_NAME:-masterbot_db}
+      - REDIS_URL=redis://redis:6379/0
+      - SOURCE_CHANNEL_ID=${SOURCE_CHANNEL_ID:-0}
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID:-0}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH:-}
+      - TELEGRAM_SESSION_STRING=${TELEGRAM_SESSION_STRING:-}
+      - TIMEZONE=${TIMEZONE:-Europe/Moscow}
+      - TZ=${TIMEZONE:-Europe/Moscow}
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - miniapp_network
+
+  # Bablo Service (для API)
+  bablo_service:
+    build:
+      context: .
+      dockerfile: bablo_service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-masterbot}:${DB_PASSWORD:-masterbot_pass}@postgres:5432/${DB_NAME:-masterbot_db}
+      - REDIS_URL=redis://redis:6379/0
+      - BABLO_CHANNEL_ID=${BABLO_CHANNEL_ID:-0}
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID:-0}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH:-}
+      - TELEGRAM_SESSION_STRING=${TELEGRAM_SESSION_STRING:-}
+      - TIMEZONE=${TIMEZONE:-Europe/Moscow}
+      - TZ=${TIMEZONE:-Europe/Moscow}
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - miniapp_network
+
+  # Mini App Gateway (WebSocket)
+  miniapp_gateway:
+    build:
+      context: .
+      dockerfile: miniapp_gateway/Dockerfile
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_URL=redis://redis:6379/0
+      - IMPULSE_SERVICE_URL=http://impulse_service:8001
+      - BABLO_SERVICE_URL=http://bablo_service:8002
+    ports:
+      - "8003:8003"
+    depends_on:
+      redis:
+        condition: service_healthy
+      impulse_service:
+        condition: service_healthy
+      bablo_service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - miniapp_network
+
+volumes:
+  miniapp_postgres_data:
+
+networks:
+  miniapp_network:
+    driver: bridge
