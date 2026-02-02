@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import re
+from html import escape as html_escape
 from typing import Optional
 
 from aiogram import Bot
@@ -54,7 +56,6 @@ class NotificationListener:
                 if not self._running:
                     break
 
-                logger.debug(f"Received message type: {message['type']}")
                 if message["type"] != "message":
                     continue
 
@@ -63,6 +64,9 @@ class NotificationListener:
                     channel = message.get("channel", "")
                     if isinstance(channel, bytes):
                         channel = channel.decode()
+                    event = data.get("event", "unknown")
+                    user_id = data.get("user_id", "?")
+                    logger.info(f"📨 Received {event} for user {user_id} on {channel}")
                     await self._handle_notification(data, channel)
                 except json.JSONDecodeError as e:
                     logger.error(f"Invalid JSON in notification: {message['data'][:200]} - Error: {e}")
@@ -134,6 +138,7 @@ class NotificationListener:
 
         try:
             await self.bot.send_message(user_id, text)
+            logger.info(f"✅ Impulse alert sent to {user_id}: {symbol} {percent:+.2f}%")
         except Exception as e:
             logger.error(f"Failed to send impulse alert to {user_id}: {e}")
 
@@ -156,8 +161,44 @@ class NotificationListener:
 
         try:
             await self.bot.send_message(user_id, text)
+            logger.info(f"✅ Activity alert sent to {user_id}: {count} impulses in {window}m")
         except Exception as e:
             logger.error(f"Failed to send activity alert to {user_id}: {e}")
+
+    @staticmethod
+    def _convert_tv_markdown_to_html(text: str) -> str:
+        """Convert TradingView markdown formatting to Telegram HTML.
+
+        TradingView uses standard markdown (**bold**, __emphasis__, [text](url))
+        which differs from Telegram's Markdown v1 (*bold*, _italic_).
+        """
+        # Extract and preserve markdown links before HTML escaping
+        links: list[tuple[str, str]] = []
+
+        def _save_link(m: re.Match) -> str:
+            idx = len(links)
+            links.append((m.group(1), m.group(2)))
+            return f"\x00LINK{idx}\x00"
+
+        text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _save_link, text)
+
+        # HTML-escape the rest
+        text = html_escape(text)
+
+        # Convert **bold** → <b>bold</b>
+        text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text, flags=re.DOTALL)
+
+        # Convert __emphasis__ → <b>emphasis</b>
+        text = re.sub(r"__(.+?)__", r"<b>\1</b>", text)
+
+        # Restore links as HTML <a> tags
+        for i, (link_text, url) in enumerate(links):
+            text = text.replace(
+                f"\x00LINK{i}\x00",
+                f'<a href="{html_escape(url)}">{html_escape(link_text)}</a>',
+            )
+
+        return text
 
     async def _send_bablo_signal(self, user_id: int, data: dict) -> None:
         """Send Bablo signal alert to user.
@@ -166,25 +207,27 @@ class NotificationListener:
             user_id: Telegram user ID
             data: Signal data
         """
-        # Use original text from TradingView (Markdown formatted)
+        # Use original text from TradingView (converted to HTML)
         original_text = data.get("original_text")
+        symbol = data.get("symbol", "N/A")
 
         if not original_text:
             # Fallback to basic format if original text is not available
-            symbol = data.get("symbol", "N/A")
             direction = data.get("direction", "long")
             strength = data.get("strength", 3)
             timeframe = data.get("timeframe", "")
             quality = data.get("quality_total", 0)
 
             strength_squares = ("🟩" if direction == "long" else "🟥") * strength + "⬜" * (5 - strength)
-            text = f"{strength_squares} {symbol}\n⏱: {timeframe} | ⭐: {quality}/10"
+            text = f"{strength_squares} {html_escape(symbol)}\n⏱: {timeframe} | ⭐: {quality}/10"
         else:
-            text = original_text
+            # Convert TradingView markdown (**bold**, __em__, [link](url)) to HTML
+            text = self._convert_tv_markdown_to_html(original_text)
 
         try:
-            # Send with Markdown parse mode to preserve TradingView formatting
-            await self.bot.send_message(user_id, text, parse_mode="Markdown")
+            # Bot default parse_mode is HTML
+            await self.bot.send_message(user_id, text)
+            logger.info(f"✅ Bablo signal sent to {user_id}: {symbol}")
         except Exception as e:
             logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
 
@@ -207,6 +250,7 @@ class NotificationListener:
 
         try:
             await self.bot.send_message(user_id, text)
+            logger.info(f"✅ Bablo activity alert sent to {user_id}: {signal_count} signals in {window_minutes}m")
         except Exception as e:
             logger.error(f"Failed to send Bablo activity alert to {user_id}: {e}")
 
@@ -301,19 +345,6 @@ class NotificationListener:
 
         try:
             await self.bot.send_message(user_id, text)
-        except Exception as e:
-            logger.error(f"Failed to send report to {user_id}: {e}")
-
-    async def _send_report(self, user_id: int, data: dict) -> None:
-        """Send report to user (legacy method).
-
-        Args:
-            user_id: Telegram user ID
-            data: Report data
-        """
-        text = data.get("text", "Отчёт недоступен")
-
-        try:
-            await self.bot.send_message(user_id, text)
+            logger.info(f"✅ Report ({report_type}) sent to {user_id}")
         except Exception as e:
             logger.error(f"Failed to send report to {user_id}: {e}")
