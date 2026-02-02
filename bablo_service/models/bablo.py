@@ -112,5 +112,32 @@ class BabloUserSettings(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    __table_args__ = (
+        # Composite index for signal notifications query
+        Index(
+            "idx_bablo_settings_notif_quality",
+            "notifications_enabled",
+            "min_quality",
+            postgresql_where="notifications_enabled = true",
+        ),
+        # Index for activity alerts
+        Index(
+            "idx_bablo_settings_activity_threshold",
+            "activity_threshold",
+            postgresql_where="activity_threshold > 0",
+        ),
+        # Indexes for report queries
+        Index(
+            "idx_bablo_settings_morning_report",
+            "morning_report",
+            postgresql_where="morning_report = true",
+        ),
+        Index(
+            "idx_bablo_settings_evening_report",
+            "evening_report",
+            postgresql_where="evening_report = true",
+        ),
+    )
+
     def __repr__(self) -> str:
         return f"<BabloUserSettings(user_id={self.user_id})>"

@@ -89,6 +89,30 @@ class RedisClient:
         """Publish message to channel."""
         return await self.client.publish(channel, json.dumps(message))
 
+    async def publish_batch(self, channel: str, messages: list[dict]) -> list[int]:
+        """Publish multiple messages to channel using pipeline.
+
+        Uses Redis pipeline to batch publish operations into a single
+        network round-trip, significantly reducing latency for multiple
+        publishes (e.g., 500 users = 1 call instead of 500).
+
+        Args:
+            channel: Redis channel name
+            messages: List of message dictionaries to publish
+
+        Returns:
+            List of subscriber counts for each publish
+        """
+        if not messages:
+            return []
+
+        async with self.client.pipeline(transaction=False) as pipe:
+            for message in messages:
+                pipe.publish(channel, json.dumps(message))
+            results = await pipe.execute()
+
+        return results
+
     async def subscribe(self, *channels: str) -> redis.client.PubSub:
         """Subscribe to channels."""
         self._pubsub = self.client.pubsub()

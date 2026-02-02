@@ -151,6 +151,8 @@ class TelegramListener:
     async def _send_notifications(self, parsed) -> None:
         """Send notifications to users who match the threshold.
 
+        Uses Redis pipeline for batch publish (1 network call instead of N).
+
         Args:
             parsed: Parsed impulse data
         """
@@ -165,19 +167,22 @@ class TelegramListener:
 
             redis = await get_redis_client()
 
-            for user_id in user_ids:
-                await redis.publish(
-                    REDIS_CHANNEL_NOTIFICATIONS,
-                    {
-                        "event": EVENT_IMPULSE_ALERT,
-                        "user_id": user_id,
-                        "data": {
-                            "symbol": parsed.symbol,
-                            "percent": float(parsed.percent),
-                            "type": parsed.type,
-                        },
+            # Build batch of messages
+            messages = [
+                {
+                    "event": EVENT_IMPULSE_ALERT,
+                    "user_id": user_id,
+                    "data": {
+                        "symbol": parsed.symbol,
+                        "percent": float(parsed.percent),
+                        "type": parsed.type,
                     },
-                )
+                }
+                for user_id in user_ids
+            ]
+
+            # Single network call for all publishes
+            await redis.publish_batch(REDIS_CHANNEL_NOTIFICATIONS, messages)
 
             logger.info(f"Sent impulse alert to {len(user_ids)} users")
 
@@ -281,20 +286,20 @@ class TelegramListener:
                     if redis_key in redis_updates:
                         await redis.client.expire(redis_key, window * 60)
 
-            # Step 5: Publish activity notifications
-            for user_id, threshold, window, count in users_to_notify:
-                await redis.publish(
-                    REDIS_CHANNEL_NOTIFICATIONS,
-                    {
-                        "event": EVENT_ACTIVITY_ALERT,
-                        "user_id": user_id,
-                        "data": {
-                            "count": count,
-                            "window_minutes": window,
-                            "threshold": threshold,
-                        },
+            # Step 5: Publish activity notifications (batch)
+            messages = [
+                {
+                    "event": EVENT_ACTIVITY_ALERT,
+                    "user_id": user_id,
+                    "data": {
+                        "count": count,
+                        "window_minutes": window,
+                        "threshold": threshold,
                     },
-                )
+                }
+                for user_id, threshold, window, count in users_to_notify
+            ]
+            await redis.publish_batch(REDIS_CHANNEL_NOTIFICATIONS, messages)
 
             logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users")
 

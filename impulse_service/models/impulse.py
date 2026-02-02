@@ -79,5 +79,29 @@ class UserNotificationSettings(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    __table_args__ = (
+        # Index for growth impulse notifications
+        Index("idx_user_notif_growth_threshold", "growth_threshold"),
+        # Index for fall impulse notifications
+        Index("idx_user_notif_fall_threshold", "fall_threshold"),
+        # Index for activity alerts
+        Index(
+            "idx_user_notif_activity_threshold",
+            "activity_threshold",
+            postgresql_where="activity_threshold > 0",
+        ),
+        # Indexes for report queries
+        Index(
+            "idx_user_notif_morning_report",
+            "morning_report",
+            postgresql_where="morning_report = true",
+        ),
+        Index(
+            "idx_user_notif_evening_report",
+            "evening_report",
+            postgresql_where="evening_report = true",
+        ),
+    )
+
     def __repr__(self) -> str:
         return f"<UserNotificationSettings(user_id={self.user_id})>"

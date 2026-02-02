@@ -123,12 +123,15 @@ class BabloTelegramListener:
             logger.error(f"Error handling message: {e}", exc_info=True)
 
     async def _publish_notifications(self, signal_data, user_ids: list[int], original_text: str) -> None:
-        """Publish notifications to Redis for users."""
+        """Publish notifications to Redis for users.
+
+        Uses Redis pipeline for batch publish (1 network call instead of N).
+        """
         redis = await get_redis_client()
 
-        # Use original Telegram message text (from TradingView with Markdown formatting)
-        for user_id in user_ids:
-            notification = {
+        # Build batch of messages
+        messages = [
+            {
                 "event": EVENT_BABLO_SIGNAL,
                 "user_id": user_id,
                 "data": {
@@ -140,8 +143,11 @@ class BabloTelegramListener:
                     "original_text": original_text,
                 },
             }
+            for user_id in user_ids
+        ]
 
-            await redis.publish(REDIS_CHANNEL, notification)
+        # Single network call for all publishes
+        await redis.publish_batch(REDIS_CHANNEL, messages)
 
         logger.info(f"Published notification to {len(user_ids)} users")
 
@@ -247,9 +253,9 @@ class BabloTelegramListener:
                         if redis_key in redis_updates:
                             await redis.client.expire(redis_key, window * 60)
 
-                # Step 5: Publish activity notifications
-                for user_id, threshold, window, count in users_to_notify:
-                    notification = {
+                # Step 5: Publish activity notifications (batch)
+                messages = [
+                    {
                         "event": EVENT_BABLO_ACTIVITY,
                         "user_id": user_id,
                         "data": {
@@ -258,7 +264,9 @@ class BabloTelegramListener:
                             "threshold": threshold,
                         },
                     }
-                    await redis.publish(REDIS_CHANNEL, notification)
+                    for user_id, threshold, window, count in users_to_notify
+                ]
+                await redis.publish_batch(REDIS_CHANNEL, messages)
 
                 logger.info(f"📈 Activity alert sent to {len(users_to_notify)} users")
 
