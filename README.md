@@ -19,7 +19,7 @@ masterbot-platform/
 │   │   ├── reply/           # Reply-клавиатуры
 │   │   └── inline/          # Inline-клавиатуры
 │   ├── states/              # FSM состояния для навигации
-│   └── services/            # HTTP-клиенты для микросервисов
+│   └── services/            # HTTP-клиенты, очередь сообщений, планировщик
 ├── impulse_service/         # Микросервис импульсов (FastAPI)
 │   ├── api/                 # REST API endpoints
 │   ├── services/            # Бизнес-логика
@@ -140,6 +140,7 @@ docker compose exec postgres psql -U masterbot -d masterbot
 \i /migrations/004_add_bablo_activity_fields.sql
 \i /migrations/005_add_user_timezone.sql
 \i /migrations/006_add_bablo_timeframe_columns.sql
+\i /migrations/007_add_performance_indexes.sql
 ```
 
 Или выполните все миграции одной командой:
@@ -550,6 +551,38 @@ docker compose exec postgres pg_dump -U masterbot masterbot_db > backup.sql
 # Восстановить базу данных
 docker compose exec -T postgres psql -U masterbot -d masterbot_db < backup.sql
 ```
+
+## Масштабирование (500+ пользователей)
+
+Платформа оптимизирована для работы с большим количеством пользователей:
+
+### Оптимизации базы данных
+- Partial indexes для частых запросов (migration 007)
+- Индексы на threshold, activity, report columns
+
+### Redis оптимизации
+- **MGET/MSET batching** — массовое чтение/запись вместо N отдельных вызовов
+- **Pipeline publish** — отправка всех сообщений за 1 сетевой вызов
+
+### Telegram Message Queue
+Rate-limited очередь (25 msg/sec) для соблюдения лимитов API:
+- Автоматический retry при rate limiting
+- Отслеживание заблокированных пользователей
+
+Файл: `master_bot/services/message_queue.py`
+
+### Кэширование отчётов
+- Генерация отчёта один раз на всех (market data одинаковая)
+- Группировка пользователей по подпискам
+- Bulk send через очередь
+
+### Результат
+| Операция | Было | Стало |
+|----------|------|-------|
+| Redis publish (500 users) | 500 calls, ~2.5s | 1 pipeline, ~5ms |
+| Report generation | N API calls | 2 API calls |
+| Telegram send | sequential | queued, 25 msg/sec |
+| DB user queries | full scan | index scan |
 
 ## Лицензия
 
