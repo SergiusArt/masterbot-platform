@@ -55,8 +55,17 @@ def format_analytics(data: dict) -> str:
     # Comparison
     comparison = data.get("comparison")
     if comparison:
-        vs_yesterday = comparison.get("vs_yesterday", "N/A")
-        lines.append(f"\n📊 По сравнению с вчера: <b>{vs_yesterday}</b>")
+        vs_prev = comparison.get("vs_yesterday")
+        if vs_prev is not None:
+            if period == "yesterday":
+                lines.append(f"\n📊 По сравнению с позавчера: <b>{vs_prev}</b>")
+            else:
+                lines.append(f"\n📊 По сравнению со вчера: <b>{vs_prev}</b>")
+
+        vs_week = comparison.get("vs_week_median")
+        week_median = comparison.get("week_median")
+        if vs_week is not None and week_median is not None:
+            lines.append(f"📈 Медиана за неделю: <b>{week_median}</b>/день ({vs_week})")
 
     return "\n".join(lines)
 

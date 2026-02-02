@@ -201,8 +201,8 @@ class AnalyticsService:
         month_median = None
         vs_month_median = None
 
-        if period in (AnalyticsPeriod.TODAY.value, AnalyticsPeriod.YESTERDAY.value):
-            # Yesterday's total
+        if period == AnalyticsPeriod.TODAY.value:
+            # Compare today with yesterday
             yesterday_start = today_start - timedelta(days=1)
             yesterday_end = today_start - timedelta(seconds=1)
             yq = select(func.count()).where(
@@ -213,10 +213,28 @@ class AnalyticsService:
             )
             yesterday_total = await session.scalar(yq) or 0
 
-            if period == AnalyticsPeriod.TODAY.value and yesterday_total > 0:
+            if yesterday_total > 0:
                 change = ((current_total - yesterday_total) / yesterday_total) * 100
                 vs_yesterday = f"{change:+.1f}%"
-            elif period == AnalyticsPeriod.TODAY.value:
+            else:
+                vs_yesterday = "нет данных"
+
+        elif period == AnalyticsPeriod.YESTERDAY.value:
+            # Compare yesterday with the day before yesterday
+            day_before_start = today_start - timedelta(days=2)
+            day_before_end = today_start - timedelta(days=1, seconds=1)
+            dbq = select(func.count()).where(
+                and_(
+                    Impulse.received_at >= day_before_start,
+                    Impulse.received_at <= day_before_end,
+                )
+            )
+            yesterday_total = await session.scalar(dbq) or 0
+
+            if yesterday_total > 0:
+                change = ((current_total - yesterday_total) / yesterday_total) * 100
+                vs_yesterday = f"{change:+.1f}%"
+            else:
                 vs_yesterday = "нет данных"
 
         # Week median (daily counts for last 7 days)
