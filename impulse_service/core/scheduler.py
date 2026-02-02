@@ -1,5 +1,6 @@
 """Scheduler for periodic tasks."""
 
+import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -11,7 +12,8 @@ from config import settings
 
 logger = get_logger("scheduler")
 
-scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
+_tz = pytz.timezone(settings.TIMEZONE)
+scheduler = AsyncIOScheduler(timezone=_tz)
 
 
 async def send_morning_reports():
@@ -154,7 +156,7 @@ def start_scheduler():
     # Morning reports at 8:00
     scheduler.add_job(
         send_morning_reports,
-        CronTrigger(hour=8, minute=0),
+        CronTrigger(hour=8, minute=0, timezone=_tz),
         id="morning_reports",
         replace_existing=True,
     )
@@ -162,7 +164,7 @@ def start_scheduler():
     # Evening reports at 20:00
     scheduler.add_job(
         send_evening_reports,
-        CronTrigger(hour=20, minute=0),
+        CronTrigger(hour=20, minute=0, timezone=_tz),
         id="evening_reports",
         replace_existing=True,
     )
@@ -170,13 +172,13 @@ def start_scheduler():
     # Weekly reports on Monday at 9:00
     scheduler.add_job(
         send_weekly_reports,
-        CronTrigger(day_of_week="mon", hour=9, minute=0),
+        CronTrigger(day_of_week="mon", hour=9, minute=0, timezone=_tz),
         id="weekly_reports",
         replace_existing=True,
     )
 
     scheduler.start()
-    logger.info("Scheduler started with jobs: morning (8:00), evening (20:00), weekly (Mon 9:00)")
+    logger.info(f"Scheduler started ({_tz}): morning (8:00), evening (20:00), weekly (Mon 9:00)")
 
 
 def stop_scheduler():

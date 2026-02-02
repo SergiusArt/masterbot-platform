@@ -216,5 +216,166 @@ class TestSignalFormatting:
         assert "🔴" in result
         assert "ETHUSDT.P" in result
         assert "Short" in result
-        assert "🟩🟩🟩⬜⬜" in result
+        assert "🟥🟥🟥⬜⬜" in result
         assert "6/10" in result
+
+    @pytest.mark.unit
+    def test_format_time_with_user_timezone(self):
+        """Test time formatting with user timezone."""
+        from handlers.bablo.signals import _format_time
+
+        # 10:00 UTC
+        iso_time = "2024-01-15T10:00:00+00:00"
+
+        # Moscow is UTC+3, so 10:00 UTC = 13:00 MSK
+        result = _format_time(iso_time, "Europe/Moscow")
+        assert "13:00" in result
+
+        # UTC+5, so 10:00 UTC = 15:00
+        result = _format_time(iso_time, "UTC+5")
+        assert "15:00" in result
+
+
+class TestSettingsMenuStates:
+    """Test settings menu FSM states."""
+
+    @pytest.mark.unit
+    def test_settings_timezone_states_exist(self):
+        """Test settings timezone states exist in MenuState."""
+        from states.navigation import MenuState
+
+        assert hasattr(MenuState, "settings")
+        assert hasattr(MenuState, "settings_timezone")
+        assert hasattr(MenuState, "settings_timezone_custom")
+        assert hasattr(MenuState, "settings_language")
+
+
+class TestTimezoneKeyboard:
+    """Test timezone selection keyboard."""
+
+    @pytest.mark.unit
+    def test_timezone_keyboard_has_popular_timezones(self):
+        """Test timezone keyboard includes popular timezones."""
+        from keyboards.inline.timezone import get_timezone_keyboard, POPULAR_TIMEZONES
+
+        keyboard = get_timezone_keyboard()
+
+        # Flatten all callback_data
+        all_callbacks = [btn.callback_data for row in keyboard.inline_keyboard for btn in row]
+
+        # Check popular timezones are present
+        for label, tz_value in POPULAR_TIMEZONES:
+            assert f"tz:set:{tz_value}" in all_callbacks
+
+    @pytest.mark.unit
+    def test_timezone_keyboard_has_custom_option(self):
+        """Test timezone keyboard has custom input option."""
+        from keyboards.inline.timezone import get_timezone_keyboard
+
+        keyboard = get_timezone_keyboard()
+
+        all_callbacks = [btn.callback_data for row in keyboard.inline_keyboard for btn in row]
+
+        assert "tz:custom" in all_callbacks
+
+    @pytest.mark.unit
+    def test_timezone_keyboard_has_cancel(self):
+        """Test timezone keyboard has cancel button."""
+        from keyboards.inline.timezone import get_timezone_keyboard
+
+        keyboard = get_timezone_keyboard()
+
+        all_callbacks = [btn.callback_data for row in keyboard.inline_keyboard for btn in row]
+
+        assert "tz:cancel" in all_callbacks
+
+    @pytest.mark.unit
+    def test_timezone_keyboard_marks_current(self):
+        """Test timezone keyboard marks current timezone with checkmark."""
+        from keyboards.inline.timezone import get_timezone_keyboard
+
+        keyboard = get_timezone_keyboard(current_tz="Europe/Moscow")
+
+        # Find Moscow button
+        moscow_btn = None
+        for row in keyboard.inline_keyboard:
+            for btn in row:
+                if btn.callback_data == "tz:set:Europe/Moscow":
+                    moscow_btn = btn
+                    break
+
+        assert moscow_btn is not None
+        assert "✓" in moscow_btn.text
+
+    @pytest.mark.unit
+    def test_timezone_display_with_offset(self):
+        """Test get_timezone_display includes offset."""
+        from keyboards.inline.timezone import get_timezone_display
+
+        result = get_timezone_display("Europe/Moscow", include_offset=True)
+        assert "Москва" in result
+        assert "UTC+3" in result
+
+    @pytest.mark.unit
+    def test_timezone_display_without_offset(self):
+        """Test get_timezone_display without offset."""
+        from keyboards.inline.timezone import get_timezone_display
+
+        result = get_timezone_display("Europe/Moscow", include_offset=False)
+        assert "Москва" in result
+        assert "UTC" not in result
+
+    @pytest.mark.unit
+    def test_timezone_display_utc_format(self):
+        """Test get_timezone_display with UTC offset format."""
+        from keyboards.inline.timezone import get_timezone_display
+
+        result = get_timezone_display("UTC+5")
+        assert "UTC+5" in result
+
+    @pytest.mark.unit
+    def test_timezone_display_fallback(self):
+        """Test get_timezone_display with unknown timezone."""
+        from keyboards.inline.timezone import get_timezone_display
+
+        result = get_timezone_display("Some/Unknown")
+        assert "Some/Unknown" in result
+
+
+class TestSettingsKeyboard:
+    """Test settings menu keyboard."""
+
+    @pytest.mark.unit
+    def test_settings_keyboard_has_timezone(self):
+        """Test settings keyboard has timezone button."""
+        from handlers.settings.menu import get_settings_keyboard
+
+        keyboard = get_settings_keyboard()
+
+        all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
+
+        assert "🌍 Часовой пояс" in all_buttons
+
+    @pytest.mark.unit
+    def test_settings_keyboard_has_back(self):
+        """Test settings keyboard has back button."""
+        from handlers.settings.menu import get_settings_keyboard
+        from shared.constants import MENU_BACK
+
+        keyboard = get_settings_keyboard()
+
+        all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
+
+        assert MENU_BACK in all_buttons
+
+    @pytest.mark.unit
+    def test_settings_keyboard_language_hidden(self):
+        """Test settings keyboard has language button hidden (commented)."""
+        from handlers.settings.menu import get_settings_keyboard
+
+        keyboard = get_settings_keyboard()
+
+        all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
+
+        # Language button should be hidden (commented out in code)
+        assert "🌐 Язык" not in all_buttons

@@ -102,6 +102,9 @@ class BabloUserSettings(Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # User timezone as UTC offset string: "Europe/Moscow", "UTC+3", "UTC-5", etc.
+    timezone: Mapped[str] = mapped_column(String(50), default="Europe/Moscow")
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

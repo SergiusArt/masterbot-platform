@@ -107,6 +107,8 @@ class NotificationSettingsSchema(BaseSchema):
     monthly_report: bool = True
     activity_window_minutes: int = Field(default=15, ge=5, le=60)
     activity_threshold: int = Field(default=10, ge=1, le=100)
+    timezone: str = Field(default="Europe/Moscow")
+    language: str = Field(default="ru")
 
 
 class NotificationSettingsUpdate(BaseSchema):
@@ -123,6 +125,8 @@ class NotificationSettingsUpdate(BaseSchema):
     monthly_report: Optional[bool] = None
     activity_window_minutes: Optional[int] = Field(default=None, ge=5, le=60)
     activity_threshold: Optional[int] = Field(default=None, ge=1, le=100)
+    timezone: Optional[str] = None
+    language: Optional[str] = None
 
 
 class SignalListResponse(BaseSchema):

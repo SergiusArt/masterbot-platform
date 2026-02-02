@@ -28,7 +28,7 @@ class ReportScheduler:
         # Morning reports at 8:00
         self.scheduler.add_job(
             self._send_morning_reports,
-            CronTrigger(hour=8, minute=0),
+            CronTrigger(hour=8, minute=0, timezone=self.tz),
             id="morning_reports",
             replace_existing=True,
         )
@@ -36,7 +36,7 @@ class ReportScheduler:
         # Evening reports at 20:00
         self.scheduler.add_job(
             self._send_evening_reports,
-            CronTrigger(hour=20, minute=0),
+            CronTrigger(hour=20, minute=0, timezone=self.tz),
             id="evening_reports",
             replace_existing=True,
         )
@@ -44,7 +44,7 @@ class ReportScheduler:
         # Weekly reports on Monday at 9:00
         self.scheduler.add_job(
             self._send_weekly_reports,
-            CronTrigger(day_of_week="mon", hour=9, minute=0),
+            CronTrigger(day_of_week="mon", hour=9, minute=0, timezone=self.tz),
             id="weekly_reports",
             replace_existing=True,
         )
@@ -52,14 +52,14 @@ class ReportScheduler:
         # Monthly reports on 1st day at 9:00
         self.scheduler.add_job(
             self._send_monthly_reports,
-            CronTrigger(day=1, hour=9, minute=0),
+            CronTrigger(day=1, hour=9, minute=0, timezone=self.tz),
             id="monthly_reports",
             replace_existing=True,
         )
 
         self.scheduler.start()
         logger.info(
-            "Scheduler started: morning (8:00), evening (20:00), "
+            f"Scheduler started ({self.tz}): morning (8:00), evening (20:00), "
             "weekly (Mon 9:00), monthly (1st 9:00)"
         )
 

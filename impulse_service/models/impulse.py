@@ -68,6 +68,10 @@ class UserNotificationSettings(Base):
     last_activity_alert_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # User timezone as UTC offset string: "Europe/Moscow", "UTC+3", "UTC-5", etc.
+    timezone: Mapped[str] = mapped_column(String(50), default="Europe/Moscow")
+    # User interface language: "ru", "en"
+    language: Mapped[str] = mapped_column(String(5), default="ru")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

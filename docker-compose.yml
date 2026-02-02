@@ -48,6 +48,7 @@ services:
       - IMPULSE_SERVICE_URL=http://impulse_service:8001
       - BABLO_SERVICE_URL=http://bablo_service:8002
       - TIMEZONE=${TIMEZONE}
+      - TZ=${TIMEZONE}
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +75,7 @@ services:
       - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
       - TELEGRAM_SESSION_STRING=${TELEGRAM_SESSION_STRING}
       - TIMEZONE=${TIMEZONE}
+      - TZ=${TIMEZONE}
     ports:
       - "8001:8001"
     depends_on:
@@ -103,6 +105,7 @@ services:
       - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
       - TELEGRAM_SESSION_STRING=${TELEGRAM_SESSION_STRING}
       - TIMEZONE=${TIMEZONE}
+      - TZ=${TIMEZONE}
     ports:
       - "8002:8002"
     depends_on:

@@ -51,6 +51,8 @@ class NotificationService:
                 monthly_report=settings.monthly_report,
                 activity_window_minutes=settings.activity_window_minutes,
                 activity_threshold=settings.activity_threshold,
+                timezone=settings.timezone,
+                language=settings.language,
             )
 
     async def update_settings(
@@ -102,6 +104,8 @@ class NotificationService:
                 monthly_report=settings.monthly_report,
                 activity_window_minutes=settings.activity_window_minutes,
                 activity_threshold=settings.activity_threshold,
+                timezone=settings.timezone,
+                language=settings.language,
             )
 
     async def get_users_for_alert(

@@ -1,23 +1,30 @@
 """Bablo signals handlers."""
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
+import pytz
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from config import settings
 from keyboards.reply.bablo_menu import (
     get_bablo_signals_keyboard,
     get_bablo_menu_keyboard,
     get_timeframe_selection_keyboard,
 )
+from keyboards.inline.bablo import get_signals_pagination_keyboard
 from services.bablo_client import bablo_client
+from services.impulse_client import impulse_client
 from shared.constants import MENU_BABLO_SIGNALS, MENU_BACK, MENU_MAIN
+from shared.utils.timezone import get_pytz_timezone
 from states.navigation import MenuState
 
 router = Router()
+
+SIGNALS_PER_PAGE = 10
 
 # Timeframe to strength mapping
 TIMEFRAME_STRENGTH = {
@@ -31,6 +38,9 @@ TIMEFRAME_STRENGTH = {
 # Strength to timeframe mapping
 STRENGTH_TIMEFRAME = {v: k for k, v in TIMEFRAME_STRENGTH.items()}
 
+# Default timezone (fallback)
+_default_tz = pytz.timezone(settings.TIMEZONE)
+
 
 @router.message(MenuState.bablo, F.text == MENU_BABLO_SIGNALS)
 async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
@@ -40,8 +50,16 @@ async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
         message: Incoming message
         state: FSM context
     """
+    # Get user timezone
+    user_id = message.from_user.id
+    try:
+        user_settings = await impulse_client.get_user_settings(user_id)
+        user_tz = user_settings.get("timezone", "Europe/Moscow")
+    except Exception:
+        user_tz = "Europe/Moscow"
+
     await state.set_state(MenuState.bablo_signals)
-    await state.update_data(selected_timeframes=set(), signal_direction=None)
+    await state.update_data(selected_timeframes=set(), signal_direction=None, user_timezone=user_tz)
     await message.answer(
         "📋 <b>Сигналы Bablo</b>\n\n"
         "Здесь отображаются <b>все сигналы за текущий день</b>, которые соответствуют вашим фильтрам.\n\n"
@@ -50,47 +68,55 @@ async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
     )
 
 
-def _format_time(received_at: str) -> str:
-    """Format received_at time in short format.
+def _format_time(received_at: str, user_tz_str: str | None = None) -> str:
+    """Format received_at time in user's timezone.
 
     Args:
-        received_at: ISO format datetime string
+        received_at: ISO format datetime string (UTC)
+        user_tz_str: User timezone string (e.g., "Europe/Moscow" or "UTC+3")
 
     Returns:
-        Short time format like "14:35" or "Вчера 14:35"
+        Short time format like "14:35" or "Вчера 14:35" in user's tz
     """
     try:
         dt = datetime.fromisoformat(received_at.replace("Z", "+00:00"))
-        now = datetime.now(dt.tzinfo)
+        # Get user timezone or use default
+        tz = get_pytz_timezone(user_tz_str) if user_tz_str else _default_tz
+        # Convert to user timezone
+        dt_local = dt.astimezone(tz)
+        now_local = datetime.now(tz)
 
-        if dt.date() == now.date():
-            return dt.strftime("%H:%M")
-        elif (now.date() - dt.date()).days == 1:
-            return f"Вчера {dt.strftime('%H:%M')}"
+        if dt_local.date() == now_local.date():
+            return dt_local.strftime("%H:%M")
+        elif (now_local.date() - dt_local.date()).days == 1:
+            return f"Вчера {dt_local.strftime('%H:%M')}"
         else:
-            return dt.strftime("%d.%m %H:%M")
+            return dt_local.strftime("%d.%m %H:%M")
     except Exception:
         return ""
 
 
-def _format_signal(signal: dict) -> str:
+def _format_signal(signal: dict, user_tz: str | None = None) -> str:
     """Format a single signal for display.
 
     Args:
         signal: Signal data
+        user_tz: User timezone string
 
     Returns:
         Formatted signal string
     """
-    direction_emoji = "🟢" if signal["direction"] == "long" else "🔴"
-    direction_text = "Long" if signal["direction"] == "long" else "Short"
+    is_long = signal["direction"] == "long"
+    direction_emoji = "🟢" if is_long else "🔴"
+    direction_text = "Long" if is_long else "Short"
     strength = signal.get("strength", 1)
-    strength_squares = "🟩" * strength + "⬜" * (5 - strength)
+    filled = "🟩" if is_long else "🟥"
+    strength_squares = filled * strength + "⬜" * (5 - strength)
 
     # Get timeframe from strength
     timeframe = STRENGTH_TIMEFRAME.get(strength, signal.get("timeframe", ""))
 
-    time_str = _format_time(signal.get("received_at", ""))
+    time_str = _format_time(signal.get("received_at", ""), user_tz)
     time_part = f" | {time_str}" if time_str else ""
 
     lines = [
@@ -105,37 +131,97 @@ def _format_signal(signal: dict) -> str:
     return "\n".join(lines)
 
 
+def _build_header(
+    direction: Optional[str],
+    timeframes: Optional[set[str]],
+) -> str:
+    """Build signals list header text."""
+    if direction == "long":
+        header = "🟢 <b>Long сигналы"
+    elif direction == "short":
+        header = "🔴 <b>Short сигналы"
+    else:
+        header = "📋 <b>Все сигналы"
+
+    if timeframes:
+        header += f" ({', '.join(sorted(timeframes))})"
+    header += "</b>\n"
+    return header
+
+
+async def _fetch_and_format_signals(
+    direction: Optional[str],
+    timeframes: Optional[set[str]],
+    page: int = 0,
+    user_tz: str | None = None,
+) -> tuple[str, int, int]:
+    """Fetch signals from API and format them.
+
+    Returns:
+        (formatted_text, total_count, shown_count)
+    """
+    strengths = None
+    if timeframes:
+        strengths = [TIMEFRAME_STRENGTH[tf] for tf in timeframes if tf in TIMEFRAME_STRENGTH]
+
+    # Fetch more than needed so we can filter by exact strengths
+    fetch_limit = SIGNALS_PER_PAGE * 3 if strengths else SIGNALS_PER_PAGE
+    data = await bablo_client.get_signals(
+        limit=fetch_limit,
+        offset=page * SIGNALS_PER_PAGE if not strengths else 0,
+        direction=direction,
+        min_strength=min(strengths) if strengths else None,
+        max_strength=max(strengths) if strengths else None,
+    )
+    signals = data.get("signals", [])
+    total = data.get("total", len(signals))
+
+    # Filter by exact strengths if specified
+    if strengths:
+        signals = [s for s in signals if s.get("strength") in strengths]
+        total = len(signals)
+        # Manual pagination after filtering
+        start = page * SIGNALS_PER_PAGE
+        signals = signals[start : start + SIGNALS_PER_PAGE]
+
+    if not signals:
+        return "", total, 0
+
+    header = _build_header(direction, timeframes)
+    formatted = [_format_signal(s, user_tz) for s in signals]
+    text = header + "\n" + "\n\n".join(formatted)
+
+    start_num = page * SIGNALS_PER_PAGE + 1
+    end_num = start_num + len(formatted) - 1
+    text += f"\n\n<i>Сигналы {start_num}–{end_num} из {total}</i>"
+
+    return text, total, len(formatted)
+
+
 async def _show_signals(
     message: Message,
+    state: FSMContext,
     direction: Optional[str] = None,
     timeframes: Optional[set[str]] = None,
+    page: int = 0,
 ) -> None:
-    """Show signals with optional direction and timeframe filters.
+    """Show signals with optional filters and pagination.
 
     Args:
         message: Incoming message
+        state: FSM context
         direction: Filter by direction (long, short, None for all)
-        timeframes: Set of timeframes to filter by (e.g., {"1м", "5м"})
+        timeframes: Set of timeframes to filter by
+        page: Page number (0-based)
     """
     try:
-        # Convert timeframes to strengths for API query
-        strengths = None
-        if timeframes:
-            strengths = [TIMEFRAME_STRENGTH[tf] for tf in timeframes if tf in TIMEFRAME_STRENGTH]
+        # Get user timezone from state
+        data = await state.get_data()
+        user_tz = data.get("user_timezone")
 
-        data = await bablo_client.get_signals(
-            limit=10,
-            direction=direction,
-            min_strength=min(strengths) if strengths else None,
-            max_strength=max(strengths) if strengths else None,
-        )
-        signals = data.get("signals", [])
+        text, total, shown = await _fetch_and_format_signals(direction, timeframes, page, user_tz)
 
-        # Filter by exact strengths if specified
-        if strengths:
-            signals = [s for s in signals if s.get("strength") in strengths]
-
-        if not signals:
+        if not text:
             filter_parts = []
             if direction == "long":
                 filter_parts.append("Long")
@@ -143,7 +229,6 @@ async def _show_signals(
                 filter_parts.append("Short")
             if timeframes:
                 filter_parts.append(f"({', '.join(sorted(timeframes))})")
-
             filter_text = " " + " ".join(filter_parts) if filter_parts else ""
 
             await message.answer(
@@ -152,27 +237,15 @@ async def _show_signals(
             )
             return
 
-        header_parts = []
-        if direction == "long":
-            header_parts.append("🟢 <b>Long сигналы")
-        elif direction == "short":
-            header_parts.append("🔴 <b>Short сигналы")
-        else:
-            header_parts.append("📋 <b>Все сигналы")
+        # Save pagination state
+        await state.update_data(signals_page=page)
 
-        if timeframes:
-            header_parts.append(f" ({', '.join(sorted(timeframes))})")
-        header_parts.append("</b>\n")
-        header = "".join(header_parts)
+        # Build pagination keyboard if needed
+        has_prev = page > 0
+        has_next = (page + 1) * SIGNALS_PER_PAGE < total
+        keyboard = get_signals_pagination_keyboard(page, has_prev, has_next) if (has_prev or has_next) else None
 
-        formatted_signals = [_format_signal(s) for s in signals[:10]]
-        text = header + "\n" + "\n\n".join(formatted_signals)
-
-        total = data.get("total", len(signals))
-        if total > len(formatted_signals):
-            text += f"\n\n<i>Показано {len(formatted_signals)} из {total}</i>"
-
-        await message.answer(text)
+        await message.answer(text, reply_markup=keyboard)
 
     except Exception as e:
         await message.answer(
@@ -279,7 +352,7 @@ async def show_filtered_signals(message: Message, state: FSMContext) -> None:
     if not timeframes:
         timeframes = None
 
-    await _show_signals(message, direction=direction, timeframes=timeframes)
+    await _show_signals(message, state, direction=direction, timeframes=timeframes)
 
 
 @router.message(MenuState.bablo_signals_timeframe, F.text == MENU_BACK)
@@ -296,3 +369,36 @@ async def back_from_timeframe_selection(message: Message, state: FSMContext) -> 
         "Выберите тип сигналов:",
         reply_markup=get_bablo_signals_keyboard(),
     )
+
+
+@router.callback_query(F.data.startswith("bablo:signals:page:"))
+async def paginate_signals(callback: CallbackQuery, state: FSMContext) -> None:
+    """Handle pagination buttons for signals list."""
+    page = int(callback.data.split(":")[-1])
+    data = await state.get_data()
+    direction = data.get("signal_direction")
+    timeframes = data.get("selected_timeframes", set())
+    user_tz = data.get("user_timezone")
+
+    if isinstance(timeframes, list):
+        timeframes = set(timeframes)
+    if not timeframes:
+        timeframes = None
+
+    try:
+        text, total, shown = await _fetch_and_format_signals(direction, timeframes, page, user_tz)
+
+        if not text:
+            await callback.answer("Сигналов больше нет")
+            return
+
+        await state.update_data(signals_page=page)
+
+        has_prev = page > 0
+        has_next = (page + 1) * SIGNALS_PER_PAGE < total
+        keyboard = get_signals_pagination_keyboard(page, has_prev, has_next) if (has_prev or has_next) else None
+
+        await callback.message.edit_text(text, reply_markup=keyboard)
+        await callback.answer()
+    except Exception:
+        await callback.answer("Ошибка загрузки")
