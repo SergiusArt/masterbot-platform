@@ -171,7 +171,12 @@ async def get_impulses(
                 params={"limit": limit, "offset": offset},
             )
             resp.raise_for_status()
-            return resp.json()
+            data = resp.json()
+            # Transform response: rename 'signals' to 'impulses' for frontend consistency
+            return {
+                "impulses": data.get("signals", []),
+                "total": data.get("total", len(data.get("signals", []))),
+            }
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f"Impulse service error: {e}")
 
