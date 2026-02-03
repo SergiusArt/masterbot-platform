@@ -40,7 +40,8 @@ export function formatRelativeTime(dateStr: string): string {
 /**
  * Format percent with sign.
  */
-export function formatPercent(value: number): string {
+export function formatPercent(value: number | undefined | null): string {
+  if (value == null || typeof value !== 'number') return '--'
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(2)}%`
 }
@@ -48,14 +49,16 @@ export function formatPercent(value: number): string {
 /**
  * Format number with thousands separator.
  */
-export function formatNumber(value: number): string {
+export function formatNumber(value: number | undefined | null): string {
+  if (value == null || typeof value !== 'number') return '--'
   return new Intl.NumberFormat('ru-RU').format(value)
 }
 
 /**
  * Format quality score (0-10).
  */
-export function formatQuality(value: number): string {
+export function formatQuality(value: number | undefined | null): string {
+  if (value == null || typeof value !== 'number') return '--'
   return value.toFixed(1)
 }
 
