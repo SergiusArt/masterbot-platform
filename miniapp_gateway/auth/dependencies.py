@@ -22,8 +22,13 @@ async def check_user_access(user_id: int, db: AsyncSession) -> bool:
     Returns:
         True if user has access, False otherwise
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     # Admin always has access
+    logger.info(f"Checking access for user_id={user_id} (type={type(user_id)}), ADMIN_ID={settings.ADMIN_ID} (type={type(settings.ADMIN_ID)})")
     if user_id == settings.ADMIN_ID:
+        logger.info(f"User {user_id} is admin, granting access")
         return True
 
     # Check users table
