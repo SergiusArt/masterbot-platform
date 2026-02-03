@@ -81,7 +81,7 @@ async def reports_menu(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(MenuState.reports, F.text.contains("Импульсы"))
+@router.message(MenuState.reports, F.text.endswith(" Импульсы"))
 async def toggle_impulse_service(message: Message, state: FSMContext) -> None:
     """Toggle impulse service for reports.
 
@@ -111,7 +111,7 @@ async def toggle_impulse_service(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(MenuState.reports, F.text.contains("Bablo"))
+@router.message(MenuState.reports, F.text.endswith(" Bablo"))
 async def toggle_bablo_service(message: Message, state: FSMContext) -> None:
     """Toggle bablo service for reports.
 
