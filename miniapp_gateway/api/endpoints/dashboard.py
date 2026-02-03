@@ -4,9 +4,11 @@ from datetime import datetime, timezone
 from typing import Literal, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from auth.dependencies import get_current_user
+from auth.telegram import TelegramUser
 from config import settings
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -88,7 +90,9 @@ def calculate_market_pulse(
 
 
 @router.get("/summary", response_model=DashboardSummary)
-async def get_dashboard_summary() -> DashboardSummary:
+async def get_dashboard_summary(
+    user: TelegramUser = Depends(get_current_user),
+) -> DashboardSummary:
     """Get combined dashboard summary from both services."""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -155,6 +159,7 @@ async def get_dashboard_summary() -> DashboardSummary:
 
 @router.get("/impulses")
 async def get_impulses(
+    user: TelegramUser = Depends(get_current_user),
     limit: int = Query(default=20, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
@@ -173,6 +178,7 @@ async def get_impulses(
 
 @router.get("/bablo")
 async def get_bablo_signals(
+    user: TelegramUser = Depends(get_current_user),
     limit: int = Query(default=20, le=100),
     offset: int = Query(default=0, ge=0),
     direction: Optional[str] = None,
@@ -204,6 +210,7 @@ async def get_bablo_signals(
 async def get_analytics(
     service: Literal["impulse", "bablo"],
     period: Literal["today", "yesterday", "week", "month"],
+    user: TelegramUser = Depends(get_current_user),
 ) -> dict:
     """Get analytics for a specific service and period."""
     async with httpx.AsyncClient(timeout=10.0) as client:

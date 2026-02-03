@@ -2,11 +2,38 @@ import type { DashboardSummary, Impulse, BabloSignal } from '../types'
 
 const API_BASE = '/api/v1/dashboard'
 
+/**
+ * Get Telegram initData for authentication.
+ */
+function getInitData(): string {
+  return window.Telegram?.WebApp?.initData || ''
+}
+
+/**
+ * Make authenticated API request.
+ */
 async function fetchApi<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`)
+  const initData = getInitData()
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  }
+
+  // Add auth header if we have initData
+  if (initData) {
+    headers['X-Telegram-Init-Data'] = initData
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, { headers })
+
+  if (response.status === 401) {
+    throw new Error('Unauthorized: Please open this app from Telegram')
+  }
+
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`)
   }
+
   return response.json()
 }
 
@@ -60,5 +87,12 @@ export const api = {
     period: 'today' | 'yesterday' | 'week' | 'month'
   ): Promise<Record<string, unknown>> {
     return fetchApi(`/analytics/${service}/${period}`)
+  },
+
+  /**
+   * Check if user is authenticated (has valid initData).
+   */
+  isAuthenticated(): boolean {
+    return !!getInitData()
   },
 }

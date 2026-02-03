@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8003
+    DEBUG_MODE: bool = False  # Set to True only for local development
 
     # Telegram Bot
     BOT_TOKEN: str

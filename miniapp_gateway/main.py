@@ -126,44 +126,45 @@ async def websocket_endpoint(
         await connection_manager.disconnect(user_id)
 
 
-@app.websocket("/ws/dev")
-async def websocket_dev_endpoint(websocket: WebSocket):
-    """Development WebSocket endpoint without authentication.
+# Dev WebSocket endpoint - only available when DEBUG_MODE=True
+if settings.DEBUG_MODE:
+    @app.websocket("/ws/dev")
+    async def websocket_dev_endpoint(websocket: WebSocket):
+        """Development WebSocket endpoint without authentication.
 
-    WARNING: Only use in development!
-    """
-    # Use a fake user ID for development
-    dev_user_id = 12345
+        WARNING: Only available when DEBUG_MODE=True!
+        """
+        dev_user_id = 12345
 
-    connected = await connection_manager.connect(websocket, dev_user_id)
-    if not connected:
-        await websocket.close(code=4002, reason="Connection limit reached")
-        return
+        connected = await connection_manager.connect(websocket, dev_user_id)
+        if not connected:
+            await websocket.close(code=4002, reason="Connection limit reached")
+            return
 
-    welcome_msg = WebSocketMessage(
-        type=WSMessageType.CONNECTED,
-        data={
-            "user_id": dev_user_id,
-            "message": "Connected to Mini App Gateway (DEV MODE)",
-        },
-    )
-    await websocket.send_text(welcome_msg.to_json())
+        welcome_msg = WebSocketMessage(
+            type=WSMessageType.CONNECTED,
+            data={
+                "user_id": dev_user_id,
+                "message": "Connected to Mini App Gateway (DEV MODE)",
+            },
+        )
+        await websocket.send_text(welcome_msg.to_json())
 
-    logger.info(f"DEV user {dev_user_id} connected via WebSocket")
+        logger.info(f"DEV user {dev_user_id} connected via WebSocket")
 
-    try:
-        while True:
-            data = await websocket.receive_text()
-            response = await handle_client_message(dev_user_id, data)
-            if response:
-                await websocket.send_text(response.to_json())
+        try:
+            while True:
+                data = await websocket.receive_text()
+                response = await handle_client_message(dev_user_id, data)
+                if response:
+                    await websocket.send_text(response.to_json())
 
-    except WebSocketDisconnect:
-        logger.info(f"DEV user {dev_user_id} disconnected")
-    except Exception as e:
-        logger.error(f"WebSocket error for DEV user: {e}")
-    finally:
-        await connection_manager.disconnect(dev_user_id)
+        except WebSocketDisconnect:
+            logger.info(f"DEV user {dev_user_id} disconnected")
+        except Exception as e:
+            logger.error(f"WebSocket error for DEV user: {e}")
+        finally:
+            await connection_manager.disconnect(dev_user_id)
 
 
 if __name__ == "__main__":
