@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useTelegramApp } from './hooks/useTelegramApp'
+import { useTelegram } from './context/TelegramContext'
 import { useWebSocket } from './hooks/useWebSocket'
 import { Header } from './components/common/Header'
 import { TabNavigation } from './components/common/TabNavigation'
@@ -10,11 +10,11 @@ import type { TabType } from './types'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('combined')
-  const { isReady, initDataRaw, isMiniApp } = useTelegramApp()
+  const { initData, isMiniApp } = useTelegram()
 
   // Connect WebSocket (dev mode if not in Telegram Mini App)
   const { isConnected, error: wsError } = useWebSocket({
-    initDataRaw,
+    initDataRaw: initData,
     devMode: !isMiniApp,
   })
 
@@ -39,18 +39,7 @@ function App() {
     return 'Онлайн'
   }
 
-  // Show loading state while SDK initializes or initData is not yet available
-  if (isMiniApp && (!isReady || !initDataRaw)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="spinner mb-4" />
-          <p className="text-tg-hint">Загрузка...</p>
-        </div>
-      </div>
-    )
-  }
-
+  // TelegramProvider handles loading state, so App only renders when ready
   return (
     <div className="min-h-screen bg-tg-bg flex flex-col">
       <Header title={getTitle()} subtitle={getSubtitle()} />
