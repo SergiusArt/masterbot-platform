@@ -40,26 +40,32 @@ export function formatRelativeTime(dateStr: string): string {
 /**
  * Format percent with sign.
  */
-export function formatPercent(value: number | undefined | null): string {
-  if (value == null || typeof value !== 'number') return '--'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
+export function formatPercent(value: number | string | undefined | null): string {
+  if (value == null) return '--'
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '--'
+  const sign = num >= 0 ? '+' : ''
+  return `${sign}${num.toFixed(2)}%`
 }
 
 /**
  * Format number with thousands separator.
  */
-export function formatNumber(value: number | undefined | null): string {
-  if (value == null || typeof value !== 'number') return '--'
-  return new Intl.NumberFormat('ru-RU').format(value)
+export function formatNumber(value: number | string | undefined | null): string {
+  if (value == null) return '--'
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '--'
+  return new Intl.NumberFormat('ru-RU').format(num)
 }
 
 /**
  * Format quality score (0-10).
  */
-export function formatQuality(value: number | undefined | null): string {
-  if (value == null || typeof value !== 'number') return '--'
-  return value.toFixed(1)
+export function formatQuality(value: number | string | undefined | null): string {
+  if (value == null) return '--'
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '--'
+  return num.toFixed(1)
 }
 
 /**
