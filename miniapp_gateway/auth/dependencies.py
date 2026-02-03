@@ -1,26 +1,79 @@
-"""FastAPI dependencies for Telegram authentication."""
+"""FastAPI dependencies for Telegram authentication and access control."""
 
+from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.telegram import TelegramUser, validate_init_data
 from config import settings
+from database import get_db
+
+
+async def check_user_access(user_id: int, db: AsyncSession) -> bool:
+    """Check if user has access to Mini App.
+
+    Access is granted if:
+    1. User is admin (ADMIN_ID)
+    2. User has active unlimited access
+    3. User has active subscription that hasn't expired
+
+    Returns:
+        True if user has access, False otherwise
+    """
+    # Admin always has access
+    if user_id == settings.ADMIN_ID:
+        return True
+
+    # Check miniapp_access table
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text("""
+            SELECT access_type, expires_at, is_active
+            FROM miniapp_access
+            WHERE user_id = :user_id
+        """),
+        {"user_id": user_id},
+    )
+    row = result.fetchone()
+
+    if not row:
+        return False
+
+    access_type, expires_at, is_active = row
+
+    if not is_active:
+        return False
+
+    if access_type == "unlimited":
+        return True
+
+    # Check if subscription is still valid
+    if expires_at is None:
+        return True
+
+    return datetime.now(timezone.utc) < expires_at
 
 
 async def get_current_user(
     x_telegram_init_data: Optional[str] = Header(None, alias="X-Telegram-Init-Data"),
+    db: AsyncSession = Depends(get_db),
 ) -> TelegramUser:
-    """Dependency to extract and validate Telegram user from initData.
+    """Dependency to extract, validate Telegram user, and check access.
 
     Args:
         x_telegram_init_data: Raw initData string from X-Telegram-Init-Data header
+        db: Database session
 
     Returns:
-        Validated TelegramUser
+        Validated TelegramUser with access
 
     Raises:
         HTTPException 401 if validation fails
+        HTTPException 403 if user doesn't have access
     """
     if not x_telegram_init_data:
         raise HTTPException(
@@ -36,7 +89,18 @@ async def get_current_user(
             detail=f"Invalid initData: {result.error}",
         )
 
-    return result.user
+    user = result.user
+
+    # Check access
+    has_access = await check_user_access(user.id, db)
+
+    if not has_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Contact @SrgArtManager for access.",
+        )
+
+    return user
 
 
 async def get_optional_user(
@@ -44,7 +108,7 @@ async def get_optional_user(
 ) -> Optional[TelegramUser]:
     """Optional authentication - returns None if not authenticated.
 
-    Useful for endpoints that work both authenticated and unauthenticated.
+    Note: Does NOT check access control, only validates initData.
     """
     if not x_telegram_init_data:
         return None

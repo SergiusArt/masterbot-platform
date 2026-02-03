@@ -42,6 +42,15 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
     throw new Error('Unauthorized: Please open this app from Telegram')
   }
 
+  if (response.status === 403) {
+    // Parse the error detail from the response
+    const errorData = await response.json().catch(() => ({}))
+    const detail = errorData.detail || 'Access denied'
+    const error = new Error(detail)
+    ;(error as Error & { status: number }).status = 403
+    throw error
+  }
+
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`)
   }

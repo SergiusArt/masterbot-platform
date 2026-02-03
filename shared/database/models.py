@@ -125,3 +125,46 @@ class ActionLog(Base):
 
     def __repr__(self) -> str:
         return f"<ActionLog(user_id={self.user_id}, action={self.action})>"
+
+
+class MiniAppAccess(Base):
+    """Mini App access control table."""
+
+    __tablename__ = "miniapp_access"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    access_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="subscription"
+    )  # 'unlimited' or 'subscription'
+    expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )  # NULL for unlimited
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notified_2_days: Mapped[bool] = mapped_column(Boolean, default=False)
+    notified_1_day: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    created_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<MiniAppAccess(user_id={self.user_id}, type={self.access_type}, active={self.is_active})>"
+
+    def is_expired(self) -> bool:
+        """Check if subscription has expired."""
+        if self.access_type == "unlimited":
+            return False
+        if self.expires_at is None:
+            return False
+        from datetime import timezone as tz
+        return datetime.now(tz.utc) > self.expires_at
+
+    def has_valid_access(self) -> bool:
+        """Check if user has valid access."""
+        return self.is_active and not self.is_expired()

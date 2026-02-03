@@ -13,6 +13,10 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     BOT_TOKEN: str
+    ADMIN_ID: int  # Admin always has access
+
+    # Database
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/masterbot"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

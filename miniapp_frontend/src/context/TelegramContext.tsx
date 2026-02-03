@@ -1,16 +1,21 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { initApi } from '../api'
+import { api, initApi } from '../api'
+import { AccessDenied } from '../components/common/AccessDenied'
 
 interface TelegramContextValue {
   isReady: boolean
   initData: string
   isMiniApp: boolean
+  accessDenied: boolean
+  accessDeniedMessage: string
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
   isReady: false,
   initData: '',
   isMiniApp: false,
+  accessDenied: false,
+  accessDeniedMessage: '',
 })
 
 // Max retries and delays for Telegram SDK detection
@@ -22,10 +27,30 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [initData, setInitData] = useState('')
   const [isMiniApp, setIsMiniApp] = useState<boolean | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [accessDenied, setAccessDenied] = useState(false)
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState('')
 
   useEffect(() => {
     let retryCount = 0
     let timeoutId: ReturnType<typeof setTimeout>
+
+    const checkAccess = async () => {
+      try {
+        // Make a simple API call to check if user has access
+        await api.getSummary()
+        setIsReady(true)
+      } catch (err) {
+        if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 403) {
+          // Access denied
+          setAccessDenied(true)
+          setAccessDeniedMessage((err as Error).message)
+          setIsReady(true)
+        } else {
+          // Other errors - still allow app to load, will show error in dashboard
+          setIsReady(true)
+        }
+      }
+    }
 
     const checkTelegram = () => {
       const webApp = window.Telegram?.WebApp
@@ -37,7 +62,8 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         initApi(webApp.initData)
         webApp.ready()
         webApp.expand()
-        setIsReady(true)
+        // Check access after initializing API
+        checkAccess()
       } else if (webApp && !webApp.initData && retryCount < MAX_RETRIES) {
         // SDK exists but initData not ready yet - retry
         retryCount++
@@ -79,7 +105,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   }
 
   // Show error if Mini App but no initData
-  if (error === 'no_init_data' || (isMiniApp && !initData)) {
+  if (error === 'no_init_data' || (isMiniApp && !initData && !accessDenied)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-tg-bg p-4">
         <div className="text-center max-w-sm">
@@ -101,8 +127,13 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  // Show access denied screen
+  if (accessDenied) {
+    return <AccessDenied message={accessDeniedMessage} />
+  }
+
   return (
-    <TelegramContext.Provider value={{ isReady, initData, isMiniApp }}>
+    <TelegramContext.Provider value={{ isReady, initData, isMiniApp, accessDenied, accessDeniedMessage }}>
       {children}
     </TelegramContext.Provider>
   )
