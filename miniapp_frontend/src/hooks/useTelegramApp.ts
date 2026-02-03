@@ -58,7 +58,10 @@ declare global {
  */
 export function useTelegramApp(): TelegramAppState {
   const [isReady, setIsReady] = useState(false)
+  const [initDataRaw, setInitDataRaw] = useState('')
+  const [user, setUser] = useState<TelegramUser | null>(null)
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
+  const [isDark, setIsDark] = useState(false)
 
   // Check if running in Mini App context
   const isMiniApp = typeof window !== 'undefined' && !!window.Telegram?.WebApp
@@ -67,37 +70,35 @@ export function useTelegramApp(): TelegramAppState {
     const webApp = window.Telegram?.WebApp
 
     if (webApp) {
-      // Mark as ready
+      // Mark as ready and capture all data
       webApp.ready()
       webApp.expand()
-      setIsReady(true)
+
+      // Set initData
+      setInitDataRaw(webApp.initData || '')
+
+      // Set user data
+      const tgUser = webApp.initDataUnsafe?.user
+      if (tgUser) {
+        setUser({
+          id: tgUser.id,
+          firstName: tgUser.first_name,
+          lastName: tgUser.last_name,
+          username: tgUser.username,
+          languageCode: tgUser.language_code,
+          isPremium: tgUser.is_premium,
+        })
+      }
+
+      // Set other state
+      setIsDark(webApp.colorScheme === 'dark')
       setViewportHeight(webApp.viewportHeight || window.innerHeight)
+      setIsReady(true)
     } else {
       // Not in Telegram - still mark as ready for dev mode
       setIsReady(true)
     }
   }, [])
-
-  // Extract user data from Telegram WebApp
-  const webApp = window.Telegram?.WebApp
-  const tgUser = webApp?.initDataUnsafe?.user
-
-  const user: TelegramUser | null = tgUser
-    ? {
-        id: tgUser.id,
-        firstName: tgUser.first_name,
-        lastName: tgUser.last_name,
-        username: tgUser.username,
-        languageCode: tgUser.language_code,
-        isPremium: tgUser.is_premium,
-      }
-    : null
-
-  // Get raw init data for WebSocket authentication
-  const initDataRaw = webApp?.initData || ''
-
-  // Check if dark mode
-  const isDark = webApp?.colorScheme === 'dark'
 
   return {
     isReady,
