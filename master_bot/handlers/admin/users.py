@@ -225,7 +225,7 @@ async def process_user_id(message: Message, state: FSMContext) -> None:
         await state.update_data(user_id=user_id)
         await state.set_state(AdminUserState.waiting_for_days)
         await message.answer(
-            "Введите количество дней для продления:",
+            "Введите количество дней для продления (0 = бессрочно):",
         )
 
 
@@ -279,17 +279,25 @@ async def process_days(message: Message, state: FSMContext) -> None:
         elif action == "extend":
             user = await session.get(User, user_id)
             if user:
-                if user.access_expires_at and user.access_expires_at > datetime.now(timezone.utc):
-                    user.access_expires_at = user.access_expires_at + timedelta(days=days)
+                if days == 0:
+                    # Unlimited access
+                    user.access_expires_at = None
+                    user.is_active = True
+                    await session.commit()
+                    await message.answer(
+                        f"✅ Пользователю {user_id} установлен бессрочный доступ.",
+                    )
                 else:
-                    user.access_expires_at = datetime.now(timezone.utc) + timedelta(days=days)
-                user.is_active = True
-                await session.commit()
-
-                await message.answer(
-                    f"✅ Доступ пользователя {user_id} продлён на {days} дней.\n"
-                    f"Новая дата: {user.access_expires_at.strftime('%d.%m.%Y')}",
-                )
+                    if user.access_expires_at and user.access_expires_at > datetime.now(timezone.utc):
+                        user.access_expires_at = user.access_expires_at + timedelta(days=days)
+                    else:
+                        user.access_expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+                    user.is_active = True
+                    await session.commit()
+                    await message.answer(
+                        f"✅ Доступ пользователя {user_id} продлён на {days} дней.\n"
+                        f"Новая дата: {user.access_expires_at.strftime('%d.%m.%Y')}",
+                    )
 
     await state.clear()
     await message.answer(
