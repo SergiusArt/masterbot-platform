@@ -24,9 +24,9 @@ const TelegramContext = createContext<TelegramContextValue>({
 })
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
-  // Use the already-captured initData
+  // Use the already-captured initData (no need for state, it's captured at load time)
   const [isReady, setIsReady] = useState(false)
-  const [initData, setInitData] = useState(webAppInitData)
+  const initData = webAppInitData
 
   // Check synchronously if we're in Mini App
   const isMiniApp = typeof window !== 'undefined' && !!window.Telegram?.WebApp
