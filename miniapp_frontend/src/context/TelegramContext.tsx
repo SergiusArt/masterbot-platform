@@ -35,11 +35,14 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     let timeoutId: ReturnType<typeof setTimeout>
 
     const checkAccess = async () => {
+      console.log('[TelegramContext] checkAccess starting...')
       try {
         // Make a simple API call to check if user has access
-        await api.getSummary()
+        const summary = await api.getSummary()
+        console.log('[TelegramContext] Access check passed:', summary)
         setIsReady(true)
       } catch (err: unknown) {
+        console.error('[TelegramContext] Access check failed:', err)
         const error = err as { status?: number; message?: string }
         if (error.status === 403) {
           // Access denied
@@ -48,6 +51,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
           setIsReady(true)
         } else {
           // Other errors - still allow app to load, will show error in dashboard
+          console.log('[TelegramContext] Non-403 error, allowing app to load')
           setIsReady(true)
         }
       }
@@ -55,14 +59,31 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
     const checkTelegram = () => {
       const webApp = window.Telegram?.WebApp
+      console.log('[TelegramContext] checkTelegram:', {
+        hasWebApp: !!webApp,
+        hasInitData: !!webApp?.initData,
+        retryCount
+      })
 
       if (webApp && webApp.initData) {
         // Telegram SDK is ready with initData
+        console.log('[TelegramContext] SDK ready, initializing...')
         setIsMiniApp(true)
         setInitData(webApp.initData)
         initApi(webApp.initData)
+
+        // Signal to Telegram that app is ready
         webApp.ready()
-        webApp.expand()
+        console.log('[TelegramContext] webApp.ready() called')
+
+        // Expand to full height (do this after ready)
+        try {
+          webApp.expand()
+          console.log('[TelegramContext] webApp.expand() called')
+        } catch (e) {
+          console.error('[TelegramContext] webApp.expand() failed:', e)
+        }
+
         // Check access after initializing API
         checkAccess()
       } else if (webApp && !webApp.initData && retryCount < MAX_RETRIES) {
