@@ -7,16 +7,6 @@ interface TelegramContextValue {
   isMiniApp: boolean
 }
 
-// Initialize API SYNCHRONOUSLY at module load time
-// This runs before any React component renders
-const webAppInitData = typeof window !== 'undefined'
-  ? window.Telegram?.WebApp?.initData || ''
-  : ''
-
-if (webAppInitData) {
-  initApi(webAppInitData)
-}
-
 const TelegramContext = createContext<TelegramContextValue>({
   isReady: false,
   initData: '',
@@ -24,29 +14,42 @@ const TelegramContext = createContext<TelegramContextValue>({
 })
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
-  // Use the already-captured initData (no need for state, it's captured at load time)
   const [isReady, setIsReady] = useState(false)
-  const initData = webAppInitData
-
-  // Check synchronously if we're in Mini App
-  const isMiniApp = typeof window !== 'undefined' && !!window.Telegram?.WebApp
+  const [initData, setInitData] = useState('')
+  const [isMiniApp, setIsMiniApp] = useState<boolean | null>(null) // null = still checking
 
   useEffect(() => {
-    const webApp = window.Telegram?.WebApp
+    // Wait a tick to ensure Telegram SDK is injected
+    const checkTelegram = () => {
+      const webApp = window.Telegram?.WebApp
 
-    if (webApp) {
-      // Notify Telegram we're ready
-      webApp.ready()
-      webApp.expand()
-      setIsReady(true)
-    } else {
-      // Dev mode - no Telegram
-      setIsReady(true)
+      if (webApp) {
+        // We're in Telegram Mini App
+        setIsMiniApp(true)
+
+        // Get and store initData
+        const data = webApp.initData || ''
+        setInitData(data)
+        initApi(data)
+
+        // Notify Telegram we're ready
+        webApp.ready()
+        webApp.expand()
+        setIsReady(true)
+      } else {
+        // Not in Telegram - dev mode
+        setIsMiniApp(false)
+        setIsReady(true)
+      }
     }
+
+    // Small delay to ensure Telegram SDK has time to inject
+    const timer = setTimeout(checkTelegram, 10)
+    return () => clearTimeout(timer)
   }, [])
 
-  // Don't render children until ready (and initData is available in Mini App mode)
-  if (isMiniApp && (!isReady || !initData)) {
+  // Show loading while checking environment or while Mini App initializes
+  if (isMiniApp === null || (isMiniApp && (!isReady || !initData))) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -58,7 +61,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <TelegramContext.Provider value={{ isReady, initData, isMiniApp }}>
+    <TelegramContext.Provider value={{ isReady, initData, isMiniApp: isMiniApp ?? false }}>
       {children}
     </TelegramContext.Provider>
   )
