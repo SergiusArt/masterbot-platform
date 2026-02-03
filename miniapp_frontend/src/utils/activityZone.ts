@@ -4,11 +4,14 @@ import type { ActivityZone, MarketPulse } from '../types'
  * Calculate activity zone based on current count vs median.
  */
 export function calculateActivityZone(current: number, median: number): ActivityZone {
-  if (median === 0) return 'medium'
+  if (median === 0) return 'normal'
   const ratio = current / median
-  if (ratio < 0.5) return 'low'
-  if (ratio > 1.5) return 'high'
-  return 'medium'
+
+  if (ratio < 0.25) return 'very_low'
+  if (ratio < 0.75) return 'low'
+  if (ratio <= 1.25) return 'normal'
+  if (ratio <= 2.0) return 'high'
+  return 'extreme'
 }
 
 /**
@@ -16,12 +19,16 @@ export function calculateActivityZone(current: number, median: number): Activity
  */
 export function getActivityZoneColor(zone: ActivityZone): string {
   switch (zone) {
+    case 'very_low':
+      return 'text-blue-500'
     case 'low':
-      return 'text-zone-low'
-    case 'medium':
-      return 'text-zone-medium'
+      return 'text-cyan-500'
+    case 'normal':
+      return 'text-green-500'
     case 'high':
-      return 'text-zone-high'
+      return 'text-orange-500'
+    case 'extreme':
+      return 'text-red-500'
   }
 }
 
@@ -30,12 +37,16 @@ export function getActivityZoneColor(zone: ActivityZone): string {
  */
 export function getActivityZoneBadgeClass(zone: ActivityZone): string {
   switch (zone) {
+    case 'very_low':
+      return 'bg-blue-500 text-white'
     case 'low':
-      return 'badge-zone-low'
-    case 'medium':
-      return 'badge-zone-medium'
+      return 'bg-cyan-500 text-white'
+    case 'normal':
+      return 'bg-green-500 text-white'
     case 'high':
-      return 'badge-zone-high'
+      return 'bg-orange-500 text-white'
+    case 'extreme':
+      return 'bg-red-500 text-white'
   }
 }
 
@@ -44,12 +55,16 @@ export function getActivityZoneBadgeClass(zone: ActivityZone): string {
  */
 export function getActivityZoneLabel(zone: ActivityZone): string {
   switch (zone) {
+    case 'very_low':
+      return '🥶 Очень низкая'
     case 'low':
-      return 'Низкая'
-    case 'medium':
-      return 'Средняя'
+      return '😴 Низкая'
+    case 'normal':
+      return '✅ Нормальная'
     case 'high':
-      return 'Высокая'
+      return '🔥 Повышенная'
+    case 'extreme':
+      return '🚀 Экстремальная'
   }
 }
 
@@ -59,13 +74,13 @@ export function getActivityZoneLabel(zone: ActivityZone): string {
 export function getMarketPulseLabel(pulse: MarketPulse): string {
   switch (pulse) {
     case 'calm':
-      return 'Спокойно'
+      return '😴 Спокойно'
     case 'normal':
-      return 'Нормально'
+      return '✅ Нормально'
     case 'active':
-      return 'Активно'
+      return '🔥 Активно'
     case 'very_active':
-      return 'Очень активно'
+      return '🚀 Очень активно'
   }
 }
 
@@ -75,12 +90,12 @@ export function getMarketPulseLabel(pulse: MarketPulse): string {
 export function getMarketPulseColor(pulse: MarketPulse): string {
   switch (pulse) {
     case 'calm':
-      return 'text-zone-low'
+      return 'text-blue-500'
     case 'normal':
-      return 'text-zone-medium'
+      return 'text-green-500'
     case 'active':
-      return 'text-zone-high'
+      return 'text-orange-500'
     case 'very_active':
-      return 'text-zone-high'
+      return 'text-red-500'
   }
 }

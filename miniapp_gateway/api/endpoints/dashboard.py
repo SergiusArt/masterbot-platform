@@ -1,5 +1,6 @@
 """Dashboard API endpoints - proxies to backend services."""
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
@@ -13,12 +14,17 @@ from config import settings
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
+# Activity zone type
+ActivityZoneType = Literal["very_low", "low", "normal", "high", "extreme"]
+
 
 class ServiceStats(BaseModel):
     """Statistics for a service."""
 
     today_count: int
-    activity_zone: Literal["low", "medium", "high"]
+    median: float
+    activity_zone: ActivityZoneType
+    activity_ratio: float  # current / median ratio
 
 
 class ImpulseStats(ServiceStats):
@@ -60,33 +66,60 @@ class ActivityChartData(BaseModel):
     medians: dict
 
 
-def calculate_activity_zone(current: int, median: float) -> Literal["low", "medium", "high"]:
-    """Calculate activity zone based on current count vs median."""
+def calculate_activity_zone(current: int, median: float) -> tuple[ActivityZoneType, float]:
+    """
+    Calculate activity zone based on current count vs median.
+
+    Zones:
+    - very_low: < 25% of median
+    - low: 25-75% of median
+    - normal: 75-125% of median
+    - high: 125-200% of median
+    - extreme: > 200% of median
+
+    Returns (zone, ratio)
+    """
     if median == 0:
-        return "medium"
+        return "normal", 1.0
+
     ratio = current / median
-    if ratio < 0.5:
-        return "low"
-    if ratio > 1.5:
-        return "high"
-    return "medium"
+
+    if ratio < 0.25:
+        zone = "very_low"
+    elif ratio < 0.75:
+        zone = "low"
+    elif ratio <= 1.25:
+        zone = "normal"
+    elif ratio <= 2.0:
+        zone = "high"
+    else:
+        zone = "extreme"
+
+    return zone, round(ratio, 2)
 
 
 def calculate_market_pulse(
     impulse_zone: str, bablo_zone: str
 ) -> Literal["calm", "normal", "active", "very_active"]:
     """Calculate overall market pulse from service zones."""
-    zones = [impulse_zone, bablo_zone]
-    high_count = zones.count("high")
-    low_count = zones.count("low")
+    zone_scores = {
+        "very_low": 0,
+        "low": 1,
+        "normal": 2,
+        "high": 3,
+        "extreme": 4,
+    }
 
-    if high_count == 2:
-        return "very_active"
-    if high_count == 1:
-        return "active"
-    if low_count == 2:
+    total_score = zone_scores.get(impulse_zone, 2) + zone_scores.get(bablo_zone, 2)
+
+    if total_score <= 2:
         return "calm"
-    return "normal"
+    elif total_score <= 4:
+        return "normal"
+    elif total_score <= 6:
+        return "active"
+    else:
+        return "very_active"
 
 
 @router.get("/summary", response_model=DashboardSummary)
@@ -106,32 +139,28 @@ async def get_dashboard_summary(
             # Process impulse data
             if isinstance(impulse_resp, Exception):
                 impulse_data = {"total_impulses": 0, "growth_count": 0, "fall_count": 0}
-                impulse_median = 0.0
+                impulse_median = 50.0  # Default median
             else:
                 impulse_data = impulse_resp.json()
-                # Get median from comparison if available
+                # Get actual median from comparison.week_median
                 comparison = impulse_data.get("comparison", {})
-                median_value = comparison.get("vs_week_median", 0)
-                # Handle non-numeric values (e.g., "в норме", "high", etc.)
-                try:
-                    impulse_median = float(median_value) if median_value else 0.0
-                except (ValueError, TypeError):
-                    impulse_median = 0.0
+                impulse_median = float(comparison.get("week_median", 50) or 50)
 
             # Process bablo data
             if isinstance(bablo_resp, Exception):
                 bablo_data = {"total_signals": 0, "long_count": 0, "short_count": 0, "average_quality": 0}
-                bablo_median = 0
+                bablo_median = 30.0  # Default median
             else:
                 bablo_data = bablo_resp.json()
-                # Estimate median (would need separate endpoint ideally)
-                bablo_median = bablo_data.get("total_signals", 0) * 0.8  # Rough estimate
+                # TODO: Add week_median to bablo_service analytics
+                # For now use estimate based on typical daily count
+                bablo_median = float(bablo_data.get("week_median", 30) or 30)
 
             # Calculate activity zones
-            impulse_zone = calculate_activity_zone(
+            impulse_zone, impulse_ratio = calculate_activity_zone(
                 impulse_data.get("total_impulses", 0), impulse_median
             )
-            bablo_zone = calculate_activity_zone(
+            bablo_zone, bablo_ratio = calculate_activity_zone(
                 bablo_data.get("total_signals", 0), bablo_median
             )
 
@@ -140,14 +169,18 @@ async def get_dashboard_summary(
                     today_count=impulse_data.get("total_impulses", 0),
                     growth_count=impulse_data.get("growth_count", 0),
                     fall_count=impulse_data.get("fall_count", 0),
+                    median=impulse_median,
                     activity_zone=impulse_zone,
+                    activity_ratio=impulse_ratio,
                 ),
                 bablo=BabloStats(
                     today_count=bablo_data.get("total_signals", 0) or 0,
                     long_count=bablo_data.get("long_count", 0) or 0,
                     short_count=bablo_data.get("short_count", 0) or 0,
                     avg_quality=bablo_data.get("average_quality", 0) or 0.0,
+                    median=bablo_median,
                     activity_zone=bablo_zone,
+                    activity_ratio=bablo_ratio,
                 ),
                 market_pulse=calculate_market_pulse(impulse_zone, bablo_zone),
                 timestamp=datetime.now(timezone.utc),
@@ -230,7 +263,3 @@ async def get_analytics(
             return resp.json()
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f"Service error: {e}")
-
-
-# Import asyncio for gather
-import asyncio

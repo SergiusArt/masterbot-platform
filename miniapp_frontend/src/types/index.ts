@@ -25,7 +25,7 @@ export interface BabloSignal {
 }
 
 // Activity zones
-export type ActivityZone = 'low' | 'medium' | 'high'
+export type ActivityZone = 'very_low' | 'low' | 'normal' | 'high' | 'extreme'
 export type MarketPulse = 'calm' | 'normal' | 'active' | 'very_active'
 
 // Dashboard summary
@@ -33,7 +33,9 @@ export interface ImpulseStats {
   today_count: number
   growth_count: number
   fall_count: number
+  median: number
   activity_zone: ActivityZone
+  activity_ratio: number
 }
 
 export interface BabloStats {
@@ -41,7 +43,9 @@ export interface BabloStats {
   long_count: number
   short_count: number
   avg_quality: number
+  median: number
   activity_zone: ActivityZone
+  activity_ratio: number
 }
 
 export interface DashboardSummary {
