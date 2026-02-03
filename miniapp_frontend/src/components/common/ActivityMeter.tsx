@@ -8,23 +8,28 @@ interface ActivityMeterProps {
   label?: string
 }
 
-const zoneConfig = {
+const zoneConfig: Record<string, { color: string; text: string; emoji: string }> = {
   very_low: { color: 'bg-blue-500', text: 'Очень низкая', emoji: '🥶' },
   low: { color: 'bg-cyan-500', text: 'Низкая', emoji: '😴' },
   normal: { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' },
+  medium: { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' }, // alias for backwards compatibility
   high: { color: 'bg-orange-500', text: 'Повышенная', emoji: '🔥' },
   extreme: { color: 'bg-red-500', text: 'Экстремальная', emoji: '🚀' },
 }
 
+const defaultConfig = { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' }
+
 export function ActivityMeter({ current, median, zone, ratio, label }: ActivityMeterProps) {
-  const config = zoneConfig[zone]
+  const config = zoneConfig[zone] || defaultConfig
+  const safeMedian = median || 50
+  const safeRatio = ratio || (safeMedian > 0 ? current / safeMedian : 1)
 
   // Calculate position on the meter (0-100%)
   // Map ratio to position: 0 -> 0%, 0.5 -> 25%, 1.0 -> 50%, 1.5 -> 75%, 2.0+ -> 100%
-  const position = Math.min(100, Math.max(0, ratio * 50))
+  const position = Math.min(100, Math.max(0, safeRatio * 50))
 
   // Format ratio as percentage
-  const ratioPercent = Math.round(ratio * 100)
+  const ratioPercent = Math.round(safeRatio * 100)
 
   return (
     <div className="space-y-2">
@@ -52,7 +57,7 @@ export function ActivityMeter({ current, median, zone, ratio, label }: ActivityM
         <div
           className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg"
           style={{ left: '50%' }}
-          title={`Медиана: ${median}`}
+          title={`Медиана: ${safeMedian}`}
         />
 
         {/* Current position indicator */}
@@ -72,9 +77,9 @@ export function ActivityMeter({ current, median, zone, ratio, label }: ActivityM
           Сегодня: <span className="font-semibold text-tg-text">{current}</span>
         </span>
         <span className="text-tg-hint">
-          Медиана: <span className="font-semibold text-tg-text">{Math.round(median)}</span>
+          Медиана: <span className="font-semibold text-tg-text">{Math.round(safeMedian)}</span>
         </span>
-        <span className={`font-semibold ${ratio >= 1 ? 'text-growth' : 'text-fall'}`}>
+        <span className={`font-semibold ${safeRatio >= 1 ? 'text-growth' : 'text-fall'}`}>
           {ratioPercent}%
         </span>
       </div>
@@ -84,7 +89,7 @@ export function ActivityMeter({ current, median, zone, ratio, label }: ActivityM
 
 // Compact version for cards
 export function ActivityBadge({ zone }: { zone: ActivityZone }) {
-  const config = zoneConfig[zone]
+  const config = zoneConfig[zone] || defaultConfig
 
   return (
     <span
