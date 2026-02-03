@@ -33,3 +33,26 @@ async def get_analytics(period: str):
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/timeseries/{period}")
+async def get_time_series(period: str):
+    """Get signal counts as time series.
+
+    Args:
+        period: Time period (today, week, month)
+
+    Returns:
+        Time series data with labels and counts
+    """
+    if period not in ["today", "week", "month"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid period. Must be one of: today, week, month",
+        )
+
+    try:
+        data = await analytics_service.get_time_series(period)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

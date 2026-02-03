@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import select, func, and_, cast, Date
+from sqlalchemy import select, func, and_, cast, Date, extract
 
 from models.impulse import Impulse
 from shared.database.connection import async_session_maker
@@ -281,6 +281,103 @@ class AnalyticsService:
             vs_month_median=vs_month_median,
             month_median=month_median,
         )
+
+
+    async def get_time_series(self, period: str) -> dict:
+        """Get signal counts as time series.
+
+        Args:
+            period: Period identifier (today, week, month)
+
+        Returns:
+            Time series data with labels and counts
+        """
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        async with async_session_maker() as session:
+            if period == "today":
+                # Hourly counts for today
+                query = (
+                    select(
+                        extract("hour", Impulse.received_at).label("hour"),
+                        func.count().label("count"),
+                    )
+                    .where(Impulse.received_at >= today_start)
+                    .group_by(extract("hour", Impulse.received_at))
+                    .order_by(extract("hour", Impulse.received_at))
+                )
+                result = await session.execute(query)
+                rows = result.all()
+
+                # Fill in missing hours
+                data = {int(row.hour): row.count for row in rows}
+                current_hour = now.hour
+                labels = [f"{h:02d}:00" for h in range(current_hour + 1)]
+                counts = [data.get(h, 0) for h in range(current_hour + 1)]
+
+            elif period == "week":
+                # Daily counts for last 7 days
+                week_start = today_start - timedelta(days=6)
+                query = (
+                    select(
+                        cast(Impulse.received_at, Date).label("day"),
+                        func.count().label("count"),
+                    )
+                    .where(Impulse.received_at >= week_start)
+                    .group_by(cast(Impulse.received_at, Date))
+                    .order_by(cast(Impulse.received_at, Date))
+                )
+                result = await session.execute(query)
+                rows = result.all()
+
+                # Fill in missing days
+                data = {row.day: row.count for row in rows}
+                labels = []
+                counts = []
+                for i in range(7):
+                    day = (week_start + timedelta(days=i)).date()
+                    labels.append(day.strftime("%d.%m"))
+                    counts.append(data.get(day, 0))
+
+            elif period == "month":
+                # Daily counts for last 30 days
+                month_start = today_start - timedelta(days=29)
+                query = (
+                    select(
+                        cast(Impulse.received_at, Date).label("day"),
+                        func.count().label("count"),
+                    )
+                    .where(Impulse.received_at >= month_start)
+                    .group_by(cast(Impulse.received_at, Date))
+                    .order_by(cast(Impulse.received_at, Date))
+                )
+                result = await session.execute(query)
+                rows = result.all()
+
+                # Fill in missing days
+                data = {row.day: row.count for row in rows}
+                labels = []
+                counts = []
+                for i in range(30):
+                    day = (month_start + timedelta(days=i)).date()
+                    labels.append(day.strftime("%d.%m"))
+                    counts.append(data.get(day, 0))
+
+            else:
+                labels = []
+                counts = []
+
+            # Calculate median for reference line
+            median = int(statistics.median(counts)) if counts else 0
+
+            return {
+                "period": period,
+                "labels": labels,
+                "counts": counts,
+                "median": median,
+                "total": sum(counts),
+            }
 
 
 # Global service instance

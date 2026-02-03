@@ -1,12 +1,15 @@
 """Analytics service for Bablo signals."""
 
+import statistics
 from datetime import datetime, timedelta
 from typing import Optional
 import pytz
 
+from sqlalchemy import select, func, cast, Date, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.signal_service import signal_service
+from models.bablo import BabloSignal
 from config import settings
 from shared.utils.logger import get_logger
 
@@ -158,6 +161,102 @@ class AnalyticsService:
             return f"{diff:.0f}%"
         else:
             return "0%"
+
+    async def get_time_series(self, session: AsyncSession, period: str) -> dict:
+        """Get signal counts as time series.
+
+        Args:
+            session: Database session
+            period: Period identifier (today, week, month)
+
+        Returns:
+            Time series data with labels and counts
+        """
+        now = datetime.now(self.tz)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        if period == "today":
+            # Hourly counts for today
+            query = (
+                select(
+                    extract("hour", BabloSignal.received_at).label("hour"),
+                    func.count().label("count"),
+                )
+                .where(BabloSignal.received_at >= today_start)
+                .group_by(extract("hour", BabloSignal.received_at))
+                .order_by(extract("hour", BabloSignal.received_at))
+            )
+            result = await session.execute(query)
+            rows = result.all()
+
+            # Fill in missing hours
+            data = {int(row.hour): row.count for row in rows}
+            current_hour = now.hour
+            labels = [f"{h:02d}:00" for h in range(current_hour + 1)]
+            counts = [data.get(h, 0) for h in range(current_hour + 1)]
+
+        elif period == "week":
+            # Daily counts for last 7 days
+            week_start = today_start - timedelta(days=6)
+            query = (
+                select(
+                    cast(BabloSignal.received_at, Date).label("day"),
+                    func.count().label("count"),
+                )
+                .where(BabloSignal.received_at >= week_start)
+                .group_by(cast(BabloSignal.received_at, Date))
+                .order_by(cast(BabloSignal.received_at, Date))
+            )
+            result = await session.execute(query)
+            rows = result.all()
+
+            # Fill in missing days
+            data = {row.day: row.count for row in rows}
+            labels = []
+            counts = []
+            for i in range(7):
+                day = (week_start + timedelta(days=i)).date()
+                labels.append(day.strftime("%d.%m"))
+                counts.append(data.get(day, 0))
+
+        elif period == "month":
+            # Daily counts for last 30 days
+            month_start = today_start - timedelta(days=29)
+            query = (
+                select(
+                    cast(BabloSignal.received_at, Date).label("day"),
+                    func.count().label("count"),
+                )
+                .where(BabloSignal.received_at >= month_start)
+                .group_by(cast(BabloSignal.received_at, Date))
+                .order_by(cast(BabloSignal.received_at, Date))
+            )
+            result = await session.execute(query)
+            rows = result.all()
+
+            # Fill in missing days
+            data = {row.day: row.count for row in rows}
+            labels = []
+            counts = []
+            for i in range(30):
+                day = (month_start + timedelta(days=i)).date()
+                labels.append(day.strftime("%d.%m"))
+                counts.append(data.get(day, 0))
+
+        else:
+            labels = []
+            counts = []
+
+        # Calculate median for reference line
+        median = int(statistics.median(counts)) if counts else 0
+
+        return {
+            "period": period,
+            "labels": labels,
+            "counts": counts,
+            "median": median,
+            "total": sum(counts),
+        }
 
 
 # Global service instance

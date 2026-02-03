@@ -263,3 +263,32 @@ async def get_analytics(
             return resp.json()
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f"Service error: {e}")
+
+
+@router.get("/timeseries/{service}/{period}")
+async def get_time_series(
+    service: Literal["impulse", "bablo"],
+    period: Literal["today", "week", "month"],
+    user: TelegramUser = Depends(get_current_user),
+) -> dict:
+    """Get signal counts as time series.
+
+    Args:
+        service: Service name (impulse or bablo)
+        period: Time period (today, week, month)
+
+    Returns:
+        Time series data with labels, counts, and median
+    """
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            if service == "impulse":
+                url = f"{settings.IMPULSE_SERVICE_URL}/api/v1/analytics/timeseries/{period}"
+            else:
+                url = f"{settings.BABLO_SERVICE_URL}/api/v1/analytics/timeseries/{period}"
+
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=500, detail=f"Service error: {e}")

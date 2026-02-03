@@ -34,3 +34,26 @@ async def get_comparison(
     """Get comparison data for today vs historical."""
     comparison = await analytics_service.get_comparison(session)
     return comparison
+
+
+@router.get("/timeseries/{period}")
+async def get_time_series(
+    period: str,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Get signal counts as time series.
+
+    Args:
+        period: Time period (today, week, month)
+
+    Returns:
+        Time series data with labels and counts
+    """
+    if period not in ["today", "week", "month"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid period. Must be one of: today, week, month",
+        )
+
+    data = await analytics_service.get_time_series(session, period)
+    return data
