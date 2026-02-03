@@ -9,7 +9,7 @@ import './styles/index.css'
 // 0 = Full app (TelegramProvider + App)
 // 1 = Test with webApp.ready() only
 // 2 = Simple test (no Telegram SDK calls)
-const TEST_LEVEL: number = 1
+const TEST_LEVEL: number = 0
 
 function TestAppWithTelegram() {
   const [status, setStatus] = useState('Initializing...')
