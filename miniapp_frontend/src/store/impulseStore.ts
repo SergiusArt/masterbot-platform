@@ -1,10 +1,16 @@
 import { create } from 'zustand'
 import type { Impulse, ImpulseStats } from '../types'
 
+type ImpulseTypeFilter = 'all' | 'growth' | 'fall'
+
 interface ImpulseState {
   // Data
   impulses: Impulse[]
   stats: ImpulseStats | null
+
+  // Filters
+  filterType: ImpulseTypeFilter
+  filterMinPercent: number | null
 
   // Loading states
   isLoading: boolean
@@ -16,6 +22,8 @@ interface ImpulseState {
   setStats: (stats: ImpulseStats) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  setFilterType: (type: ImpulseTypeFilter) => void
+  setFilterMinPercent: (percent: number | null) => void
   reset: () => void
 }
 
@@ -24,6 +32,8 @@ const MAX_IMPULSES = 100
 export const useImpulseStore = create<ImpulseState>((set) => ({
   impulses: [],
   stats: null,
+  filterType: 'all',
+  filterMinPercent: null,
   isLoading: false,
   error: null,
 
@@ -56,10 +66,16 @@ export const useImpulseStore = create<ImpulseState>((set) => ({
 
   setError: (error) => set({ error, isLoading: false }),
 
+  setFilterType: (filterType) => set({ filterType }),
+
+  setFilterMinPercent: (filterMinPercent) => set({ filterMinPercent }),
+
   reset: () =>
     set({
       impulses: [],
       stats: null,
+      filterType: 'all',
+      filterMinPercent: null,
       isLoading: false,
       error: null,
     }),
@@ -70,6 +86,25 @@ export const selectImpulses = (state: ImpulseState) => state.impulses
 export const selectImpulseStats = (state: ImpulseState) => state.stats
 export const selectImpulsesLoading = (state: ImpulseState) => state.isLoading
 export const selectImpulsesError = (state: ImpulseState) => state.error
+
+export const selectFilteredImpulses = (state: ImpulseState) => {
+  let filtered = state.impulses
+
+  // Filter by type
+  if (state.filterType !== 'all') {
+    filtered = filtered.filter((i) => i.type === state.filterType)
+  }
+
+  // Filter by min percent
+  if (state.filterMinPercent !== null) {
+    filtered = filtered.filter((i) => {
+      const percent = typeof i.percent === 'string' ? parseFloat(i.percent) : i.percent
+      return percent >= state.filterMinPercent!
+    })
+  }
+
+  return filtered
+}
 
 export const selectGrowthImpulses = (state: ImpulseState) =>
   state.impulses.filter((i) => i.type === 'growth')

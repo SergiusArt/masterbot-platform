@@ -1,58 +1,58 @@
-import { useBabloStore } from '../../store/babloStore'
+import { useImpulseStore } from '../../store/impulseStore'
 
-const timeframes = ['1m', '5m', '15m', '30m', '1h']
+const minPercentOptions = [10, 15, 20, 30, 50]
 
-export function BabloFilters() {
-  const { filterDirection, filterTimeframe, setFilterDirection, setFilterTimeframe } =
-    useBabloStore()
+export function ImpulseFilters() {
+  const { filterType, filterMinPercent, setFilterType, setFilterMinPercent } =
+    useImpulseStore()
 
   return (
     <div className="card space-y-3">
-      {/* Direction filter */}
+      {/* Type filter */}
       <div>
-        <div className="text-xs text-tg-hint mb-1">Направление</div>
+        <div className="text-xs text-tg-hint mb-1">Тип</div>
         <div className="flex space-x-2">
-          {(['all', 'long', 'short'] as const).map((dir) => (
+          {(['all', 'growth', 'fall'] as const).map((type) => (
             <button
-              key={dir}
-              onClick={() => setFilterDirection(dir)}
+              key={type}
+              onClick={() => setFilterType(type)}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filterDirection === dir
+                filterType === type
                   ? 'bg-tg-button text-tg-button-text'
                   : 'bg-tg-secondary-bg text-tg-hint'
               }`}
             >
-              {dir === 'all' ? 'Все' : dir.toUpperCase()}
+              {type === 'all' ? 'Все' : type === 'growth' ? '📈 Рост' : '📉 Падение'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Timeframe filter */}
+      {/* Min percent filter */}
       <div>
-        <div className="text-xs text-tg-hint mb-1">Таймфрейм</div>
+        <div className="text-xs text-tg-hint mb-1">Мин. процент</div>
         <div className="flex flex-wrap gap-1">
           <button
-            onClick={() => setFilterTimeframe(null)}
+            onClick={() => setFilterMinPercent(null)}
             className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              filterTimeframe === null
+              filterMinPercent === null
                 ? 'bg-tg-button text-tg-button-text'
                 : 'bg-tg-secondary-bg text-tg-hint'
             }`}
           >
             Все
           </button>
-          {timeframes.map((tf) => (
+          {minPercentOptions.map((percent) => (
             <button
-              key={tf}
-              onClick={() => setFilterTimeframe(tf)}
+              key={percent}
+              onClick={() => setFilterMinPercent(percent)}
               className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                filterTimeframe === tf
+                filterMinPercent === percent
                   ? 'bg-tg-button text-tg-button-text'
                   : 'bg-tg-secondary-bg text-tg-hint'
               }`}
             >
-              {tf}
+              ≥{percent}%
             </button>
           ))}
         </div>
