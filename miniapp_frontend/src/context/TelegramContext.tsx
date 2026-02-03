@@ -7,6 +7,16 @@ interface TelegramContextValue {
   isMiniApp: boolean
 }
 
+// Initialize API SYNCHRONOUSLY at module load time
+// This runs before any React component renders
+const webAppInitData = typeof window !== 'undefined'
+  ? window.Telegram?.WebApp?.initData || ''
+  : ''
+
+if (webAppInitData) {
+  initApi(webAppInitData)
+}
+
 const TelegramContext = createContext<TelegramContextValue>({
   isReady: false,
   initData: '',
@@ -14,8 +24,9 @@ const TelegramContext = createContext<TelegramContextValue>({
 })
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
+  // Use the already-captured initData
   const [isReady, setIsReady] = useState(false)
-  const [initData, setInitData] = useState('')
+  const [initData, setInitData] = useState(webAppInitData)
 
   // Check synchronously if we're in Mini App
   const isMiniApp = typeof window !== 'undefined' && !!window.Telegram?.WebApp
@@ -24,17 +35,9 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     const webApp = window.Telegram?.WebApp
 
     if (webApp) {
-      // Get initData FIRST, before anything else
-      const data = webApp.initData || ''
-
-      // Initialize API module with initData
-      initApi(data)
-      setInitData(data)
-
-      // Then notify Telegram we're ready
+      // Notify Telegram we're ready
       webApp.ready()
       webApp.expand()
-
       setIsReady(true)
     } else {
       // Dev mode - no Telegram
