@@ -11,31 +11,6 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 VALID_PERIODS = ["today", "yesterday", "week", "month"]
 
 
-@router.get("/{period}")
-async def get_analytics(
-    period: str,
-    session: AsyncSession = Depends(get_db_session),
-):
-    """Get analytics for specified period."""
-    if period not in VALID_PERIODS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid period. Must be one of: {VALID_PERIODS}",
-        )
-
-    analytics = await analytics_service.get_analytics(session, period)
-    return analytics
-
-
-@router.get("/comparison/today")
-async def get_comparison(
-    session: AsyncSession = Depends(get_db_session),
-):
-    """Get comparison data for today vs historical."""
-    comparison = await analytics_service.get_comparison(session)
-    return comparison
-
-
 @router.get("/timeseries/{period}")
 async def get_time_series(
     period: str,
@@ -57,3 +32,28 @@ async def get_time_series(
 
     data = await analytics_service.get_time_series(session, period)
     return data
+
+
+@router.get("/comparison/today")
+async def get_comparison(
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Get comparison data for today vs historical."""
+    comparison = await analytics_service.get_comparison(session)
+    return comparison
+
+
+@router.get("/{period}")
+async def get_analytics(
+    period: str,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Get analytics for specified period."""
+    if period not in VALID_PERIODS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid period. Must be one of: {VALID_PERIODS}",
+        )
+
+    analytics = await analytics_service.get_analytics(session, period)
+    return analytics
