@@ -39,11 +39,12 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         // Make a simple API call to check if user has access
         await api.getSummary()
         setIsReady(true)
-      } catch (err) {
-        if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 403) {
+      } catch (err: unknown) {
+        const error = err as { status?: number; message?: string }
+        if (error.status === 403) {
           // Access denied
           setAccessDenied(true)
-          setAccessDeniedMessage((err as Error).message)
+          setAccessDeniedMessage(error.message || 'Access denied')
           setIsReady(true)
         } else {
           // Other errors - still allow app to load, will show error in dashboard
