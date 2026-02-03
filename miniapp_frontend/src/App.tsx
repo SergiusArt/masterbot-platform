@@ -39,8 +39,8 @@ function App() {
     return 'Онлайн'
   }
 
-  // Show loading state while SDK initializes
-  if (!isReady && isMiniApp) {
+  // Show loading state while SDK initializes or initData is not yet available
+  if (isMiniApp && (!isReady || !initDataRaw)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
