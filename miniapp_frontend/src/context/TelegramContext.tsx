@@ -93,8 +93,8 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Show loading while checking
-  if (isMiniApp === null) {
+  // Show loading while checking (isMiniApp null or isReady false)
+  if (isMiniApp === null || !isReady) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-tg-bg">
         <div className="text-center">

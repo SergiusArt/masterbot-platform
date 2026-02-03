@@ -16,9 +16,8 @@ async def check_user_access(user_id: int, db: AsyncSession) -> bool:
     """Check if user has access to Mini App.
 
     Access is granted if:
-    1. User is admin (ADMIN_ID)
-    2. User has active unlimited access
-    3. User has active subscription that hasn't expired
+    1. User is admin (ADMIN_ID or is_admin=True in users table)
+    2. User exists in users table, is_active=True, and access not expired
 
     Returns:
         True if user has access, False otherwise
@@ -27,14 +26,14 @@ async def check_user_access(user_id: int, db: AsyncSession) -> bool:
     if user_id == settings.ADMIN_ID:
         return True
 
-    # Check miniapp_access table
+    # Check users table
     from sqlalchemy import text
 
     result = await db.execute(
         text("""
-            SELECT access_type, expires_at, is_active
-            FROM miniapp_access
-            WHERE user_id = :user_id
+            SELECT is_active, is_admin, access_expires_at
+            FROM users
+            WHERE id = :user_id
         """),
         {"user_id": user_id},
     )
@@ -43,19 +42,20 @@ async def check_user_access(user_id: int, db: AsyncSession) -> bool:
     if not row:
         return False
 
-    access_type, expires_at, is_active = row
+    is_active, is_admin, access_expires_at = row
+
+    # Admins always have access
+    if is_admin:
+        return True
 
     if not is_active:
         return False
 
-    if access_type == "unlimited":
+    # Check if access hasn't expired (NULL = unlimited)
+    if access_expires_at is None:
         return True
 
-    # Check if subscription is still valid
-    if expires_at is None:
-        return True
-
-    return datetime.now(timezone.utc) < expires_at
+    return datetime.now(timezone.utc) < access_expires_at
 
 
 async def get_current_user(

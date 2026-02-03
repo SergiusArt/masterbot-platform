@@ -95,12 +95,3 @@ MENU_EXTEND_ACCESS = "📅 Продлить доступ"
 MENU_USER_LIST = "📋 Список"
 MENU_SERVICE_STATUS = "🔍 Статус сервисов"
 MENU_RESTART_SERVICE = "🔄 Перезапустить"
-
-# Mini App access management
-MENU_MINIAPP = "📱 Mini App"
-MENU_MINIAPP_ADD = "➕ Добавить доступ"
-MENU_MINIAPP_REMOVE = "➖ Удалить доступ"
-MENU_MINIAPP_EXTEND = "📅 Продлить"
-MENU_MINIAPP_LIST = "📋 Список пользователей"
-MENU_MINIAPP_UNLIMITED = "♾️ Бессрочно"
-MENU_MINIAPP_SUBSCRIPTION = "📅 Подписка"

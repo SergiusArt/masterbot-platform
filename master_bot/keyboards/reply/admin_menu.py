@@ -13,13 +13,6 @@ from shared.constants import (
     MENU_USER_LIST,
     MENU_SERVICE_STATUS,
     MENU_RESTART_SERVICE,
-    MENU_MINIAPP,
-    MENU_MINIAPP_ADD,
-    MENU_MINIAPP_REMOVE,
-    MENU_MINIAPP_EXTEND,
-    MENU_MINIAPP_LIST,
-    MENU_MINIAPP_UNLIMITED,
-    MENU_MINIAPP_SUBSCRIPTION,
 )
 
 
@@ -32,7 +25,6 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=MENU_USERS)],
-            [KeyboardButton(text=MENU_MINIAPP)],
             [KeyboardButton(text=MENU_SERVICES)],
             [KeyboardButton(text=MENU_MAIN)],
         ],
@@ -77,49 +69,6 @@ def get_admin_services_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=MENU_RESTART_SERVICE)],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN)],
-        ],
-        resize_keyboard=True,
-        is_persistent=True,
-    )
-
-
-def get_miniapp_access_keyboard() -> ReplyKeyboardMarkup:
-    """Build Mini App access management keyboard.
-
-    Returns:
-        Mini App access keyboard
-    """
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=MENU_MINIAPP_ADD),
-                KeyboardButton(text=MENU_MINIAPP_REMOVE),
-            ],
-            [
-                KeyboardButton(text=MENU_MINIAPP_EXTEND),
-                KeyboardButton(text=MENU_MINIAPP_LIST),
-            ],
-            [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN)],
-        ],
-        resize_keyboard=True,
-        is_persistent=True,
-    )
-
-
-def get_access_type_keyboard() -> ReplyKeyboardMarkup:
-    """Build access type selection keyboard.
-
-    Returns:
-        Access type keyboard
-    """
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=MENU_MINIAPP_UNLIMITED),
-                KeyboardButton(text=MENU_MINIAPP_SUBSCRIPTION),
-            ],
-            [KeyboardButton(text=MENU_BACK)],
         ],
         resize_keyboard=True,
         is_persistent=True,

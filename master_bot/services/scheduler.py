@@ -5,21 +5,17 @@ Optimizations:
 - Rate-limited queue: respects Telegram API limits (30 msg/sec)
 """
 
-from datetime import datetime, timedelta, timezone as tz
 from typing import Optional
 
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from aiogram import Bot
-from sqlalchemy import select, and_
 
 from services.impulse_client import impulse_client
 from services.bablo_client import bablo_client
 from services.message_queue import get_message_queue
 from config import settings
-from shared.database.connection import async_session_maker
-from shared.database.models import MiniAppAccess
 from shared.utils.logger import get_logger
 
 logger = get_logger("scheduler")
@@ -67,150 +63,16 @@ class ReportScheduler:
             replace_existing=True,
         )
 
-        # Mini App subscription notifications - check every hour at :00
-        self.scheduler.add_job(
-            self._check_miniapp_subscriptions,
-            CronTrigger(minute=0, timezone=self.tz),
-            id="miniapp_subscription_check",
-            replace_existing=True,
-        )
-
-        # Mini App expired access deactivation - check every hour at :30
-        self.scheduler.add_job(
-            self._deactivate_expired_miniapp_access,
-            CronTrigger(minute=30, timezone=self.tz),
-            id="miniapp_deactivation_check",
-            replace_existing=True,
-        )
-
         self.scheduler.start()
         logger.info(
             f"Scheduler started ({self.tz}): morning (8:00), evening (20:00), "
-            "weekly (Mon 9:00), monthly (1st 9:00), miniapp checks (hourly)"
+            "weekly (Mon 9:00), monthly (1st 9:00)"
         )
 
     def stop(self) -> None:
         """Stop the scheduler."""
         self.scheduler.shutdown(wait=False)
         logger.info("Scheduler stopped")
-
-    async def _check_miniapp_subscriptions(self) -> None:
-        """Check Mini App subscriptions and send notifications about expiring access."""
-        logger.info("Checking Mini App subscriptions for expiring access...")
-
-        now = datetime.now(tz.utc)
-        two_days_from_now = now + timedelta(days=2)
-        one_day_from_now = now + timedelta(days=1)
-
-        async with async_session_maker() as session:
-            # Find subscriptions expiring in ~2 days (not yet notified)
-            result = await session.execute(
-                select(MiniAppAccess).where(
-                    and_(
-                        MiniAppAccess.access_type == "subscription",
-                        MiniAppAccess.is_active == True,
-                        MiniAppAccess.notified_2_days == False,
-                        MiniAppAccess.expires_at.isnot(None),
-                        MiniAppAccess.expires_at <= two_days_from_now,
-                        MiniAppAccess.expires_at > one_day_from_now,
-                    )
-                )
-            )
-            expiring_2_days = result.scalars().all()
-
-            # Find subscriptions expiring in ~1 day (not yet notified for 1 day)
-            result = await session.execute(
-                select(MiniAppAccess).where(
-                    and_(
-                        MiniAppAccess.access_type == "subscription",
-                        MiniAppAccess.is_active == True,
-                        MiniAppAccess.notified_1_day == False,
-                        MiniAppAccess.expires_at.isnot(None),
-                        MiniAppAccess.expires_at <= one_day_from_now,
-                        MiniAppAccess.expires_at > now,
-                    )
-                )
-            )
-            expiring_1_day = result.scalars().all()
-
-            # Send 2-day notifications
-            for access in expiring_2_days:
-                try:
-                    expires_str = access.expires_at.strftime("%d.%m.%Y %H:%M")
-                    await self.bot.send_message(
-                        access.user_id,
-                        f"⚠️ <b>Внимание!</b>\n\n"
-                        f"Ваша подписка на Mini App заканчивается через 2 дня "
-                        f"({expires_str} UTC).\n\n"
-                        f"Для продления доступа обратитесь к менеджеру: @SrgArtManager",
-                    )
-                    access.notified_2_days = True
-                    logger.info(f"Sent 2-day notification to user {access.user_id}")
-                except Exception as e:
-                    logger.error(f"Failed to send 2-day notification to {access.user_id}: {e}")
-
-            # Send 1-day notifications
-            for access in expiring_1_day:
-                try:
-                    expires_str = access.expires_at.strftime("%d.%m.%Y %H:%M")
-                    await self.bot.send_message(
-                        access.user_id,
-                        f"🚨 <b>Срочно!</b>\n\n"
-                        f"Ваша подписка на Mini App заканчивается завтра "
-                        f"({expires_str} UTC).\n\n"
-                        f"Для продления доступа обратитесь к менеджеру: @SrgArtManager",
-                    )
-                    access.notified_1_day = True
-                    logger.info(f"Sent 1-day notification to user {access.user_id}")
-                except Exception as e:
-                    logger.error(f"Failed to send 1-day notification to {access.user_id}: {e}")
-
-            await session.commit()
-
-        notified_count = len(expiring_2_days) + len(expiring_1_day)
-        if notified_count > 0:
-            logger.info(f"Sent {notified_count} Mini App subscription notifications")
-
-    async def _deactivate_expired_miniapp_access(self) -> None:
-        """Deactivate expired Mini App subscriptions."""
-        logger.info("Checking for expired Mini App subscriptions...")
-
-        now = datetime.now(tz.utc)
-
-        async with async_session_maker() as session:
-            # Find expired subscriptions that are still active
-            result = await session.execute(
-                select(MiniAppAccess).where(
-                    and_(
-                        MiniAppAccess.access_type == "subscription",
-                        MiniAppAccess.is_active == True,
-                        MiniAppAccess.expires_at.isnot(None),
-                        MiniAppAccess.expires_at <= now,
-                    )
-                )
-            )
-            expired_access = result.scalars().all()
-
-            # Deactivate and notify
-            for access in expired_access:
-                access.is_active = False
-                access.updated_at = now
-
-                try:
-                    await self.bot.send_message(
-                        access.user_id,
-                        f"❌ <b>Подписка истекла</b>\n\n"
-                        f"Ваша подписка на Mini App завершилась.\n\n"
-                        f"Для продления доступа обратитесь к менеджеру: @SrgArtManager",
-                    )
-                    logger.info(f"Deactivated access and notified user {access.user_id}")
-                except Exception as e:
-                    logger.error(f"Failed to notify user {access.user_id} about expiration: {e}")
-
-            await session.commit()
-
-        if expired_access:
-            logger.info(f"Deactivated {len(expired_access)} expired Mini App subscriptions")
 
     async def _send_morning_reports(self) -> None:
         """Send morning reports to all subscribed users."""
