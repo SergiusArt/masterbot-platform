@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useTelegram } from './context/TelegramContext'
 import { useWebSocket } from './hooks/useWebSocket'
 import { Header } from './components/common/Header'
@@ -8,28 +8,9 @@ import { ImpulseDashboard } from './components/impulse/ImpulseDashboard'
 import { BabloDashboard } from './components/bablo/BabloDashboard'
 import type { TabType } from './types'
 
-// Debug helper
-declare global {
-  interface Window {
-    __addDebug?: (msg: string) => void
-  }
-}
-const debug = (msg: string) => {
-  console.log('[App]', msg)
-  window.__addDebug?.(`[App] ${msg}`)
-}
-
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('combined')
   const { initData, isMiniApp } = useTelegram()
-
-  // Debug mount/unmount
-  useEffect(() => {
-    debug('App MOUNTED')
-    return () => {
-      debug('App UNMOUNTED')
-    }
-  }, [])
 
   // Connect WebSocket (dev mode if not in Telegram Mini App)
   const { isConnected, error: wsError } = useWebSocket({
