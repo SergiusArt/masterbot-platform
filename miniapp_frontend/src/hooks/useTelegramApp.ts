@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { initApi } from '../api'
 
 export interface TelegramUser {
   id: number
@@ -74,8 +75,10 @@ export function useTelegramApp(): TelegramAppState {
       webApp.ready()
       webApp.expand()
 
-      // Set initData
-      setInitDataRaw(webApp.initData || '')
+      // Set initData and initialize API
+      const initData = webApp.initData || ''
+      setInitDataRaw(initData)
+      initApi(initData)
 
       // Set user data
       const tgUser = webApp.initDataUnsafe?.user

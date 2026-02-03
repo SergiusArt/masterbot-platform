@@ -2,11 +2,23 @@ import type { DashboardSummary, Impulse, BabloSignal } from '../types'
 
 const API_BASE = '/api/v1/dashboard'
 
+// Store initData at module level for reliable access
+let storedInitData = ''
+
+/**
+ * Initialize API with Telegram initData.
+ * Must be called before making any API requests.
+ */
+export function initApi(initData: string): void {
+  storedInitData = initData
+}
+
 /**
  * Get Telegram initData for authentication.
  */
 function getInitData(): string {
-  return window.Telegram?.WebApp?.initData || ''
+  // Use stored value first, fallback to window
+  return storedInitData || window.Telegram?.WebApp?.initData || ''
 }
 
 /**
