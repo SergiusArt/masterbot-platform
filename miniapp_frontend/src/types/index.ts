@@ -48,11 +48,20 @@ export interface BabloStats {
   activity_ratio: number
 }
 
+/** User info in dashboard summary */
+export interface UserInfo {
+  id: number
+  username?: string
+  first_name?: string
+  is_admin: boolean
+}
+
 export interface DashboardSummary {
   impulses: ImpulseStats
   bablo: BabloStats
   market_pulse: MarketPulse
   timestamp: string
+  user: UserInfo
 }
 
 // Chart data
@@ -99,7 +108,7 @@ export interface WSMessage {
 }
 
 // Tab navigation
-export type TabType = 'combined' | 'impulse' | 'bablo' | 'reports'
+export type TabType = 'combined' | 'impulse' | 'bablo' | 'reports' | 'admin'
 
 // Reports data
 export interface ServiceReport {
@@ -110,3 +119,6 @@ export interface ServiceReport {
   week_median?: number
   month_median?: number
 }
+
+// Re-export admin types
+export * from './admin'

@@ -16,12 +16,14 @@ from shared.constants import (
     REDIS_CHANNEL_NOTIFICATIONS,
     REDIS_CHANNEL_BABLO,
     REDIS_CHANNEL_ERRORS,
+    REDIS_CHANNEL_BROADCAST,
     EVENT_IMPULSE_ALERT,
     EVENT_ACTIVITY_ALERT,
     EVENT_REPORT_READY,
     EVENT_BABLO_SIGNAL,
     EVENT_BABLO_ACTIVITY,
     EVENT_SERVICE_ERROR,
+    EVENT_ADMIN_BROADCAST,
 )
 
 logger = get_logger("notification_listener")
@@ -54,8 +56,9 @@ class NotificationListener:
                 REDIS_CHANNEL_NOTIFICATIONS,
                 REDIS_CHANNEL_BABLO,
                 REDIS_CHANNEL_ERRORS,
+                REDIS_CHANNEL_BROADCAST,
             )
-            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}, {REDIS_CHANNEL_ERRORS}")
+            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}, {REDIS_CHANNEL_ERRORS}, {REDIS_CHANNEL_BROADCAST}")
 
             async for message in pubsub.listen():
                 if not self._running:
@@ -97,6 +100,11 @@ class NotificationListener:
             data: Notification data
             channel: Redis channel name
         """
+        # Handle broadcast messages (different format)
+        if channel == REDIS_CHANNEL_BROADCAST:
+            await self._send_broadcast(data)
+            return
+
         event = data.get("event")
         user_id = data.get("user_id")
         event_data = data.get("data", {})
@@ -415,3 +423,53 @@ class NotificationListener:
             logger.info(f"✅ Service error sent to admin: {service}/{error_type}")
         except Exception as e:
             logger.error(f"Failed to send service error to admin: {e}")
+
+    async def _send_broadcast(self, data: dict) -> None:
+        """Send broadcast message to multiple users.
+
+        Args:
+            data: Broadcast data with message and user_ids
+        """
+        broadcast_id = data.get("broadcast_id", "unknown")
+        message_text = data.get("message", "")
+        user_ids = data.get("user_ids", [])
+        sent_by = data.get("sent_by")
+
+        if not message_text or not user_ids:
+            logger.warning(f"Invalid broadcast data: missing message or user_ids")
+            return
+
+        logger.info(f"📢 Starting broadcast {broadcast_id} to {len(user_ids)} users")
+
+        # Format the message
+        formatted_message = f"📢 <b>Сообщение от администратора</b>\n\n{message_text}"
+
+        queue = get_message_queue()
+        success_count = 0
+        fail_count = 0
+
+        for user_id in user_ids:
+            try:
+                if queue:
+                    await queue.send(user_id, formatted_message)
+                else:
+                    await self.bot.send_message(user_id, formatted_message)
+                success_count += 1
+            except Exception as e:
+                logger.error(f"Failed to send broadcast to {user_id}: {e}")
+                fail_count += 1
+
+        logger.info(f"✅ Broadcast {broadcast_id} completed: {success_count} sent, {fail_count} failed")
+
+        # Notify admin about broadcast completion
+        if sent_by:
+            try:
+                admin_notification = (
+                    f"✅ <b>Рассылка завершена</b>\n\n"
+                    f"ID: <code>{broadcast_id}</code>\n"
+                    f"Отправлено: {success_count}\n"
+                    f"Ошибок: {fail_count}"
+                )
+                await self.bot.send_message(sent_by, admin_notification)
+            except Exception as e:
+                logger.error(f"Failed to notify admin about broadcast completion: {e}")

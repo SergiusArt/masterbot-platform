@@ -7,10 +7,12 @@ from typing import Literal, Optional
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, check_is_admin
 from auth.telegram import TelegramUser
 from config import settings
+from database import get_db
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -42,6 +44,15 @@ class BabloStats(ServiceStats):
     avg_quality: float
 
 
+class UserInfo(BaseModel):
+    """Current user information."""
+
+    id: int
+    username: Optional[str]
+    first_name: Optional[str]
+    is_admin: bool
+
+
 class DashboardSummary(BaseModel):
     """Combined dashboard summary."""
 
@@ -49,6 +60,7 @@ class DashboardSummary(BaseModel):
     bablo: BabloStats
     market_pulse: Literal["calm", "normal", "active", "very_active"]
     timestamp: datetime
+    user: UserInfo
 
 
 class HourlyActivity(BaseModel):
@@ -125,8 +137,12 @@ def calculate_market_pulse(
 @router.get("/summary", response_model=DashboardSummary)
 async def get_dashboard_summary(
     user: TelegramUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> DashboardSummary:
     """Get combined dashboard summary from both services."""
+    # Check if user is admin
+    is_admin = await check_is_admin(user.id, db)
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             # Fetch analytics from both services in parallel
@@ -182,6 +198,12 @@ async def get_dashboard_summary(
                 ),
                 market_pulse=calculate_market_pulse(impulse_zone, bablo_zone),
                 timestamp=datetime.now(timezone.utc),
+                user=UserInfo(
+                    id=user.id,
+                    username=user.username,
+                    first_name=user.first_name,
+                    is_admin=is_admin,
+                ),
             )
 
         except Exception as e:

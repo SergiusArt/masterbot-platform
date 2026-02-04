@@ -7,11 +7,12 @@ import { CombinedDashboard } from './components/common/CombinedDashboard'
 import { ImpulseDashboard } from './components/impulse/ImpulseDashboard'
 import { BabloDashboard } from './components/bablo/BabloDashboard'
 import { ReportsDashboard } from './components/reports/ReportsDashboard'
+import { AdminDashboard } from './components/admin/AdminDashboard'
 import type { TabType } from './types'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('combined')
-  const { initData, isMiniApp } = useTelegram()
+  const { initData, isMiniApp, isAdmin } = useTelegram()
 
   // Connect WebSocket (dev mode if not in Telegram Mini App)
   const { isConnected, error: wsError } = useWebSocket({
@@ -33,6 +34,8 @@ function App() {
         return 'Bablo'
       case 'reports':
         return 'Отчёты'
+      case 'admin':
+        return 'Админ-панель'
     }
   }
 
@@ -58,9 +61,10 @@ function App() {
         {activeTab === 'impulse' && <ImpulseDashboard />}
         {activeTab === 'bablo' && <BabloDashboard />}
         {activeTab === 'reports' && <ReportsDashboard />}
+        {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>
 
-      <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} isAdmin={isAdmin} />
     </div>
   )
 }

@@ -8,6 +8,7 @@ interface TelegramContextValue {
   isMiniApp: boolean
   accessDenied: boolean
   accessDeniedMessage: string
+  isAdmin: boolean
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
@@ -16,6 +17,7 @@ const TelegramContext = createContext<TelegramContextValue>({
   isMiniApp: false,
   accessDenied: false,
   accessDeniedMessage: '',
+  isAdmin: false,
 })
 
 // Max retries and delays for Telegram SDK detection
@@ -29,6 +31,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [accessDenied, setAccessDenied] = useState(false)
   const [accessDeniedMessage, setAccessDeniedMessage] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     let retryCount = 0
@@ -40,6 +43,11 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         // Make a simple API call to check if user has access
         const summary = await api.getSummary()
         console.log('[TelegramContext] Access check passed:', summary)
+        // Extract is_admin from user info in summary
+        if (summary.user?.is_admin) {
+          setIsAdmin(true)
+          console.log('[TelegramContext] User is admin')
+        }
         setIsReady(true)
       } catch (err: unknown) {
         console.error('[TelegramContext] Access check failed:', err)
@@ -155,7 +163,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <TelegramContext.Provider value={{ isReady, initData, isMiniApp, accessDenied, accessDeniedMessage }}>
+    <TelegramContext.Provider value={{ isReady, initData, isMiniApp, accessDenied, accessDeniedMessage, isAdmin }}>
       {children}
     </TelegramContext.Provider>
   )
