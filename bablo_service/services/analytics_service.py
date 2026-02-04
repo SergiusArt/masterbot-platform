@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import pytz
 
-from sqlalchemy import select, func, cast, Date, extract
+from sqlalchemy import select, func, cast, Date, extract, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.signal_service import signal_service
@@ -89,6 +89,14 @@ class AnalyticsService:
             session, start_date, end_date
         )
 
+        # Calculate median (daily counts for last 14 days)
+        now = datetime.now(self.tz)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        median_start = today_start - timedelta(days=14)
+
+        median_counts = await self._get_daily_counts(session, median_start, today_start)
+        week_median = int(statistics.median(median_counts)) if median_counts else 0
+
         return {
             "period": period,
             "start_date": start_date.isoformat(),
@@ -102,6 +110,7 @@ class AnalyticsService:
                 for symbol, count in top_symbols
             ],
             "average_quality": round(avg_quality, 1) if avg_quality else None,
+            "week_median": week_median,
         }
 
     async def get_comparison(
@@ -162,6 +171,27 @@ class AnalyticsService:
         else:
             return "0%"
 
+    async def _get_daily_counts(
+        self, session: AsyncSession, start_date: datetime, end_date: datetime
+    ) -> list[int]:
+        """Get signal counts per day for a date range."""
+        local_time = func.timezone(settings.TIMEZONE, BabloSignal.received_at)
+        local_date = func.date(local_time)
+
+        query = (
+            select(
+                local_date.label("day"),
+                func.count().label("cnt"),
+            )
+            .where(
+                BabloSignal.received_at >= start_date,
+                BabloSignal.received_at < end_date,
+            )
+            .group_by(local_date)
+        )
+        result = await session.execute(query)
+        return [row.cnt for row in result.all()]
+
     async def get_time_series(self, session: AsyncSession, period: str) -> dict:
         """Get signal counts as time series.
 
@@ -175,16 +205,19 @@ class AnalyticsService:
         now = datetime.now(self.tz)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
+        # Convert timestamp to local timezone for correct hour/day extraction
+        local_time = func.timezone(settings.TIMEZONE, BabloSignal.received_at)
+
         if period == "today":
-            # Hourly counts for today
+            # Hourly counts for today (using local timezone)
             query = (
                 select(
-                    extract("hour", BabloSignal.received_at).label("hour"),
+                    extract("hour", local_time).label("hour"),
                     func.count().label("count"),
                 )
                 .where(BabloSignal.received_at >= today_start)
-                .group_by(extract("hour", BabloSignal.received_at))
-                .order_by(extract("hour", BabloSignal.received_at))
+                .group_by(extract("hour", local_time))
+                .order_by(extract("hour", local_time))
             )
             result = await session.execute(query)
             rows = result.all()
@@ -196,16 +229,17 @@ class AnalyticsService:
             counts = [data.get(h, 0) for h in range(current_hour + 1)]
 
         elif period == "week":
-            # Daily counts for last 7 days
+            # Daily counts for last 7 days (using local timezone for date)
             week_start = today_start - timedelta(days=6)
+            local_date = func.date(local_time)
             query = (
                 select(
-                    cast(BabloSignal.received_at, Date).label("day"),
+                    local_date.label("day"),
                     func.count().label("count"),
                 )
                 .where(BabloSignal.received_at >= week_start)
-                .group_by(cast(BabloSignal.received_at, Date))
-                .order_by(cast(BabloSignal.received_at, Date))
+                .group_by(local_date)
+                .order_by(local_date)
             )
             result = await session.execute(query)
             rows = result.all()
@@ -220,16 +254,17 @@ class AnalyticsService:
                 counts.append(data.get(day, 0))
 
         elif period == "month":
-            # Daily counts for last 30 days
+            # Daily counts for last 30 days (using local timezone for date)
             month_start = today_start - timedelta(days=29)
+            local_date = func.date(local_time)
             query = (
                 select(
-                    cast(BabloSignal.received_at, Date).label("day"),
+                    local_date.label("day"),
                     func.count().label("count"),
                 )
                 .where(BabloSignal.received_at >= month_start)
-                .group_by(cast(BabloSignal.received_at, Date))
-                .order_by(cast(BabloSignal.received_at, Date))
+                .group_by(local_date)
+                .order_by(local_date)
             )
             result = await session.execute(query)
             rows = result.all()

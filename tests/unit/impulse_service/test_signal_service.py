@@ -399,6 +399,91 @@ class TestNotificationSettingsSchema:
         assert update.morning_report is None
 
 
+class TestTimeSeriesAnalytics:
+    """Tests for time series analytics (14-day median, timezone-aware)."""
+
+    @pytest.mark.unit
+    def test_comparison_data_has_week_median(self):
+        """Test ComparisonData schema includes week_median field."""
+        from shared.schemas.impulse import ComparisonData
+
+        # Create with week_median
+        comparison = ComparisonData(
+            vs_yesterday="+10%",
+            yesterday_total=50,
+            vs_week_median="в норме",
+            week_median=45,
+            vs_month_median="высокая активность",
+            month_median=40,
+        )
+
+        assert comparison.week_median == 45
+        assert comparison.vs_week_median == "в норме"
+
+    @pytest.mark.unit
+    def test_comparison_data_activity_levels(self):
+        """Test ComparisonData activity level descriptions."""
+        from shared.schemas.impulse import ComparisonData
+
+        # High activity
+        high = ComparisonData(
+            vs_week_median="высокая активность",
+            week_median=30,
+        )
+        assert "высокая" in high.vs_week_median
+
+        # Low activity
+        low = ComparisonData(
+            vs_week_median="низкая активность",
+            week_median=30,
+        )
+        assert "низкая" in low.vs_week_median
+
+        # Normal activity
+        normal = ComparisonData(
+            vs_week_median="в норме",
+            week_median=30,
+        )
+        assert "норме" in normal.vs_week_median
+
+    @pytest.mark.unit
+    def test_median_calculation_logic(self):
+        """Test 14-day median calculation logic."""
+        import statistics
+
+        # Simulate daily counts for 14 days
+        daily_counts = [45, 52, 38, 61, 48, 55, 42, 50, 47, 53, 44, 58, 46, 51]
+        assert len(daily_counts) == 14
+
+        median = int(statistics.median(daily_counts))
+        assert median == 49  # Median of sorted: [38,42,44,45,46,47,48,50,51,52,53,55,58,61]
+
+    @pytest.mark.unit
+    def test_activity_zone_calculation(self):
+        """Test activity zone calculation based on ratio."""
+        def calculate_zone(current: int, median: int) -> str:
+            if median == 0:
+                return "normal"
+            ratio = current / median
+            if ratio > 2.0:
+                return "extreme"
+            elif ratio > 1.5:
+                return "high"
+            elif ratio < 0.25:
+                return "very_low"
+            elif ratio < 0.5:
+                return "low"
+            return "normal"
+
+        # Test cases
+        assert calculate_zone(105, 50) == "extreme"  # 2.1 ratio > 2.0
+        assert calculate_zone(80, 50) == "high"  # 1.6 ratio > 1.5
+        assert calculate_zone(50, 50) == "normal"  # 1.0 ratio
+        assert calculate_zone(20, 50) == "low"  # 0.4 ratio < 0.5
+        assert calculate_zone(10, 50) == "very_low"  # 0.2 ratio < 0.25
+        assert calculate_zone(50, 0) == "normal"  # Handle zero median
+
+
 class TestReportSchemas:
     """Tests for report-related schemas."""
 

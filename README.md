@@ -30,6 +30,17 @@ masterbot-platform/
 │   ├── services/            # Бизнес-логика и аналитика
 │   ├── models/              # SQLAlchemy модели
 │   └── listeners/           # Telegram listener (Telethon)
+├── miniapp_gateway/         # WebSocket gateway для Mini App (FastAPI)
+│   ├── auth/                # Telegram initData validation
+│   ├── websocket/           # WebSocket manager и handlers
+│   ├── api/                 # REST API proxy endpoints
+│   └── services/            # Redis subscriber
+├── miniapp_frontend/        # React SPA дашборд
+│   └── src/
+│       ├── components/      # React компоненты (charts, dashboards)
+│       ├── hooks/           # useWebSocket, useTelegramApp
+│       ├── store/           # Zustand stores
+│       └── api/             # API client
 ├── shared/                  # Общие модули
 │   ├── database/            # Подключение к БД и миграции
 │   │   ├── connection.py    # Async SQLAlchemy connection
@@ -79,6 +90,20 @@ masterbot-platform/
 #### 5. Redis (port 6379)
 - Pub/Sub для отправки уведомлений из сервисов в бот
 - Кэширование данных
+
+#### 6. Mini App Gateway (port 8003)
+WebSocket gateway для Telegram Mini App:
+- Telegram initData validation (HMAC-SHA256)
+- WebSocket для real-time updates
+- REST proxy к impulse/bablo сервисам
+- Redis subscriber для push уведомлений
+
+#### 7. Mini App Frontend (port 8081)
+React SPA дашборд (nginx):
+- Timeline charts с period selector
+- Activity zones visualization
+- Pie charts для распределения сигналов
+- Real-time WebSocket updates
 
 ## Требования
 
@@ -315,9 +340,21 @@ docker compose --env-file .env.production up -d
 - `GET /api/v1/signals` — Список сигналов (с фильтрами)
 - `GET /api/v1/signals/latest` — Последние сигналы
 - `GET /api/v1/analytics/{period}` — Аналитика за период
+- `GET /api/v1/timeseries/{period}` — Time series данные (today/week/month)
 - `GET /api/v1/settings/{user_id}` — Настройки пользователя
 - `PUT /api/v1/settings/{user_id}` — Обновление настроек
 - `POST /api/v1/reports/{user_id}` — Генерация отчёта
+
+### Mini App Gateway (port 8003)
+
+- `GET /health` — Проверка здоровья сервиса
+- `WS /ws` — WebSocket для real-time updates (требует initData)
+- `WS /ws/dev` — WebSocket без auth (только при DEBUG_MODE=True)
+- `GET /api/dashboard/impulse/stats` — Статистика импульсов
+- `GET /api/dashboard/bablo/stats` — Статистика Bablo
+- `GET /api/dashboard/combined` — Комбинированная статистика
+- `GET /api/timeseries/{service}/{period}` — Time series данные
+- `GET /api/analytics/{service}/{period}` — Аналитика за период
 
 ## Тестирование
 
@@ -382,6 +419,56 @@ pytest --cov=master_bot --cov=impulse_service --cov=bablo_service tests/unit/sha
 - **conftest.py**: В директориях `impulse_service/` и `bablo_service/` есть conftest-файлы, настраивающие `sys.path` для корректного импорта модулей
 - **fastapi skip**: Тесты API автоматически пропускаются если fastapi не установлен (`pytest.importorskip`)
 
+## Telegram Mini App
+
+Интерактивный дашборд для просмотра сигналов в реальном времени.
+
+### Архитектура Mini App
+
+```
+Telegram Bot → Mini App (React SPA) → miniapp_gateway (WebSocket) → Services
+```
+
+**Компоненты:**
+- `miniapp_frontend/` — React 18 + TypeScript + Vite + Tailwind CSS
+- `miniapp_gateway/` — FastAPI WebSocket gateway с Telegram initData validation
+- **URL:** https://app.srgart.ru (доступно только через Telegram)
+
+### Вкладки дашборда
+
+| Вкладка | Описание |
+|---------|----------|
+| 📊 Обзор | Общий market pulse, quick stats |
+| ⚡ Импульсы | Timeline chart по часам, Live Feed импульсов |
+| 💰 Bablo | Timeline chart, сигналы с фильтрами |
+| 📈 Отчёты | Pie charts: рост/падение, long/short |
+
+### Ключевые функции
+
+- **Real-time updates** через WebSocket (Redis pub/sub)
+- **Timeline Charts** — bar charts с period selector (сегодня/неделя/месяц)
+- **Activity Zones** — визуализация активности относительно 14-дневной медианы
+- **Pie Charts** — распределение сигналов по типам
+- **Telegram theming** — автоматическая поддержка тёмной/светлой темы
+
+### Зоны активности
+
+ActivityMeter показывает текущую активность относительно медианы:
+
+| Зона | Ratio | Цвет | Emoji |
+|------|-------|------|-------|
+| Очень низкая | < 0.25 | 🔵 | 🥶 |
+| Низкая | < 0.5 | 🩵 | 😴 |
+| Нормальная | 0.5–1.5 | 🟢 | ✅ |
+| Повышенная | > 1.5 | 🟠 | 🔥 |
+| Экстремальная | > 2.0 | 🔴 | 🚀 |
+
+Медиана рассчитывается за последние **14 дней** для стабильной оценки.
+
+### Доступ
+
+Mini App доступен через кнопку **"SrgArt_App"** в меню бота (открывается как Telegram Web App).
+
 ## Технологии
 
 - **Python 3.11**
@@ -391,6 +478,8 @@ pytest --cov=master_bot --cov=impulse_service --cov=bablo_service tests/unit/sha
 - **PostgreSQL 15** — База данных
 - **Redis 7** — Кэширование и Pub/Sub
 - **Telethon** — Telegram MTProto API для прослушивания каналов
+- **React 18** — Mini App frontend
+- **Recharts** — Графики в Mini App
 - **Docker Compose** — Оркестрация
 - **pytest** — Тестирование
 

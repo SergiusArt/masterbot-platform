@@ -4,8 +4,6 @@ import re
 import logging
 
 from aiogram import Router, F
-
-logger = logging.getLogger(__name__)
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -17,8 +15,11 @@ from keyboards.reply.bablo_menu import (
 )
 from keyboards.inline.bablo import get_quality_keyboard
 from services.bablo_client import bablo_client
+from services.error_reporter import report_error
 from shared.constants import MENU_BABLO_SETTINGS, MENU_BACK
 from states.navigation import MenuState
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -112,6 +113,7 @@ async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings_menu")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 
@@ -159,6 +161,7 @@ async def toggle_bablo_notifications(message: Message, state: FSMContext) -> Non
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 
@@ -207,6 +210,7 @@ async def process_quality_callback(callback: CallbackQuery) -> None:
 
     except Exception as e:
         logger.error(f"Bablo quality update error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_quality_update")
         await callback.answer("❌ Не удалось сохранить. Попробуйте позже.", show_alert=True)
 
 
@@ -320,6 +324,7 @@ async def save_timeframe_settings(message: Message, state: FSMContext) -> None:
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 
@@ -356,6 +361,7 @@ async def back_from_timeframe_settings(message: Message, state: FSMContext) -> N
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 
@@ -471,6 +477,7 @@ async def save_direction_settings(message: Message, state: FSMContext) -> None:
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 
@@ -507,6 +514,7 @@ async def back_from_direction_settings(message: Message, state: FSMContext) -> N
 
     except Exception as e:
         logger.error(f"Bablo settings error for user {message.from_user.id}: {e}")
+        await report_error(e, user_id=message.from_user.id, context="bablo_settings")
         await message.answer("❌ Не удалось загрузить настройки. Попробуйте позже.")
 
 

@@ -13,6 +13,7 @@ from keyboards.reply.impulse_menu import (
     get_impulse_menu_keyboard,
 )
 from services.impulse_client import impulse_client
+from services.error_reporter import report_error
 from shared.constants import (
     MENU_MORNING_REPORT,
     MENU_EVENING_REPORT,
@@ -114,6 +115,7 @@ async def _toggle_report(message: Message, setting: str, name: str) -> None:
 
     except Exception as e:
         logger.error(f"Report toggle error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="impulse_report_toggle")
         await message.answer("❌ Не удалось обновить настройки. Попробуйте позже.")
 
 

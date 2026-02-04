@@ -4,6 +4,7 @@ import statistics
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
+import pytz
 
 from sqlalchemy import select, func, and_, cast, Date, extract
 
@@ -11,6 +12,7 @@ from models.impulse import Impulse
 from shared.database.connection import async_session_maker
 from shared.schemas.impulse import AnalyticsResponse, TopImpulse, ComparisonData
 from shared.constants import AnalyticsPeriod
+from config import settings
 
 
 class AnalyticsService:
@@ -237,8 +239,8 @@ class AnalyticsService:
             else:
                 vs_yesterday = "нет данных"
 
-        # Week median (daily counts for last 7 days)
-        week_start = today_start - timedelta(days=7)
+        # Week median (daily counts for last 14 days)
+        week_start = today_start - timedelta(days=14)
         week_counts = await self._get_daily_counts(session, week_start, today_start - timedelta(seconds=1))
         if week_counts:
             week_median = int(statistics.median(week_counts))
@@ -292,20 +294,24 @@ class AnalyticsService:
         Returns:
             Time series data with labels and counts
         """
-        now = datetime.now(timezone.utc)
+        tz = pytz.timezone(settings.TIMEZONE)
+        now = datetime.now(tz)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Convert timestamp to local timezone for correct hour/day extraction
+        local_time = func.timezone(settings.TIMEZONE, Impulse.received_at)
 
         async with async_session_maker() as session:
             if period == "today":
-                # Hourly counts for today
+                # Hourly counts for today (using local timezone)
                 query = (
                     select(
-                        extract("hour", Impulse.received_at).label("hour"),
+                        extract("hour", local_time).label("hour"),
                         func.count().label("count"),
                     )
                     .where(Impulse.received_at >= today_start)
-                    .group_by(extract("hour", Impulse.received_at))
-                    .order_by(extract("hour", Impulse.received_at))
+                    .group_by(extract("hour", local_time))
+                    .order_by(extract("hour", local_time))
                 )
                 result = await session.execute(query)
                 rows = result.all()
@@ -317,16 +323,17 @@ class AnalyticsService:
                 counts = [data.get(h, 0) for h in range(current_hour + 1)]
 
             elif period == "week":
-                # Daily counts for last 7 days
+                # Daily counts for last 7 days (using local timezone for date)
                 week_start = today_start - timedelta(days=6)
+                local_date = func.date(local_time)
                 query = (
                     select(
-                        cast(Impulse.received_at, Date).label("day"),
+                        local_date.label("day"),
                         func.count().label("count"),
                     )
                     .where(Impulse.received_at >= week_start)
-                    .group_by(cast(Impulse.received_at, Date))
-                    .order_by(cast(Impulse.received_at, Date))
+                    .group_by(local_date)
+                    .order_by(local_date)
                 )
                 result = await session.execute(query)
                 rows = result.all()
@@ -341,16 +348,17 @@ class AnalyticsService:
                     counts.append(data.get(day, 0))
 
             elif period == "month":
-                # Daily counts for last 30 days
+                # Daily counts for last 30 days (using local timezone for date)
                 month_start = today_start - timedelta(days=29)
+                local_date = func.date(local_time)
                 query = (
                     select(
-                        cast(Impulse.received_at, Date).label("day"),
+                        local_date.label("day"),
                         func.count().label("count"),
                     )
                     .where(Impulse.received_at >= month_start)
-                    .group_by(cast(Impulse.received_at, Date))
-                    .order_by(cast(Impulse.received_at, Date))
+                    .group_by(local_date)
+                    .order_by(local_date)
                 )
                 result = await session.execute(query)
                 rows = result.all()

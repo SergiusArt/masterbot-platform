@@ -70,6 +70,17 @@ export interface ActivityChartData {
   }
 }
 
+// Time series data
+export type TimeSeriesPeriod = 'today' | 'week' | 'month'
+
+export interface TimeSeriesData {
+  period: TimeSeriesPeriod
+  labels: string[]
+  counts: number[]
+  median: number
+  total: number
+}
+
 // WebSocket messages
 export type WSMessageType =
   | 'impulse:new'
@@ -88,4 +99,14 @@ export interface WSMessage {
 }
 
 // Tab navigation
-export type TabType = 'combined' | 'impulse' | 'bablo'
+export type TabType = 'combined' | 'impulse' | 'bablo' | 'reports'
+
+// Reports data
+export interface ServiceReport {
+  period: string
+  total: number
+  vs_yesterday?: string
+  vs_week_avg?: string
+  week_median?: number
+  month_median?: number
+}

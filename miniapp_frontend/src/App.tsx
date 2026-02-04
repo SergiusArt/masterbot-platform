@@ -6,6 +6,7 @@ import { TabNavigation } from './components/common/TabNavigation'
 import { CombinedDashboard } from './components/common/CombinedDashboard'
 import { ImpulseDashboard } from './components/impulse/ImpulseDashboard'
 import { BabloDashboard } from './components/bablo/BabloDashboard'
+import { ReportsDashboard } from './components/reports/ReportsDashboard'
 import type { TabType } from './types'
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
         return 'Импульсы'
       case 'bablo':
         return 'Bablo'
+      case 'reports':
+        return 'Отчёты'
     }
   }
 
@@ -54,6 +57,7 @@ function App() {
         )}
         {activeTab === 'impulse' && <ImpulseDashboard />}
         {activeTab === 'bablo' && <BabloDashboard />}
+        {activeTab === 'reports' && <ReportsDashboard />}
       </main>
 
       <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />

@@ -4,6 +4,7 @@ import { api } from '../../api'
 import { BabloStats } from './BabloStats'
 import { BabloList } from './BabloList'
 import { BabloFilters } from './BabloFilters'
+import { TimelineChart } from '../charts/TimelineChart'
 import { LoadingSpinner } from '../common/LoadingSpinner'
 
 export function BabloDashboard() {
@@ -47,6 +48,12 @@ export function BabloDashboard() {
   return (
     <div className="p-4 space-y-4">
       {stats && <BabloStats stats={stats} />}
+
+      <TimelineChart
+        service="bablo"
+        title="Динамика сигналов"
+        color="#3b82f6"
+      />
 
       <BabloFilters />
 

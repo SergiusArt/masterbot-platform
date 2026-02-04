@@ -1,4 +1,4 @@
-import type { DashboardSummary, Impulse, BabloSignal } from '../types'
+import type { DashboardSummary, Impulse, BabloSignal, TimeSeriesData, TimeSeriesPeriod } from '../types'
 
 const API_BASE = '/api/v1/dashboard'
 
@@ -108,6 +108,16 @@ export const api = {
     period: 'today' | 'yesterday' | 'week' | 'month'
   ): Promise<Record<string, unknown>> {
     return fetchApi(`/analytics/${service}/${period}`)
+  },
+
+  /**
+   * Get time series data for a service.
+   */
+  async getTimeSeries(
+    service: 'impulse' | 'bablo',
+    period: TimeSeriesPeriod
+  ): Promise<TimeSeriesData> {
+    return fetchApi(`/timeseries/${service}/${period}`)
   },
 
   /**

@@ -30,6 +30,7 @@ from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from services.scheduler import init_scheduler
 from services.message_queue import init_message_queue
+from services.error_reporter import init_error_reporter
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import setup_logger
@@ -131,6 +132,9 @@ async def main() -> None:
     # Register startup/shutdown handlers
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
+
+    # Initialize error reporter (for admin notifications)
+    init_error_reporter(bot)
 
     # Start message queue (must be before notification listener)
     message_queue = init_message_queue(bot)

@@ -9,6 +9,7 @@ const tabs: { id: TabType; label: string; icon: string }[] = [
   { id: 'combined', label: 'Обзор', icon: '📊' },
   { id: 'impulse', label: 'Импульсы', icon: '⚡' },
   { id: 'bablo', label: 'Bablo', icon: '💰' },
+  { id: 'reports', label: 'Отчёты', icon: '📈' },
 ]
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

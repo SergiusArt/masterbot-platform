@@ -4,6 +4,7 @@ import { api } from '../../api'
 import { ImpulseStats } from './ImpulseStats'
 import { ImpulseList } from './ImpulseList'
 import { ImpulseFilters } from './ImpulseFilters'
+import { TimelineChart } from '../charts/TimelineChart'
 import { LoadingSpinner } from '../common/LoadingSpinner'
 
 export function ImpulseDashboard() {
@@ -47,6 +48,12 @@ export function ImpulseDashboard() {
   return (
     <div className="p-4 space-y-4">
       {stats && <ImpulseStats stats={stats} />}
+
+      <TimelineChart
+        service="impulse"
+        title="Динамика импульсов"
+        color="#22c55e"
+      />
 
       <ImpulseFilters />
 

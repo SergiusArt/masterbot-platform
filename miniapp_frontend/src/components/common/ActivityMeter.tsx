@@ -8,16 +8,16 @@ interface ActivityMeterProps {
   label?: string
 }
 
-const zoneConfig: Record<string, { color: string; text: string; emoji: string }> = {
-  very_low: { color: 'bg-blue-500', text: 'Очень низкая', emoji: '🥶' },
-  low: { color: 'bg-cyan-500', text: 'Низкая', emoji: '😴' },
-  normal: { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' },
-  medium: { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' }, // alias for backwards compatibility
-  high: { color: 'bg-orange-500', text: 'Повышенная', emoji: '🔥' },
-  extreme: { color: 'bg-red-500', text: 'Экстремальная', emoji: '🚀' },
+const zoneConfig: Record<string, { color: string; textColor: string; text: string; emoji: string }> = {
+  very_low: { color: 'bg-blue-500', textColor: 'text-blue-500', text: 'Очень низкая', emoji: '🥶' },
+  low: { color: 'bg-cyan-500', textColor: 'text-cyan-500', text: 'Низкая', emoji: '😴' },
+  normal: { color: 'bg-green-500', textColor: 'text-green-500', text: 'Нормальная', emoji: '✅' },
+  medium: { color: 'bg-green-500', textColor: 'text-green-500', text: 'Нормальная', emoji: '✅' }, // alias for backwards compatibility
+  high: { color: 'bg-orange-500', textColor: 'text-orange-500', text: 'Повышенная', emoji: '🔥' },
+  extreme: { color: 'bg-red-500', textColor: 'text-red-500', text: 'Экстремальная', emoji: '🚀' },
 }
 
-const defaultConfig = { color: 'bg-green-500', text: 'Нормальная', emoji: '✅' }
+const defaultConfig = { color: 'bg-green-500', textColor: 'text-green-500', text: 'Нормальная', emoji: '✅' }
 
 export function ActivityMeter({ current, median, zone, ratio, label }: ActivityMeterProps) {
   const config = zoneConfig[zone] || defaultConfig
@@ -79,8 +79,8 @@ export function ActivityMeter({ current, median, zone, ratio, label }: ActivityM
         <span className="text-tg-hint">
           Медиана: <span className="font-semibold text-tg-text">{Math.round(safeMedian)}</span>
         </span>
-        <span className={`font-semibold ${safeRatio >= 1 ? 'text-growth' : 'text-fall'}`}>
-          {ratioPercent}%
+        <span className="text-tg-hint">
+          от нормы: <span className={`font-semibold ${config.textColor}`}>{ratioPercent}%</span>
         </span>
       </div>
     </div>

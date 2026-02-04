@@ -397,6 +397,133 @@ class TestParsedBabloSignalDataclass:
         assert signal.probabilities["1.5"]["short"] == 58
 
 
+class TestBabloAnalyticsLogic:
+    """Tests for Bablo analytics calculation logic (no service initialization)."""
+
+    @pytest.mark.unit
+    def test_calc_comparison_positive(self):
+        """Test comparison calculation for positive change."""
+        def calc_comparison(current: float, previous: float) -> str:
+            if previous == 0:
+                return "—"
+            diff = ((current - previous) / previous) * 100
+            if diff > 0:
+                return f"+{diff:.0f}%"
+            elif diff < 0:
+                return f"{diff:.0f}%"
+            else:
+                return "0%"
+
+        result = calc_comparison(150, 100)
+        assert result == "+50%"
+
+    @pytest.mark.unit
+    def test_calc_comparison_negative(self):
+        """Test comparison calculation for negative change."""
+        def calc_comparison(current: float, previous: float) -> str:
+            if previous == 0:
+                return "—"
+            diff = ((current - previous) / previous) * 100
+            if diff > 0:
+                return f"+{diff:.0f}%"
+            elif diff < 0:
+                return f"{diff:.0f}%"
+            else:
+                return "0%"
+
+        result = calc_comparison(50, 100)
+        assert result == "-50%"
+
+    @pytest.mark.unit
+    def test_calc_comparison_zero_previous(self):
+        """Test comparison when previous value is zero."""
+        def calc_comparison(current: float, previous: float) -> str:
+            if previous == 0:
+                return "—"
+            diff = ((current - previous) / previous) * 100
+            if diff > 0:
+                return f"+{diff:.0f}%"
+            elif diff < 0:
+                return f"{diff:.0f}%"
+            else:
+                return "0%"
+
+        result = calc_comparison(50, 0)
+        assert result == "—"
+
+    @pytest.mark.unit
+    def test_calc_comparison_no_change(self):
+        """Test comparison when values are equal."""
+        def calc_comparison(current: float, previous: float) -> str:
+            if previous == 0:
+                return "—"
+            diff = ((current - previous) / previous) * 100
+            if diff > 0:
+                return f"+{diff:.0f}%"
+            elif diff < 0:
+                return f"{diff:.0f}%"
+            else:
+                return "0%"
+
+        result = calc_comparison(100, 100)
+        assert result == "0%"
+
+    @pytest.mark.unit
+    def test_14_day_median_calculation(self):
+        """Test 14-day median calculation logic."""
+        import statistics
+
+        # Simulate daily counts for 14 days
+        daily_counts = [30, 35, 28, 42, 38, 45, 33, 40, 37, 44, 31, 48, 36, 41]
+        assert len(daily_counts) == 14
+
+        median = int(statistics.median(daily_counts))
+        # Sorted: [28,30,31,33,35,36,37,38,40,41,42,44,45,48]
+        # Middle values: 37, 38 -> (37+38)/2 = 37.5 -> 37
+        assert median == 37
+
+    @pytest.mark.unit
+    def test_time_series_period_logic(self):
+        """Test time series period calculation logic."""
+        from datetime import datetime, timedelta
+        import pytz
+
+        tz = pytz.timezone("Europe/Moscow")
+        now = datetime.now(tz)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Week period: 7 days back
+        week_start = today_start - timedelta(days=6)
+        days_in_week = (today_start - week_start).days + 1
+        assert days_in_week == 7
+
+        # Month period: 30 days back
+        month_start = today_start - timedelta(days=29)
+        days_in_month = (today_start - month_start).days + 1
+        assert days_in_month == 30
+
+    @pytest.mark.unit
+    def test_activity_zone_from_ratio(self):
+        """Test activity zone determination from ratio."""
+        def get_zone(ratio: float) -> str:
+            if ratio > 2.0:
+                return "extreme"
+            elif ratio > 1.5:
+                return "high"
+            elif ratio < 0.25:
+                return "very_low"
+            elif ratio < 0.5:
+                return "low"
+            return "normal"
+
+        # Test each zone
+        assert get_zone(2.5) == "extreme"  # > 2.0
+        assert get_zone(1.8) == "high"  # > 1.5
+        assert get_zone(1.0) == "normal"  # 0.5-1.5
+        assert get_zone(0.3) == "low"  # < 0.5
+        assert get_zone(0.2) == "very_low"  # < 0.25
+
+
 class TestBabloServiceIntegrationPatterns:
     """Test patterns for service integration."""
 

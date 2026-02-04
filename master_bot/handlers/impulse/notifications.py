@@ -17,6 +17,7 @@ from keyboards.inline.thresholds import (
     get_fall_threshold_keyboard,
 )
 from services.impulse_client import impulse_client
+from services.error_reporter import report_error
 from shared.constants import MENU_NOTIFICATIONS, MENU_BACK
 from states.navigation import MenuState
 
@@ -93,6 +94,7 @@ async def toggle_notifications(message: Message) -> None:
 
     except Exception as e:
         logger.error(f"Toggle notifications error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="impulse_toggle_notifications")
         await message.answer("❌ Не удалось обновить настройки. Попробуйте позже.")
 
 
@@ -171,6 +173,7 @@ async def process_threshold_callback(callback: CallbackQuery) -> None:
 
     except Exception as e:
         logger.error(f"Threshold update error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="impulse_threshold_update")
         await callback.answer("❌ Не удалось сохранить. Попробуйте позже.", show_alert=True)
 
 

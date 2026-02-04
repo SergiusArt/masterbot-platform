@@ -152,8 +152,6 @@ async def get_dashboard_summary(
                 bablo_median = 30.0  # Default median
             else:
                 bablo_data = bablo_resp.json()
-                # TODO: Add week_median to bablo_service analytics
-                # For now use estimate based on typical daily count
                 bablo_median = float(bablo_data.get("week_median", 30) or 30)
 
             # Calculate activity zones

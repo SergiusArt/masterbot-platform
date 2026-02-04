@@ -11,6 +11,7 @@ from aiogram.fsm.context import FSMContext
 from keyboards.reply.main_menu import get_main_menu_keyboard
 from keyboards.inline.timezone import get_timezone_keyboard, get_timezone_display
 from services.impulse_client import impulse_client
+from services.error_reporter import report_error
 from shared.constants import MENU_SETTINGS, MENU_BACK
 from shared.utils.timezone import validate_timezone_input, get_utc_offset_display
 from states.navigation import MenuState
@@ -103,6 +104,7 @@ async def set_timezone(callback: CallbackQuery, state: FSMContext) -> None:
         )
     except Exception as e:
         logger.error(f"Timezone save error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="timezone_save")
         await callback.message.edit_text(
             "❌ Не удалось сохранить часовой пояс. Попробуйте позже."
         )
@@ -166,6 +168,7 @@ async def process_custom_timezone(message: Message, state: FSMContext) -> None:
         )
     except Exception as e:
         logger.error(f"Custom timezone save error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="custom_timezone_save")
         await message.answer(
             "❌ Не удалось сохранить часовой пояс. Попробуйте позже.",
             reply_markup=get_settings_keyboard(),
@@ -236,6 +239,7 @@ async def set_language(callback: CallbackQuery, state: FSMContext) -> None:
             )
     except Exception as e:
         logger.error(f"Language save error for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="language_save")
         await callback.message.edit_text(
             "❌ Failed to save. Try again later." if new_lang == "en"
             else "❌ Не удалось сохранить. Попробуйте позже."
