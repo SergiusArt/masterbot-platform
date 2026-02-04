@@ -138,7 +138,7 @@ async def log_user_activity(user_id: int, action: str, details: Optional[dict] =
             await session.execute(
                 text("""
                     INSERT INTO action_logs (user_id, service_name, action, details, created_at)
-                    VALUES (:user_id, 'miniapp', :action, :details::jsonb, NOW())
+                    VALUES (:user_id, 'miniapp', :action, CAST(:details AS jsonb), NOW())
                 """),
                 {
                     "user_id": user_id,

@@ -244,7 +244,7 @@ async def add_user(
     await db.execute(
         text("""
             INSERT INTO action_logs (user_id, service_name, action, details, created_at)
-            VALUES (:admin_id, 'miniapp_admin', :action, :details::jsonb, NOW())
+            VALUES (:admin_id, 'miniapp_admin', :action, CAST(:details AS jsonb), NOW())
         """),
         {
             "admin_id": user.id,
@@ -320,7 +320,7 @@ async def update_user(
     await db.execute(
         text("""
             INSERT INTO action_logs (user_id, service_name, action, details, created_at)
-            VALUES (:admin_id, 'miniapp_admin', 'user_updated', :details::jsonb, NOW())
+            VALUES (:admin_id, 'miniapp_admin', 'user_updated', CAST(:details AS jsonb), NOW())
         """),
         {
             "admin_id": user.id,
@@ -364,7 +364,7 @@ async def delete_user(
     await db.execute(
         text("""
             INSERT INTO action_logs (user_id, service_name, action, details, created_at)
-            VALUES (:admin_id, 'miniapp_admin', 'user_deactivated', :details::jsonb, NOW())
+            VALUES (:admin_id, 'miniapp_admin', 'user_deactivated', CAST(:details AS jsonb), NOW())
         """),
         {
             "admin_id": user.id,
@@ -586,7 +586,7 @@ async def send_broadcast(
     await db.execute(
         text("""
             INSERT INTO action_logs (user_id, service_name, action, details, created_at)
-            VALUES (:admin_id, 'miniapp_admin', 'broadcast', :details::jsonb, NOW())
+            VALUES (:admin_id, 'miniapp_admin', 'broadcast', CAST(:details AS jsonb), NOW())
         """),
         {
             "admin_id": user.id,
