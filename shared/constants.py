@@ -36,12 +36,16 @@ REDIS_CHANNEL_REPORTS = "impulse:reports"
 # Redis channels - Bablo
 REDIS_CHANNEL_BABLO = "bablo:notifications"
 
+# Redis channels - System
+REDIS_CHANNEL_ERRORS = "system:errors"
+
 # Event types
 EVENT_IMPULSE_ALERT = "impulse_alert"
 EVENT_ACTIVITY_ALERT = "activity_alert"
 EVENT_REPORT_READY = "report_ready"
 EVENT_BABLO_SIGNAL = "bablo_signal"
 EVENT_BABLO_ACTIVITY = "bablo_activity"
+EVENT_SERVICE_ERROR = "service_error"
 
 # Default values
 DEFAULT_GROWTH_THRESHOLD = 20

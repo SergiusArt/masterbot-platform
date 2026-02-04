@@ -11,14 +11,17 @@ from aiogram import Bot
 from services.message_queue import get_message_queue
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
+from config import settings
 from shared.constants import (
     REDIS_CHANNEL_NOTIFICATIONS,
     REDIS_CHANNEL_BABLO,
+    REDIS_CHANNEL_ERRORS,
     EVENT_IMPULSE_ALERT,
     EVENT_ACTIVITY_ALERT,
     EVENT_REPORT_READY,
     EVENT_BABLO_SIGNAL,
     EVENT_BABLO_ACTIVITY,
+    EVENT_SERVICE_ERROR,
 )
 
 logger = get_logger("notification_listener")
@@ -50,8 +53,9 @@ class NotificationListener:
             pubsub = await redis.subscribe(
                 REDIS_CHANNEL_NOTIFICATIONS,
                 REDIS_CHANNEL_BABLO,
+                REDIS_CHANNEL_ERRORS,
             )
-            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}")
+            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}, {REDIS_CHANNEL_ERRORS}")
 
             async for message in pubsub.listen():
                 if not self._running:
@@ -112,6 +116,8 @@ class NotificationListener:
         elif event == EVENT_REPORT_READY:
             source = "impulse" if channel == REDIS_CHANNEL_NOTIFICATIONS else "bablo"
             await self._handle_report_part(user_id, event_data, source)
+        elif event == EVENT_SERVICE_ERROR:
+            await self._send_service_error_to_admin(data)
 
     async def _send_impulse_alert(self, user_id: int, data: dict) -> None:
         """Send impulse alert to user.
@@ -374,3 +380,38 @@ class NotificationListener:
                 logger.info(f"✅ Report ({report_type}) sent to {user_id}")
             except Exception as e:
                 logger.error(f"Failed to send report to {user_id}: {e}")
+
+    async def _send_service_error_to_admin(self, data: dict) -> None:
+        """Send service error notification to admin.
+
+        Args:
+            data: Error data from microservice
+        """
+        service = data.get("service", "unknown")
+        error_type = data.get("error_type", "UnknownError")
+        error_message = data.get("error_message", "No message")
+        context = data.get("context")
+        user_id = data.get("user_id")
+        timestamp = data.get("timestamp", "")
+
+        parts = [f"⚠️ <b>Ошибка в {service}</b>\n"]
+
+        if user_id:
+            parts.append(f"👤 User ID: <code>{user_id}</code>")
+
+        if context:
+            parts.append(f"📍 Место: <code>{context}</code>")
+
+        parts.append(f"❌ Тип: <code>{error_type}</code>")
+        parts.append(f"📝 Описание: <code>{error_message[:300]}</code>")
+
+        if timestamp:
+            parts.append(f"\n🕐 Время: {timestamp}")
+
+        message = "\n".join(parts)
+
+        try:
+            await self.bot.send_message(settings.ADMIN_ID, message)
+            logger.info(f"✅ Service error sent to admin: {service}/{error_type}")
+        except Exception as e:
+            logger.error(f"Failed to send service error to admin: {e}")

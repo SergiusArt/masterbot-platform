@@ -11,8 +11,12 @@ from keyboards.reply.bablo_menu import (
 )
 from keyboards.reply.back import get_back_keyboard
 from services.bablo_client import bablo_client
+from services.error_reporter import report_error
 from shared.constants import MENU_ACTIVITY, MENU_BACK
+from shared.utils.logger import get_logger
 from states.navigation import MenuState
+
+logger = get_logger("bablo_activity")
 
 router = Router()
 
@@ -39,7 +43,9 @@ async def activity_menu(message: Message, state: FSMContext) -> None:
         settings = await bablo_client.get_user_settings(user_id)
         window = settings.get("activity_window_minutes", 15)
         threshold = settings.get("activity_threshold", 10)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to get activity settings for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_menu")
         window = 15
         threshold = 10
 
@@ -101,7 +107,9 @@ async def back_from_window_input(message: Message, state: FSMContext) -> None:
         settings = await bablo_client.get_user_settings(user_id)
         window = settings.get("activity_window_minutes", 15)
         threshold = settings.get("activity_threshold", 10)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to get activity settings for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_back_window")
         window = 15
         threshold = 10
 
@@ -123,29 +131,43 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
         value = int(message.text.strip())
         if not 5 <= value <= 60:
             raise ValueError("Out of range")
-
-        user_id = message.from_user.id
-        await bablo_client.update_user_settings(
-            user_id, {"activity_window_minutes": value}
-        )
-
-        await state.set_state(MenuState.bablo_activity)
-        await message.answer(f"✅ Окно активности установлено: {value} минут")
-
-        # Refresh menu
-        settings = await bablo_client.get_user_settings(user_id)
-        await message.answer(
-            "⚡ <b>Настройки активности</b>",
-            reply_markup=get_activity_menu_keyboard(
-                settings.get("activity_window_minutes", 15),
-                settings.get("activity_threshold", 10),
-            ),
-        )
-
     except ValueError:
         await message.answer(
             "❌ Введите число от 5 до 60.\n\nПопробуйте ещё раз:"
         )
+        return
+
+    user_id = message.from_user.id
+
+    try:
+        await bablo_client.update_user_settings(
+            user_id, {"activity_window_minutes": value}
+        )
+    except Exception as e:
+        logger.error(f"Failed to update window for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_window_update")
+        await message.answer("❌ Не удалось сохранить настройки. Попробуйте позже.")
+        return
+
+    await state.set_state(MenuState.bablo_activity)
+    await message.answer(f"✅ Окно активности установлено: {value} минут")
+
+    # Refresh menu - use the value we just set if API call fails
+    try:
+        settings = await bablo_client.get_user_settings(user_id)
+        window = settings.get("activity_window_minutes", value)
+        threshold = settings.get("activity_threshold", 10)
+    except Exception as e:
+        logger.error(f"Failed to get settings after update for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_get_after_update")
+        # Use the value we just set and default threshold
+        window = value
+        threshold = 10
+
+    await message.answer(
+        "⚡ <b>Настройки активности</b>",
+        reply_markup=get_activity_menu_keyboard(window, threshold),
+    )
 
 
 @router.message(BabloActivitySettingsState.waiting_for_threshold, F.text == MENU_BACK)
@@ -163,7 +185,9 @@ async def back_from_threshold_input(message: Message, state: FSMContext) -> None
         settings = await bablo_client.get_user_settings(user_id)
         window = settings.get("activity_window_minutes", 15)
         threshold = settings.get("activity_threshold", 10)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to get activity settings for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_back_threshold")
         window = 15
         threshold = 10
 
@@ -185,29 +209,43 @@ async def process_threshold_input(message: Message, state: FSMContext) -> None:
         value = int(message.text.strip())
         if not 1 <= value <= 100:
             raise ValueError("Out of range")
-
-        user_id = message.from_user.id
-        await bablo_client.update_user_settings(
-            user_id, {"activity_threshold": value}
-        )
-
-        await state.set_state(MenuState.bablo_activity)
-        await message.answer(f"✅ Порог активности установлен: {value} сигналов")
-
-        # Refresh menu
-        settings = await bablo_client.get_user_settings(user_id)
-        await message.answer(
-            "⚡ <b>Настройки активности</b>",
-            reply_markup=get_activity_menu_keyboard(
-                settings.get("activity_window_minutes", 15),
-                settings.get("activity_threshold", 10),
-            ),
-        )
-
     except ValueError:
         await message.answer(
             "❌ Введите число от 1 до 100.\n\nПопробуйте ещё раз:"
         )
+        return
+
+    user_id = message.from_user.id
+
+    try:
+        await bablo_client.update_user_settings(
+            user_id, {"activity_threshold": value}
+        )
+    except Exception as e:
+        logger.error(f"Failed to update threshold for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_threshold_update")
+        await message.answer("❌ Не удалось сохранить настройки. Попробуйте позже.")
+        return
+
+    await state.set_state(MenuState.bablo_activity)
+    await message.answer(f"✅ Порог активности установлен: {value} сигналов")
+
+    # Refresh menu - use the value we just set if API call fails
+    try:
+        settings = await bablo_client.get_user_settings(user_id)
+        window = settings.get("activity_window_minutes", 15)
+        threshold = settings.get("activity_threshold", value)
+    except Exception as e:
+        logger.error(f"Failed to get settings after update for user {user_id}: {e}")
+        await report_error(e, user_id=user_id, context="bablo_activity_get_after_update")
+        # Use the value we just set and default window
+        window = 15
+        threshold = value
+
+    await message.answer(
+        "⚡ <b>Настройки активности</b>",
+        reply_markup=get_activity_menu_keyboard(window, threshold),
+    )
 
 
 @router.message(MenuState.bablo_activity, F.text == MENU_BACK)

@@ -14,6 +14,7 @@ from services.notification_service import notification_service
 from shared.schemas.impulse import ImpulseCreate
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
+from shared.utils.error_publisher import publish_error
 from shared.constants import REDIS_CHANNEL_NOTIFICATIONS, EVENT_IMPULSE_ALERT, EVENT_ACTIVITY_ALERT
 from config import settings
 
@@ -147,6 +148,11 @@ class TelegramListener:
 
         except Exception as e:
             logger.error(f"Error handling message: {e}")
+            try:
+                redis = await get_redis_client()
+                await publish_error(redis, "impulse_service", e, context="handle_message")
+            except Exception:
+                pass
 
     async def _send_notifications(self, parsed) -> None:
         """Send notifications to users who match the threshold.
@@ -188,6 +194,11 @@ class TelegramListener:
 
         except Exception as e:
             logger.error(f"Error sending notifications: {e}")
+            try:
+                redis = await get_redis_client()
+                await publish_error(redis, "impulse_service", e, context="send_notifications")
+            except Exception:
+                pass
 
     async def _check_and_notify_activity(self) -> None:
         """Check for high activity and notify users.
@@ -316,3 +327,8 @@ class TelegramListener:
 
         except Exception as e:
             logger.error(f"Error checking activity: {e}", exc_info=True)
+            try:
+                redis = await get_redis_client()
+                await publish_error(redis, "impulse_service", e, context="check_activity")
+            except Exception:
+                pass

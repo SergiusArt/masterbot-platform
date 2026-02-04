@@ -14,6 +14,7 @@ from services.notification_service import notification_service
 from shared.database.connection import async_session_maker
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
+from shared.utils.error_publisher import publish_error
 from shared.constants import EVENT_BABLO_SIGNAL, EVENT_BABLO_ACTIVITY
 
 logger = get_logger("bablo_listener")
@@ -121,6 +122,11 @@ class BabloTelegramListener:
 
         except Exception as e:
             logger.error(f"Error handling message: {e}", exc_info=True)
+            try:
+                redis = await get_redis_client()
+                await publish_error(redis, "bablo_service", e, context="handle_message")
+            except Exception:
+                pass
 
     async def _publish_notifications(self, signal_data, user_ids: list[int], original_text: str) -> None:
         """Publish notifications to Redis for users.
@@ -285,6 +291,11 @@ class BabloTelegramListener:
             logger.error(f"Error checking activity: {type(e).__name__}: {e}", exc_info=True)
             if isinstance(e, (KeyboardInterrupt, SystemExit)):
                 raise
+            try:
+                redis = await get_redis_client()
+                await publish_error(redis, "bablo_service", e, context="check_activity")
+            except Exception:
+                pass
 
 
 # Global listener instance
