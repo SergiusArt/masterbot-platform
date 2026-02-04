@@ -30,11 +30,12 @@ export function UserStatsCards() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="card p-3 animate-pulse">
-            <div className="h-4 bg-tg-hint/20 rounded w-16 mb-2" />
-            <div className="h-6 bg-tg-hint/20 rounded w-12" />
+      <div className="grid grid-cols-5 gap-1.5 mb-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="card p-2 animate-pulse text-center">
+            <div className="h-3 bg-tg-hint/20 rounded w-4 mx-auto mb-1" />
+            <div className="h-5 bg-tg-hint/20 rounded w-6 mx-auto mb-1" />
+            <div className="h-2 bg-tg-hint/20 rounded w-8 mx-auto" />
           </div>
         ))}
       </div>
@@ -52,19 +53,18 @@ export function UserStatsCards() {
   const cards = [
     { label: 'Всего', value: stats.total_users, icon: '👥', color: 'text-tg-text' },
     { label: 'Активных', value: stats.active_users, icon: '✅', color: 'text-green-500' },
+    { label: 'Истёк', value: stats.expired_users, icon: '💀', color: 'text-red-500' },
     { label: 'Истекает', value: stats.expiring_soon, icon: '⏰', color: 'text-yellow-500' },
-    { label: 'Заблок.', value: stats.blocked_users, icon: '🚫', color: 'text-red-500' },
+    { label: 'Заблок.', value: stats.blocked_users, icon: '🚫', color: 'text-tg-hint' },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-2 mb-4">
+    <div className="grid grid-cols-5 gap-1.5 mb-4">
       {cards.map((card) => (
-        <div key={card.label} className="card p-3">
-          <div className="flex items-center gap-1.5 text-tg-hint text-xs mb-1">
-            <span>{card.icon}</span>
-            <span>{card.label}</span>
-          </div>
-          <div className={`text-xl font-bold ${card.color}`}>{card.value}</div>
+        <div key={card.label} className="card p-2 text-center">
+          <div className="text-xs mb-0.5">{card.icon}</div>
+          <div className={`text-lg font-bold ${card.color}`}>{card.value}</div>
+          <div className="text-tg-hint text-[10px]">{card.label}</div>
         </div>
       ))}
     </div>

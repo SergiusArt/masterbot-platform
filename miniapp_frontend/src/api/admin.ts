@@ -11,6 +11,7 @@ import type {
   AddUserRequest,
   UpdateUserRequest,
   BroadcastRequest,
+  UserFilter,
 } from '../types/admin'
 
 const API_BASE = '/api/v1/admin'
@@ -75,11 +76,13 @@ export const adminApi = {
    */
   async getUsers(params?: {
     search?: string
+    filter?: UserFilter
     limit?: number
     offset?: number
   }): Promise<AdminUser[]> {
     const searchParams = new URLSearchParams()
     if (params?.search) searchParams.set('search', params.search)
+    if (params?.filter && params.filter !== 'all') searchParams.set('filter', params.filter)
     if (params?.limit) searchParams.set('limit', String(params.limit))
     if (params?.offset) searchParams.set('offset', String(params.offset))
     const query = searchParams.toString()

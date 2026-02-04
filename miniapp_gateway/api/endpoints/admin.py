@@ -60,6 +60,7 @@ class UserStats(BaseModel):
     """User statistics."""
     total_users: int
     active_users: int
+    expired_users: int  # access_expires_at < NOW()
     expiring_soon: int  # in 7 days
     blocked_users: int
     admins: int
@@ -133,10 +134,11 @@ async def list_users(
     user: TelegramUser = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
     search: Optional[str] = None,
+    filter: Optional[str] = Query(default=None, description="Filter: all, active, expired, expiring, blocked"),
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
 ):
-    """Get list of all users with pagination and search."""
+    """Get list of all users with pagination, search, and filter."""
     # Build query
     query = """
         SELECT
@@ -156,6 +158,16 @@ async def list_users(
         WHERE 1=1
     """
     params = {"limit": limit, "offset": offset}
+
+    # Apply filter
+    if filter == "active":
+        query += " AND u.is_active = true AND (u.access_expires_at IS NULL OR u.access_expires_at > NOW())"
+    elif filter == "expired":
+        query += " AND u.is_active = true AND u.access_expires_at IS NOT NULL AND u.access_expires_at <= NOW()"
+    elif filter == "expiring":
+        query += " AND u.is_active = true AND u.access_expires_at IS NOT NULL AND u.access_expires_at > NOW() AND u.access_expires_at <= NOW() + INTERVAL '7 days'"
+    elif filter == "blocked":
+        query += " AND u.is_active = false"
 
     if search:
         query += """ AND (
@@ -388,10 +400,19 @@ async def get_user_stats(
     result = await db.execute(text("""
         SELECT
             COUNT(*) as total,
-            COUNT(*) FILTER (WHERE is_active = true) as active,
-            COUNT(*) FILTER (WHERE is_active = true AND access_expires_at IS NOT NULL
-                AND access_expires_at <= NOW() + INTERVAL '7 days'
-                AND access_expires_at > NOW()) as expiring_soon,
+            -- Active: is_active AND (no expiration OR not expired yet)
+            COUNT(*) FILTER (WHERE is_active = true
+                AND (access_expires_at IS NULL OR access_expires_at > NOW())) as active,
+            -- Expired: is_active but access has expired
+            COUNT(*) FILTER (WHERE is_active = true
+                AND access_expires_at IS NOT NULL
+                AND access_expires_at <= NOW()) as expired,
+            -- Expiring soon: active and expires within 7 days
+            COUNT(*) FILTER (WHERE is_active = true
+                AND access_expires_at IS NOT NULL
+                AND access_expires_at > NOW()
+                AND access_expires_at <= NOW() + INTERVAL '7 days') as expiring_soon,
+            -- Blocked: is_active = false
             COUNT(*) FILTER (WHERE is_active = false) as blocked,
             COUNT(*) FILTER (WHERE is_admin = true) as admins
         FROM users
@@ -401,9 +422,10 @@ async def get_user_stats(
     return UserStats(
         total_users=row[0] or 0,
         active_users=row[1] or 0,
-        expiring_soon=row[2] or 0,
-        blocked_users=row[3] or 0,
-        admins=row[4] or 0,
+        expired_users=row[2] or 0,
+        expiring_soon=row[3] or 0,
+        blocked_users=row[4] or 0,
+        admins=row[5] or 0,
     )
 
 

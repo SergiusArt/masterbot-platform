@@ -1,10 +1,10 @@
 /**
- * User list component with search and actions.
+ * User list component with search, filters, and actions.
  */
 
 import { useEffect, useState, useCallback } from 'react'
 import { adminApi } from '../../api/admin'
-import type { AdminUser } from '../../types/admin'
+import type { AdminUser, UserFilter } from '../../types/admin'
 
 interface UserListProps {
   onEdit: (user: AdminUser) => void
@@ -12,16 +12,29 @@ interface UserListProps {
   refreshTrigger?: number
 }
 
+const filterOptions: { id: UserFilter; label: string }[] = [
+  { id: 'all', label: 'Все' },
+  { id: 'active', label: 'Активные' },
+  { id: 'expired', label: 'Истёк' },
+  { id: 'expiring', label: 'Истекает' },
+  { id: 'blocked', label: 'Заблок.' },
+]
+
 export function UserList({ onEdit, onAdd, refreshTrigger }: UserListProps) {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<UserFilter>('all')
 
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await adminApi.getUsers({ search: search || undefined, limit: 50 })
+      const data = await adminApi.getUsers({
+        search: search || undefined,
+        filter,
+        limit: 50,
+      })
       setUsers(data)
       setError(null)
     } catch (err) {
@@ -29,7 +42,7 @@ export function UserList({ onEdit, onAdd, refreshTrigger }: UserListProps) {
     } finally {
       setLoading(false)
     }
-  }, [search])
+  }, [search, filter])
 
   useEffect(() => {
     loadUsers()
@@ -41,7 +54,7 @@ export function UserList({ onEdit, onAdd, refreshTrigger }: UserListProps) {
       loadUsers()
     }, 300)
     return () => clearTimeout(timeout)
-  }, [search, loadUsers])
+  }, [search, filter, loadUsers])
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-'
@@ -86,6 +99,23 @@ export function UserList({ onEdit, onAdd, refreshTrigger }: UserListProps) {
         placeholder="Поиск по ID, username..."
         className="w-full px-3 py-2 bg-tg-secondary-bg rounded-lg text-tg-text text-sm mb-3 outline-none focus:ring-1 focus:ring-tg-button"
       />
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+        {filterOptions.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => setFilter(opt.id)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              filter === opt.id
+                ? 'bg-tg-button text-tg-button-text'
+                : 'bg-tg-secondary-bg text-tg-hint hover:text-tg-text'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div className="space-y-2">

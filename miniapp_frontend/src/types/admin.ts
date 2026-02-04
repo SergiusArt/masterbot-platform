@@ -18,10 +18,14 @@ export interface AdminUser {
 export interface UserStats {
   total_users: number
   active_users: number
+  expired_users: number
   expiring_soon: number
   blocked_users: number
   admins: number
 }
+
+/** Filter type for user list */
+export type UserFilter = 'all' | 'active' | 'expired' | 'expiring' | 'blocked'
 
 /** Daily activity data point */
 export interface DailyActivity {
