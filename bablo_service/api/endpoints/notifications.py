@@ -33,6 +33,7 @@ async def get_user_settings(
             "timeframe_15m": settings.timeframe_15m,
             "timeframe_30m": settings.timeframe_30m,
             "timeframe_1h": settings.timeframe_1h,
+            "timeframe_4h": settings.timeframe_4h,
             "long_signals": settings.long_signals,
             "short_signals": settings.short_signals,
             "morning_report": settings.morning_report,
