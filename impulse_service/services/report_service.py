@@ -33,8 +33,13 @@ class ReportService:
         ]
         return lines
 
-    def _format_comparison(self, analytics) -> list[str]:
-        """Format comparison section."""
+    def _format_comparison(self, analytics, prev_day_label: str = "Вчера") -> list[str]:
+        """Format comparison section.
+
+        Args:
+            analytics: Analytics data with comparison
+            prev_day_label: Label for the previous period comparison (e.g., "Вчера", "Позавчера")
+        """
         lines = []
         comp = analytics.comparison
         if not comp:
@@ -44,7 +49,7 @@ class ReportService:
         lines.append("<b>📊 Сравнения:</b>")
 
         if comp.yesterday_total is not None and comp.vs_yesterday:
-            lines.append(f"  • Вчера: {comp.yesterday_total} ({comp.vs_yesterday})")
+            lines.append(f"  • {prev_day_label}: {comp.yesterday_total} ({comp.vs_yesterday})")
 
         if comp.week_median is not None:
             label = self._activity_emoji(comp.vs_week_median)
@@ -88,7 +93,7 @@ class ReportService:
         analytics = await analytics_service.get_analytics("yesterday")
 
         lines = self._format_header(analytics, "за вчера")
-        lines += self._format_comparison(analytics)
+        lines += self._format_comparison(analytics, prev_day_label="Позавчера")
         lines += self._format_top(analytics, "дня")
 
         return ReportData(
