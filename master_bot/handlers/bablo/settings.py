@@ -6,6 +6,7 @@ import logging
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 
 from keyboards.reply.bablo_menu import (
     get_bablo_menu_keyboard,
@@ -202,11 +203,16 @@ async def process_quality_callback(callback: CallbackQuery) -> None:
         await callback.answer(f"✅ Минимальное качество: {value}/10")
 
         # Update the inline keyboard to show new selection
-        await callback.message.edit_text(
-            "⭐ <b>Минимальное качество</b>\n\n"
-            "Выберите минимальный показатель качества для уведомлений:",
-            reply_markup=get_quality_keyboard(value),
-        )
+        try:
+            await callback.message.edit_text(
+                "⭐ <b>Минимальное качество</b>\n\n"
+                "Выберите минимальный показатель качества для уведомлений:",
+                reply_markup=get_quality_keyboard(value),
+            )
+        except TelegramBadRequest as e:
+            # Ignore if message content hasn't changed (user clicked same button twice)
+            if "message is not modified" not in str(e):
+                raise
 
     except Exception as e:
         logger.error(f"Bablo quality update error for user {user_id}: {e}")
