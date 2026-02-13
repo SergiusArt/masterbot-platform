@@ -5,13 +5,18 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 
 from keyboards.reply.main_menu import get_main_menu_keyboard
+from services.topic_manager import get_topic_manager
+from shared.utils.logger import get_logger
 
 router = Router()
+logger = get_logger("start_handler")
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, is_admin: bool = False) -> None:
     """Handle /start command.
+
+    Creates private chat topics on first interaction.
 
     Args:
         message: Incoming message
@@ -19,6 +24,16 @@ async def cmd_start(message: Message, is_admin: bool = False) -> None:
     """
     user = message.from_user
     name = user.first_name or user.username or "пользователь"
+
+    # Create forum topics in private chat (Bot API 9.4)
+    tm = get_topic_manager()
+    if tm:
+        try:
+            topics = await tm.ensure_topics(user.id)
+            if topics:
+                logger.info(f"Topics ready for user {user.id}: {list(topics.keys())}")
+        except Exception as e:
+            logger.error(f"Failed to create topics for user {user.id}: {e}")
 
     await message.answer(
         f"👋 <b>Добро пожаловать, {name}!</b>\n\n"

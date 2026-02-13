@@ -28,6 +28,7 @@ class QueuedMessage:
     text: str
     parse_mode: Optional[str] = "HTML"
     disable_notification: bool = False
+    message_thread_id: Optional[int] = None
 
 
 class TelegramMessageQueue:
@@ -80,6 +81,7 @@ class TelegramMessageQueue:
         text: str,
         parse_mode: Optional[str] = "HTML",
         disable_notification: bool = False,
+        message_thread_id: Optional[int] = None,
     ) -> None:
         """Add message to queue.
 
@@ -88,12 +90,14 @@ class TelegramMessageQueue:
             text: Message text
             parse_mode: Parse mode (HTML, Markdown, None)
             disable_notification: Send silently
+            message_thread_id: Topic thread ID for private chat topics
         """
         message = QueuedMessage(
             user_id=user_id,
             text=text,
             parse_mode=parse_mode,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
         )
         await self._queue.put(message)
 
@@ -154,12 +158,15 @@ class TelegramMessageQueue:
             True if sent successfully
         """
         try:
-            await self.bot.send_message(
-                chat_id=message.user_id,
-                text=message.text,
-                parse_mode=message.parse_mode,
-                disable_notification=message.disable_notification,
-            )
+            kwargs = {
+                "chat_id": message.user_id,
+                "text": message.text,
+                "parse_mode": message.parse_mode,
+                "disable_notification": message.disable_notification,
+            }
+            if message.message_thread_id:
+                kwargs["message_thread_id"] = message.message_thread_id
+            await self.bot.send_message(**kwargs)
             self._stats["sent"] += 1
             return True
 

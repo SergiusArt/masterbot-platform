@@ -31,6 +31,7 @@ from services.notification_listener import NotificationListener
 from services.scheduler import init_scheduler
 from services.message_queue import init_message_queue
 from services.error_reporter import init_error_reporter
+from services.topic_manager import init_topic_manager
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import setup_logger
@@ -135,6 +136,9 @@ async def main() -> None:
 
     # Initialize error reporter (for admin notifications)
     init_error_reporter(bot)
+
+    # Initialize topic manager (Bot API 9.4 private chat topics)
+    init_topic_manager(bot)
 
     # Start message queue (must be before notification listener)
     message_queue = init_message_queue(bot)

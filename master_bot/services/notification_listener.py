@@ -9,6 +9,7 @@ from typing import Optional
 from aiogram import Bot
 
 from services.message_queue import get_message_queue
+from services.topic_manager import get_topic_manager
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
 from config import settings
@@ -24,6 +25,9 @@ from shared.constants import (
     EVENT_BABLO_ACTIVITY,
     EVENT_SERVICE_ERROR,
     EVENT_ADMIN_BROADCAST,
+    TOPIC_IMPULSES,
+    TOPIC_BABLO,
+    TOPIC_REPORTS,
 )
 
 logger = get_logger("notification_listener")
@@ -42,6 +46,13 @@ class NotificationListener:
         self._running = False
         self._pending_reports: dict[tuple[int, str], dict] = {}
         self._report_timeout = 5.0
+
+    async def _get_topic_id(self, user_id: int, section: str) -> Optional[int]:
+        """Get topic thread ID for routing messages."""
+        tm = get_topic_manager()
+        if tm:
+            return await tm.get_topic_id(user_id, section)
+        return None
 
     async def start(self) -> None:
         """Start listening for notifications."""
@@ -151,14 +162,17 @@ class NotificationListener:
             f"Изменение: <b>{percent:+.2f}%</b>"
         )
 
+        topic_id = await self._get_topic_id(user_id, TOPIC_IMPULSES)
         queue = get_message_queue()
         if queue:
-            await queue.send(user_id, text)
+            await queue.send(user_id, text, message_thread_id=topic_id)
             logger.info(f"✅ Impulse alert queued for {user_id}: {symbol} {percent:+.2f}%")
         else:
-            # Fallback to direct send if queue not initialized
             try:
-                await self.bot.send_message(user_id, text)
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
                 logger.info(f"✅ Impulse alert sent to {user_id}: {symbol} {percent:+.2f}%")
             except Exception as e:
                 logger.error(f"Failed to send impulse alert to {user_id}: {e}")
@@ -180,13 +194,17 @@ class NotificationListener:
             f"Рекомендуется проверить ситуацию на рынке."
         )
 
+        topic_id = await self._get_topic_id(user_id, TOPIC_IMPULSES)
         queue = get_message_queue()
         if queue:
-            await queue.send(user_id, text)
+            await queue.send(user_id, text, message_thread_id=topic_id)
             logger.info(f"✅ Activity alert queued for {user_id}: {count} impulses in {window}m")
         else:
             try:
-                await self.bot.send_message(user_id, text)
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
                 logger.info(f"✅ Activity alert sent to {user_id}: {count} impulses in {window}m")
             except Exception as e:
                 logger.error(f"Failed to send activity alert to {user_id}: {e}")
@@ -250,13 +268,17 @@ class NotificationListener:
             # Convert TradingView markdown (**bold**, __em__, [link](url)) to HTML
             text = self._convert_tv_markdown_to_html(original_text)
 
+        topic_id = await self._get_topic_id(user_id, TOPIC_BABLO)
         queue = get_message_queue()
         if queue:
-            await queue.send(user_id, text)
+            await queue.send(user_id, text, message_thread_id=topic_id)
             logger.info(f"✅ Bablo signal queued for {user_id}: {symbol}")
         else:
             try:
-                await self.bot.send_message(user_id, text)
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
                 logger.info(f"✅ Bablo signal sent to {user_id}: {symbol}")
             except Exception as e:
                 logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
@@ -278,13 +300,17 @@ class NotificationListener:
             f"Порог срабатывания: {threshold} сигналов"
         )
 
+        topic_id = await self._get_topic_id(user_id, TOPIC_BABLO)
         queue = get_message_queue()
         if queue:
-            await queue.send(user_id, text)
+            await queue.send(user_id, text, message_thread_id=topic_id)
             logger.info(f"✅ Bablo activity alert queued for {user_id}: {signal_count} signals in {window_minutes}m")
         else:
             try:
-                await self.bot.send_message(user_id, text)
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
                 logger.info(f"✅ Bablo activity alert sent to {user_id}: {signal_count} signals in {window_minutes}m")
             except Exception as e:
                 logger.error(f"Failed to send Bablo activity alert to {user_id}: {e}")
@@ -378,13 +404,17 @@ class NotificationListener:
 
         text = "\n".join(sections)
 
+        topic_id = await self._get_topic_id(user_id, TOPIC_REPORTS)
         queue = get_message_queue()
         if queue:
-            await queue.send(user_id, text)
+            await queue.send(user_id, text, message_thread_id=topic_id)
             logger.info(f"✅ Report ({report_type}) queued for {user_id}")
         else:
             try:
-                await self.bot.send_message(user_id, text)
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
                 logger.info(f"✅ Report ({report_type}) sent to {user_id}")
             except Exception as e:
                 logger.error(f"Failed to send report to {user_id}: {e}")

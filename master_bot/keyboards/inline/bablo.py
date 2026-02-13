@@ -15,6 +15,7 @@ def get_signals_pagination_keyboard(
             InlineKeyboardButton(
                 text="← Назад",
                 callback_data=f"bablo:signals:page:{current_page - 1}",
+                style="primary",
             )
         )
     buttons.append(
@@ -28,6 +29,7 @@ def get_signals_pagination_keyboard(
             InlineKeyboardButton(
                 text="Вперёд →",
                 callback_data=f"bablo:signals:page:{current_page + 1}",
+                style="primary",
             )
         )
     return InlineKeyboardMarkup(inline_keyboard=[buttons])
@@ -44,11 +46,12 @@ def get_quality_keyboard(current: int = 7) -> InlineKeyboardMarkup:
     """
     buttons = []
     for value in [7, 8, 9]:
-        style = "✓ " if value == current else ""
+        label = f"✓ {value}/10" if value == current else f"{value}/10"
         buttons.append(
             InlineKeyboardButton(
-                text=f"{style}{value}/10",
+                text=label,
                 callback_data=f"bablo:quality:{value}",
+                style="success" if value == current else None,
             )
         )
 

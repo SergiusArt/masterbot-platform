@@ -101,3 +101,20 @@ MENU_EXTEND_ACCESS = "📅 Продлить доступ"
 MENU_USER_LIST = "📋 Список"
 MENU_SERVICE_STATUS = "🔍 Статус сервисов"
 MENU_RESTART_SERVICE = "🔄 Перезапустить"
+
+# Private chat topic sections
+TOPIC_IMPULSES = "impulses"
+TOPIC_BABLO = "bablo"
+TOPIC_REPORTS = "reports"
+TOPIC_SETTINGS = "settings"
+
+# Topic display names and icon colors (Telegram color IDs)
+TOPIC_CONFIG = {
+    TOPIC_IMPULSES: {"name": "📊 Импульсы", "icon_color": 0x6FB9F0},
+    TOPIC_BABLO: {"name": "💰 Бабло", "icon_color": 0xFFD67E},
+    TOPIC_REPORTS: {"name": "📋 Отчёты", "icon_color": 0xCB86DB},
+    TOPIC_SETTINGS: {"name": "⚙️ Настройки", "icon_color": 0x8EEE98},
+}
+
+# Redis key prefix for user topic storage
+REDIS_KEY_TOPICS = "user_topics"

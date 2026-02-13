@@ -31,11 +31,13 @@ def get_timezone_keyboard(current_tz: str | None = None) -> InlineKeyboardMarkup
 
     for label, tz_value in POPULAR_TIMEZONES:
         # Add checkmark if this is current timezone
-        display_label = f"✓ {label}" if tz_value == current_tz else label
+        is_current = tz_value == current_tz
+        display_label = f"✓ {label}" if is_current else label
         buttons.append([
             InlineKeyboardButton(
                 text=display_label,
-                callback_data=f"tz:set:{tz_value}"
+                callback_data=f"tz:set:{tz_value}",
+                style="success" if is_current else None,
             )
         ])
 
@@ -43,7 +45,8 @@ def get_timezone_keyboard(current_tz: str | None = None) -> InlineKeyboardMarkup
     buttons.append([
         InlineKeyboardButton(
             text="⌨️ Ввести вручную (UTC±N)",
-            callback_data="tz:custom"
+            callback_data="tz:custom",
+            style="primary",
         )
     ])
 
@@ -51,7 +54,8 @@ def get_timezone_keyboard(current_tz: str | None = None) -> InlineKeyboardMarkup
     buttons.append([
         InlineKeyboardButton(
             text="❌ Отмена",
-            callback_data="tz:cancel"
+            callback_data="tz:cancel",
+            style="danger",
         )
     ])
 

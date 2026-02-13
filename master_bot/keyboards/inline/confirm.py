@@ -24,10 +24,12 @@ def get_confirm_keyboard(
                 InlineKeyboardButton(
                     text=confirm_text,
                     callback_data=f"confirm:{action}:yes",
+                    style="success",
                 ),
                 InlineKeyboardButton(
                     text=cancel_text,
                     callback_data=f"confirm:{action}:no",
+                    style="danger",
                 ),
             ]
         ]

@@ -24,9 +24,14 @@ def get_threshold_keyboard(
     row = []
 
     for value in values:
-        text = f"{'✅ ' if value == current else ''}{value}%"
+        is_selected = value == current
+        text = f"{'✅ ' if is_selected else ''}{value}%"
         callback_data = f"threshold:{threshold_type}:{value}"
-        row.append(InlineKeyboardButton(text=text, callback_data=callback_data))
+        row.append(InlineKeyboardButton(
+            text=text,
+            callback_data=callback_data,
+            style="success" if is_selected else None,
+        ))
 
         if len(row) == 3:
             buttons.append(row)
