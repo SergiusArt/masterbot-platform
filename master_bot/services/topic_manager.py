@@ -39,9 +39,15 @@ class TopicManager:
     ) -> Optional[int]:
         """Get topic thread ID for a user's section.
 
-        Returns None if topics haven't been created yet.
+        Creates topics lazily if they don't exist yet.
+        Returns None if topics can't be created.
         """
         topics = await self._get_stored_topics(user_id)
+        if section in topics:
+            return topics[section]
+
+        # Lazy creation — for existing users who never sent /start
+        topics = await self.ensure_topics(user_id)
         return topics.get(section)
 
     async def has_topics(self, user_id: int) -> bool:
