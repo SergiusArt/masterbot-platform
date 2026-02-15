@@ -12,7 +12,7 @@ from keyboards.reply.main_menu import get_main_menu_keyboard
 from keyboards.inline.timezone import get_timezone_keyboard, get_timezone_display
 from services.impulse_client import impulse_client
 from services.error_reporter import report_error
-from shared.constants import MENU_SETTINGS, MENU_BACK, MENU_MAIN
+from shared.constants import MENU_SETTINGS, MENU_BACK, MENU_MAIN, EMOJI_HOME
 from shared.utils.timezone import validate_timezone_input, get_utc_offset_display
 from states.navigation import MenuState
 
@@ -26,7 +26,7 @@ def get_settings_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text="🌍 Часовой пояс", style="primary")],
             # [KeyboardButton(text="🌐 Язык")],  # TODO: Enable when i18n is ready
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN)],
+            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],
         resize_keyboard=True,
         is_persistent=True,

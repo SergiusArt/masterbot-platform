@@ -57,22 +57,32 @@ DEFAULT_ACTIVITY_THRESHOLD = 10
 DEFAULT_MORNING_REPORT_TIME = "08:00"
 DEFAULT_EVENING_REPORT_TIME = "20:00"
 
-# Menu button texts
-MENU_MAIN = "🏠 Главное меню"
+# Animated custom emoji IDs (RestrictedEmoji pack)
+EMOJI_CHART = "5431577498364158238"       # 📊
+EMOJI_MONEY = "5375296873982604963"       # 💰
+EMOJI_FIRE = "5420315771991497307"        # 🔥
+EMOJI_CROWN = "5467406098367521267"       # 👑
+EMOJI_HOME = "5465226866321268133"        # 🏠
+EMOJI_CHART_UP = "5373001317042101552"    # 📈
+EMOJI_BELL = "5242628160297641831"        # 🔔
+EMOJI_PERSON = "5373012449597335010"      # 👤
+
+# Menu button texts (no emoji prefix — animated emoji via icon_custom_emoji_id)
+MENU_MAIN = "Главное меню"
 MENU_BACK = "◀️ Назад"
-MENU_IMPULSES = "📊 Импульсы"
-MENU_BABLO = "💰 Bablo"
-MENU_ANALYTICS = "📈 Аналитика"
-MENU_NOTIFICATIONS = "🔔 Уведомления"
+MENU_IMPULSES = "Импульсы"
+MENU_BABLO = "Bablo"
+MENU_ANALYTICS = "Аналитика"
+MENU_NOTIFICATIONS = "Уведомления"
 MENU_REPORTS = "📋 Отчёты"
-MENU_ACTIVITY = "⚡ Активность"
+MENU_ACTIVITY = "Активность"
 MENU_SETTINGS = "⚙️ Настройки"
-MENU_ADMIN = "👑 Админ-панель"
-MENU_USERS = "👥 Пользователи"
+MENU_ADMIN = "Админ-панель"
+MENU_USERS = "Пользователи"
 MENU_SERVICES = "🔧 Сервисы"
 
 # Bablo menu buttons
-MENU_BABLO_ANALYTICS = "📊 Статистика"
+MENU_BABLO_ANALYTICS = "Статистика"
 MENU_BABLO_SIGNALS = "📋 Сигналы"
 MENU_BABLO_SETTINGS = "⚙️ Настройки"
 MENU_BABLO_TIMEFRAMES = "⏱ Таймфреймы"
