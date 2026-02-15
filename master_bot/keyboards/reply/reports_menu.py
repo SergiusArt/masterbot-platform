@@ -2,7 +2,7 @@
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from shared.constants import MENU_MAIN, MENU_BACK
+from shared.constants import MENU_MAIN, MENU_BACK, EMOJI_HOME, EMOJI_CHECK
 
 
 def get_reports_menu_keyboard(
@@ -52,20 +52,38 @@ def get_reports_menu_keyboard(
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=f"{checkbox(impulse_enabled)} Импульсы"),
-                KeyboardButton(text=f"{checkbox(bablo_enabled)} Bablo"),
+                KeyboardButton(
+                    text=f"{checkbox(impulse_enabled)} Импульсы",
+                    style="success" if impulse_enabled else None,
+                ),
+                KeyboardButton(
+                    text=f"{checkbox(bablo_enabled)} Bablo",
+                    style="success" if bablo_enabled else None,
+                ),
             ],
             [
-                KeyboardButton(text=f"🌅 Утренний: {toggle(morning)}"),
-                KeyboardButton(text=f"🌆 Вечерний: {toggle(evening)}"),
+                KeyboardButton(
+                    text=f"🌅 Утренний: {toggle(morning)}",
+                    style="success" if morning else "danger",
+                ),
+                KeyboardButton(
+                    text=f"🌆 Вечерний: {toggle(evening)}",
+                    style="success" if evening else "danger",
+                ),
             ],
             [
-                KeyboardButton(text=f"📊 Недельный: {toggle(weekly)}"),
-                KeyboardButton(text=f"📊 Месячный: {toggle(monthly)}"),
+                KeyboardButton(
+                    text=f"📊 Недельный: {toggle(weekly)}",
+                    style="success" if weekly else "danger",
+                ),
+                KeyboardButton(
+                    text=f"📊 Месячный: {toggle(monthly)}",
+                    style="success" if monthly else "danger",
+                ),
             ],
             [
                 KeyboardButton(text=MENU_BACK),
-                KeyboardButton(text=MENU_MAIN),
+                KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME),
             ],
         ],
         resize_keyboard=True,
