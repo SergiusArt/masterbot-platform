@@ -113,7 +113,6 @@ TOPIC_CONFIG = {
     TOPIC_IMPULSES: {"name": "📊 Импульсы", "icon_color": 0x6FB9F0},
     TOPIC_BABLO: {"name": "💰 Бабло", "icon_color": 0xFFD67E},
     TOPIC_REPORTS: {"name": "📋 Отчёты", "icon_color": 0xCB86DB},
-    TOPIC_SETTINGS: {"name": "⚙️ Настройки", "icon_color": 0x8EEE98},
 }
 
 # Redis key prefix for user topic storage

@@ -13,10 +13,6 @@ from aiogram.exceptions import TelegramBadRequest
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
 from shared.constants import (
-    TOPIC_IMPULSES,
-    TOPIC_BABLO,
-    TOPIC_REPORTS,
-    TOPIC_SETTINGS,
     TOPIC_CONFIG,
     REDIS_KEY_TOPICS,
 )
