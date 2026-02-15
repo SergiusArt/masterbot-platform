@@ -83,6 +83,7 @@ EMOJI_CHECK = "5427009714745517609"       # ✅
 EMOJI_CROSS = "5465665476971471368"       # ❌
 EMOJI_MEGAPHONE = "5469903029144657419"   # 📣
 EMOJI_PARTY = "5436040291507247633"       # 🎉
+EMOJI_TROPHY = "5409008750893734809"      # 🏆
 
 
 def animated(emoji_id: str, fallback: str = "") -> str:

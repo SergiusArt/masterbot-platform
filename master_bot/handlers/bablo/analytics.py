@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.bablo_menu import get_bablo_analytics_keyboard
 from services.bablo_client import bablo_client
-from shared.constants import MENU_BABLO_ANALYTICS, EMOJI_CHART, EMOJI_MONEY, EMOJI_CHART_UP, EMOJI_STAR, animated
+from shared.constants import MENU_BABLO_ANALYTICS, EMOJI_CHART, EMOJI_MONEY, EMOJI_CHART_UP, EMOJI_STAR, EMOJI_TROPHY, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -78,7 +78,7 @@ async def _show_analytics(message: Message, period: str) -> None:
         top_symbols = data.get("top_symbols", [])
         if top_symbols:
             lines.append("")
-            lines.append("🏆 <b>Топ символы:</b>")
+            lines.append(f"{animated(EMOJI_TROPHY, '🏆')} <b>Топ символы:</b>")
             for item in top_symbols[:5]:
                 lines.append(f"  • {item['symbol']}: {item['count']}")
 

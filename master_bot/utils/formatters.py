@@ -2,6 +2,14 @@
 
 from typing import Any
 
+from shared.constants import (
+    EMOJI_CHART,
+    EMOJI_CHART_UP,
+    EMOJI_CHART_DOWN,
+    EMOJI_TROPHY,
+    animated,
+)
+
 
 def format_analytics(data: dict) -> str:
     """Format analytics data for display.
@@ -26,8 +34,8 @@ def format_analytics(data: dict) -> str:
     period_name = period_names.get(period, period)
 
     lines = [
-        f"📊 <b>Аналитика за {period_name}</b>\n",
-        f"📈 Всего импульсов: <b>{total}</b>",
+        f"{animated(EMOJI_CHART, '📊')} <b>Аналитика за {period_name}</b>\n",
+        f"{animated(EMOJI_CHART_UP, '📈')} Всего импульсов: <b>{total}</b>",
         f"🟢 Рост: <b>{growth}</b>",
         f"🔴 Падение: <b>{fall}</b>",
     ]
@@ -35,7 +43,7 @@ def format_analytics(data: dict) -> str:
     # Top growth
     top_growth = data.get("top_growth", [])
     if top_growth:
-        lines.append("\n<b>🏆 Топ рост:</b>")
+        lines.append(f"\n<b>{animated(EMOJI_TROPHY, '🏆')} Топ рост:</b>")
         for item in top_growth[:5]:
             symbol = item.get("symbol", "N/A")
             percent = float(item.get("percent", 0))
@@ -45,7 +53,7 @@ def format_analytics(data: dict) -> str:
     # Top fall
     top_fall = data.get("top_fall", [])
     if top_fall:
-        lines.append("\n<b>📉 Топ падение:</b>")
+        lines.append(f"\n<b>{animated(EMOJI_CHART_DOWN, '📉')} Топ падение:</b>")
         for item in top_fall[:5]:
             symbol = item.get("symbol", "N/A")
             percent = float(item.get("percent", 0))
@@ -58,14 +66,14 @@ def format_analytics(data: dict) -> str:
         vs_prev = comparison.get("vs_yesterday")
         if vs_prev is not None:
             if period == "yesterday":
-                lines.append(f"\n📊 По сравнению с позавчера: <b>{vs_prev}</b>")
+                lines.append(f"\n{animated(EMOJI_CHART, '📊')} По сравнению с позавчера: <b>{vs_prev}</b>")
             else:
-                lines.append(f"\n📊 По сравнению со вчера: <b>{vs_prev}</b>")
+                lines.append(f"\n{animated(EMOJI_CHART, '📊')} По сравнению со вчера: <b>{vs_prev}</b>")
 
         vs_week = comparison.get("vs_week_median")
         week_median = comparison.get("week_median")
         if vs_week is not None and week_median is not None:
-            lines.append(f"📈 Медиана за неделю: <b>{week_median}</b>/день ({vs_week})")
+            lines.append(f"{animated(EMOJI_CHART_UP, '📈')} Медиана за неделю: <b>{week_median}</b>/день ({vs_week})")
 
     return "\n".join(lines)
 

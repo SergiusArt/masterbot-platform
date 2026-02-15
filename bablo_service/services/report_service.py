@@ -9,6 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.signal_service import signal_service
 from services.analytics_service import analytics_service
 from config import settings
+from shared.constants import (
+    EMOJI_CHART,
+    EMOJI_CHART_UP,
+    EMOJI_STAR,
+    EMOJI_TROPHY,
+    animated,
+)
 from shared.utils.logger import get_logger
 
 logger = get_logger("bablo_report_service")
@@ -115,7 +122,7 @@ class ReportService:
         avg_quality = analytics.get("average_quality")
 
         lines = [
-            f"📊 Сигналов {period_label}: <b>{total}</b>",
+            f"{animated(EMOJI_CHART, '📊')} Сигналов {period_label}: <b>{total}</b>",
             f"🟢 Long: {long_count} | 🔴 Short: {short_count}",
         ]
 
@@ -123,20 +130,20 @@ class ReportService:
         by_tf = analytics.get("by_timeframe", {})
         if by_tf:
             lines.append("")
-            lines.append("📈 <b>По таймфреймам:</b>")
+            lines.append(f"{animated(EMOJI_CHART_UP, '📈')} <b>По таймфреймам:</b>")
             for tf, count in sorted(by_tf.items()):
                 lines.append(f"  • {tf}: {count}")
 
         # Average quality
         if avg_quality:
             lines.append("")
-            lines.append(f"⭐ Средний показатель качества: <b>{avg_quality}</b>")
+            lines.append(f"{animated(EMOJI_STAR, '⭐')} Средний показатель качества: <b>{avg_quality}</b>")
 
         # Top symbols
         top_symbols = analytics.get("top_symbols", [])
         if top_symbols:
             lines.append("")
-            lines.append("🏆 <b>Топ символы:</b>")
+            lines.append(f"{animated(EMOJI_TROPHY, '🏆')} <b>Топ символы:</b>")
             for item in top_symbols[:5]:
                 lines.append(f"  • {item['symbol']}: {item['count']}")
 
@@ -145,7 +152,7 @@ class ReportService:
             lines.append("")
             vs_yesterday = comparison.get("vs_yesterday", "—")
             vs_week = comparison.get("vs_week_avg", "—")
-            lines.append(f"📊 vs вчера: {vs_yesterday} | vs неделя: {vs_week}")
+            lines.append(f"{animated(EMOJI_CHART, '📊')} vs вчера: {vs_yesterday} | vs неделя: {vs_week}")
 
         return "\n".join(lines)
 

@@ -4,7 +4,14 @@ from datetime import datetime, timezone
 
 from services.analytics_service import analytics_service
 from shared.schemas.impulse import ReportData
-from shared.constants import ReportType
+from shared.constants import (
+    ReportType,
+    EMOJI_CHART,
+    EMOJI_CHART_UP,
+    EMOJI_CHART_DOWN,
+    EMOJI_TROPHY,
+    animated,
+)
 
 
 class ReportService:
@@ -29,7 +36,7 @@ class ReportService:
             f"Импульсов {period_label}: <b>{analytics.total_impulses}</b>",
             f"🟢 Роста: <b>{analytics.growth_count}</b>",
             f"🔴 Падения: <b>{analytics.fall_count}</b>",
-            f"📈 Уникальных монет: <b>{analytics.unique_coins}</b>",
+            f"{animated(EMOJI_CHART_UP, '📈')} Уникальных монет: <b>{analytics.unique_coins}</b>",
         ]
         return lines
 
@@ -46,7 +53,7 @@ class ReportService:
             return lines
 
         lines.append("")
-        lines.append("<b>📊 Сравнения:</b>")
+        lines.append(f"<b>{animated(EMOJI_CHART, '📊')} Сравнения:</b>")
 
         if comp.yesterday_total is not None and comp.vs_yesterday:
             lines.append(f"  • {prev_day_label}: {comp.yesterday_total} ({comp.vs_yesterday})")
@@ -76,13 +83,13 @@ class ReportService:
         lines = []
         if analytics.top_growth:
             lines.append("")
-            lines.append(f"<b>🏆 Лидеры {period_word} (рост):</b>")
+            lines.append(f"<b>{animated(EMOJI_TROPHY, '🏆')} Лидеры {period_word} (рост):</b>")
             for i, item in enumerate(analytics.top_growth[:3], 1):
                 lines.append(f"  {i}. {item.symbol}: <b>+{item.percent:.1f}%</b>")
 
         if analytics.top_fall:
             lines.append("")
-            lines.append(f"<b>📉 Лидеры {period_word} (падение):</b>")
+            lines.append(f"<b>{animated(EMOJI_CHART_DOWN, '📉')} Лидеры {period_word} (падение):</b>")
             for i, item in enumerate(analytics.top_fall[:3], 1):
                 lines.append(f"  {i}. {item.symbol}: <b>{item.percent:.1f}%</b>")
 
