@@ -2,7 +2,7 @@
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from shared.constants import MENU_MAIN, MENU_BACK, EMOJI_HOME, EMOJI_CHECK
+from shared.constants import MENU_MAIN, MENU_BACK
 
 
 def get_reports_menu_keyboard(
@@ -83,7 +83,7 @@ def get_reports_menu_keyboard(
             ],
             [
                 KeyboardButton(text=MENU_BACK),
-                KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME),
+                KeyboardButton(text=MENU_MAIN),
             ],
         ],
         resize_keyboard=True,

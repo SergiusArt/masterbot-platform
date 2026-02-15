@@ -13,8 +13,6 @@ from shared.constants import (
     MENU_USER_LIST,
     MENU_SERVICE_STATUS,
     MENU_RESTART_SERVICE,
-    EMOJI_PERSON,
-    EMOJI_HOME,
 )
 
 
@@ -26,9 +24,9 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=MENU_USERS, style="primary", icon_custom_emoji_id=EMOJI_PERSON)],
+            [KeyboardButton(text=MENU_USERS, style="primary")],
             [KeyboardButton(text=MENU_SERVICES, style="primary")],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -52,7 +50,7 @@ def get_admin_users_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_USER_LIST),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -70,7 +68,7 @@ def get_admin_services_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=MENU_SERVICE_STATUS, style="primary")],
             [KeyboardButton(text=MENU_RESTART_SERVICE, style="danger")],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,

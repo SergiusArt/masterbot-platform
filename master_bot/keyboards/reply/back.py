@@ -2,7 +2,7 @@
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from shared.constants import MENU_BACK, MENU_MAIN, EMOJI_HOME
+from shared.constants import MENU_BACK, MENU_MAIN
 
 
 def get_back_keyboard() -> ReplyKeyboardMarkup:
@@ -14,7 +14,7 @@ def get_back_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,

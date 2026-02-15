@@ -16,10 +16,6 @@ from shared.constants import (
     MENU_EVENING_REPORT,
     MENU_WEEKLY_REPORT,
     MENU_MONTHLY_REPORT,
-    EMOJI_CHART_UP,
-    EMOJI_BELL,
-    EMOJI_FIRE,
-    EMOJI_HOME,
 )
 
 
@@ -32,13 +28,13 @@ def get_impulse_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=MENU_ANALYTICS, style="primary", icon_custom_emoji_id=EMOJI_CHART_UP),
-                KeyboardButton(text=MENU_NOTIFICATIONS, icon_custom_emoji_id=EMOJI_BELL),
+                KeyboardButton(text=MENU_ANALYTICS, style="primary"),
+                KeyboardButton(text=MENU_NOTIFICATIONS),
             ],
             [
-                KeyboardButton(text=MENU_ACTIVITY, style="primary", icon_custom_emoji_id=EMOJI_FIRE),
+                KeyboardButton(text=MENU_ACTIVITY, style="primary"),
             ],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -62,7 +58,7 @@ def get_analytics_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_MONTH),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -95,10 +91,10 @@ def get_notifications_menu_keyboard(
         keyboard=[
             [KeyboardButton(text=toggle_text, style=toggle_style)],
             [
-                KeyboardButton(text=f"📈 {growth_threshold}%", style="success", icon_custom_emoji_id=EMOJI_CHART_UP),
+                KeyboardButton(text=f"📈 {growth_threshold}%", style="success"),
                 KeyboardButton(text=f"📉 {fall_threshold}%", style="danger"),
             ],
-            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -137,7 +133,7 @@ def get_reports_menu_keyboard(
                 KeyboardButton(text=f"{MENU_MONTHLY_REPORT}: {status(monthly)}"),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -164,7 +160,7 @@ def get_activity_menu_keyboard(
                 KeyboardButton(text=f"📊 {threshold}", style="primary"),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,

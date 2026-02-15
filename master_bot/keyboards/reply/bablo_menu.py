@@ -9,11 +9,6 @@ from shared.constants import (
     MENU_BABLO_SIGNALS,
     MENU_BABLO_SETTINGS,
     MENU_ACTIVITY,
-    EMOJI_CHART,
-    EMOJI_FIRE,
-    EMOJI_MONEY,
-    EMOJI_HOME,
-    EMOJI_CHECK,
 )
 
 
@@ -26,14 +21,14 @@ def get_bablo_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=MENU_BABLO_ANALYTICS, style="primary", icon_custom_emoji_id=EMOJI_CHART),
+                KeyboardButton(text=MENU_BABLO_ANALYTICS, style="primary"),
                 KeyboardButton(text=MENU_BABLO_SIGNALS, style="primary"),
             ],
             [
-                KeyboardButton(text=MENU_ACTIVITY, icon_custom_emoji_id=EMOJI_FIRE),
+                KeyboardButton(text=MENU_ACTIVITY),
                 KeyboardButton(text=MENU_BABLO_SETTINGS),
             ],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -49,7 +44,7 @@ def get_bablo_analytics_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="💰 За сегодня", style="primary", icon_custom_emoji_id=EMOJI_MONEY),
+                KeyboardButton(text="💰 За сегодня", style="primary"),
                 KeyboardButton(text="💰 За вчера"),
             ],
             [
@@ -57,7 +52,7 @@ def get_bablo_analytics_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="💰 За месяц"),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -105,7 +100,7 @@ def get_bablo_settings_keyboard(
             [KeyboardButton(text=toggle_text, style=toggle_style), KeyboardButton(text=f"⭐ {min_quality}/10", style="primary")],
             [KeyboardButton(text=f"⏱ {tf_text}")],
             [KeyboardButton(text=f"📈 {dir_text}")],
-            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_BACK), KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -126,7 +121,7 @@ def get_bablo_signals_keyboard() -> ReplyKeyboardMarkup:
             ],
             [KeyboardButton(text="📋 Все сигналы", style="primary")],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -156,7 +151,7 @@ def get_timeframe_selection_keyboard(selected: set[str] | None = None) -> ReplyK
             [btn("30м"), btn("1ч")],
             [KeyboardButton(text="📋 Показать сигналы", style="primary")],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -184,9 +179,9 @@ def get_settings_timeframe_keyboard(selected: set[str] | None = None) -> ReplyKe
         keyboard=[
             [btn("1м"), btn("5м"), btn("15м")],
             [btn("30м"), btn("1ч")],
-            [KeyboardButton(text="✅ Сохранить", style="success", icon_custom_emoji_id=EMOJI_CHECK)],
+            [KeyboardButton(text="✅ Сохранить", style="success")],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -212,9 +207,9 @@ def get_settings_direction_keyboard(
                 KeyboardButton(text=f"{'✅' if long_enabled else '⬜'} Long", style="success" if long_enabled else None),
                 KeyboardButton(text=f"{'✅' if short_enabled else '⬜'} Short", style="danger" if short_enabled else None),
             ],
-            [KeyboardButton(text="✅ Сохранить", style="success", icon_custom_emoji_id=EMOJI_CHECK)],
+            [KeyboardButton(text="✅ Сохранить", style="success")],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -241,7 +236,7 @@ def get_activity_menu_keyboard(
                 KeyboardButton(text=f"📊 {threshold}", style="primary"),
             ],
             [KeyboardButton(text=MENU_BACK)],
-            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+            [KeyboardButton(text=MENU_MAIN)],
         ],
         resize_keyboard=True,
         is_persistent=True,
