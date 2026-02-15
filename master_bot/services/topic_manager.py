@@ -66,6 +66,7 @@ class TopicManager:
             return existing
 
         # Create missing topics
+        created_any = False
         for section, config in TOPIC_CONFIG.items():
             if section in existing:
                 continue
@@ -77,6 +78,7 @@ class TopicManager:
                     icon_color=config["icon_color"],
                 )
                 existing[section] = result.message_thread_id
+                created_any = True
                 logger.info(
                     f"Created topic '{config['name']}' for user {user_id}: "
                     f"thread_id={result.message_thread_id}"
@@ -88,13 +90,14 @@ class TopicManager:
                     )
                     return {}
                 logger.error(f"Failed to create topic for user {user_id}: {e}")
-                return existing
+                break
             except Exception as e:
                 logger.error(f"Unexpected error creating topic for user {user_id}: {e}")
-                return existing
+                break
 
-        # Store all topics
-        await self._store_topics(user_id, existing)
+        # Always store what we have (even partial) to avoid duplicate creation
+        if created_any:
+            await self._store_topics(user_id, existing)
         return existing
 
     async def delete_topics(self, user_id: int) -> None:
