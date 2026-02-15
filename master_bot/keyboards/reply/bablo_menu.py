@@ -10,7 +10,10 @@ from shared.constants import (
     MENU_BABLO_SETTINGS,
     MENU_ACTIVITY,
     EMOJI_CHART,
-    EMOJI_FIRE,
+    EMOJI_MEMO,
+    EMOJI_TOOLBOX,
+    EMOJI_LIGHTNING,
+    EMOJI_MONEY,
     EMOJI_HOME,
 )
 
@@ -25,11 +28,11 @@ def get_bablo_menu_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(text=MENU_BABLO_ANALYTICS, style="primary", icon_custom_emoji_id=EMOJI_CHART),
-                KeyboardButton(text=MENU_BABLO_SIGNALS, style="primary"),
+                KeyboardButton(text=MENU_BABLO_SIGNALS, style="primary", icon_custom_emoji_id=EMOJI_MEMO),
             ],
             [
-                KeyboardButton(text=MENU_ACTIVITY, icon_custom_emoji_id=EMOJI_FIRE),
-                KeyboardButton(text=MENU_BABLO_SETTINGS),
+                KeyboardButton(text=MENU_ACTIVITY, icon_custom_emoji_id=EMOJI_LIGHTNING),
+                KeyboardButton(text=MENU_BABLO_SETTINGS, icon_custom_emoji_id=EMOJI_TOOLBOX),
             ],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],

@@ -28,25 +28,9 @@ def get_reports_menu_keyboard(
     """
 
     def checkbox(enabled: bool) -> str:
-        """Get checkbox symbol.
-
-        Args:
-            enabled: Whether checkbox is checked
-
-        Returns:
-            Checkbox symbol
-        """
         return "☑️" if enabled else "⬜"
 
     def toggle(enabled: bool) -> str:
-        """Get toggle status.
-
-        Args:
-            enabled: Whether toggle is on
-
-        Returns:
-            Toggle status
-        """
         return "ВКЛ" if enabled else "ВЫКЛ"
 
     return ReplyKeyboardMarkup(

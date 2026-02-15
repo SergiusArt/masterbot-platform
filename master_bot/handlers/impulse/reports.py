@@ -20,13 +20,16 @@ from shared.constants import (
     MENU_WEEKLY_REPORT,
     MENU_MONTHLY_REPORT,
     MENU_BACK,
+    EMOJI_MEMO,
+    EMOJI_CHART,
+    animated,
 )
 from states.navigation import MenuState
 
 router = Router()
 
 
-REPORTS_HELP = """📋 <b>Отчёты Импульсов</b>
+REPORTS_HELP = f"""{animated(EMOJI_MEMO, '📋')} <b>Отчёты Импульсов</b>
 
 <b>Расписание отчётов:</b>
 🌅 <b>Утренний</b> — 08:00 (итоги за прошлый день)
@@ -129,6 +132,6 @@ async def back_from_reports(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.impulse)
     await message.answer(
-        "📊 <b>Раздел: Импульсы</b>",
+        f"{animated(EMOJI_CHART, '📊')} <b>Раздел: Импульсы</b>",
         reply_markup=get_impulse_menu_keyboard(),
     )

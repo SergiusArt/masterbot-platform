@@ -18,8 +18,9 @@ from shared.constants import (
     MENU_MONTHLY_REPORT,
     EMOJI_CHART_UP,
     EMOJI_BELL,
-    EMOJI_FIRE,
+    EMOJI_LIGHTNING,
     EMOJI_HOME,
+    EMOJI_CALENDAR,
 )
 
 
@@ -36,7 +37,7 @@ def get_impulse_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_NOTIFICATIONS, icon_custom_emoji_id=EMOJI_BELL),
             ],
             [
-                KeyboardButton(text=MENU_ACTIVITY, style="primary", icon_custom_emoji_id=EMOJI_FIRE),
+                KeyboardButton(text=MENU_ACTIVITY, style="primary", icon_custom_emoji_id=EMOJI_LIGHTNING),
             ],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],
@@ -54,12 +55,12 @@ def get_analytics_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=MENU_TODAY, style="primary"),
-                KeyboardButton(text=MENU_YESTERDAY),
+                KeyboardButton(text=MENU_TODAY, style="primary", icon_custom_emoji_id=EMOJI_CALENDAR),
+                KeyboardButton(text=MENU_YESTERDAY, icon_custom_emoji_id=EMOJI_CALENDAR),
             ],
             [
-                KeyboardButton(text=MENU_WEEK),
-                KeyboardButton(text=MENU_MONTH),
+                KeyboardButton(text=MENU_WEEK, icon_custom_emoji_id=EMOJI_CALENDAR),
+                KeyboardButton(text=MENU_MONTH, icon_custom_emoji_id=EMOJI_CALENDAR),
             ],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],

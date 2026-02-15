@@ -4,7 +4,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 
 from keyboards.reply.main_menu import get_main_menu_keyboard
-from shared.constants import MENU_MAIN
+from shared.constants import MENU_MAIN, EMOJI_HOME, animated
 
 router = Router()
 
@@ -18,6 +18,6 @@ async def back_to_main_menu(message: Message, is_admin: bool = False) -> None:
         is_admin: Whether user is admin
     """
     await message.answer(
-        "🏠 <b>Главное меню</b>\n\nВыберите раздел:",
+        f"{animated(EMOJI_HOME, '🏠')} <b>Главное меню</b>\n\nВыберите раздел:",
         reply_markup=get_main_menu_keyboard(is_admin),
     )

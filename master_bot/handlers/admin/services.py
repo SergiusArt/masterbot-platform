@@ -20,6 +20,11 @@ from shared.constants import (
     MENU_SERVICE_STATUS,
     MENU_RESTART_SERVICE,
     MENU_BACK,
+    EMOJI_TOOLBOX,
+    EMOJI_CHART,
+    EMOJI_CROWN,
+    EMOJI_REFRESH,
+    animated,
 )
 from states.navigation import MenuState
 
@@ -38,7 +43,7 @@ async def services_menu(message: Message, is_admin: bool = False) -> None:
         return
 
     await message.answer(
-        "🔧 <b>Управление сервисами</b>\n\nВыберите действие:",
+        f"{animated(EMOJI_TOOLBOX, '🔧')} <b>Управление сервисами</b>\n\nВыберите действие:",
         reply_markup=get_admin_services_keyboard(),
     )
 
@@ -60,7 +65,7 @@ async def check_services_status(message: Message, is_admin: bool = False) -> Non
         health_results = await service_registry.check_all_services_health()
         services = await service_registry.get_active_services()
 
-        lines = ["📊 <b>Статус сервисов</b>\n"]
+        lines = [f"{animated(EMOJI_CHART, '📊')} <b>Статус сервисов</b>\n"]
 
         for service in services:
             status = health_results.get(service.name, False)
@@ -91,7 +96,7 @@ async def restart_service(message: Message, is_admin: bool = False) -> None:
         return
 
     await message.answer(
-        "🔄 <b>Перезапуск сервисов</b>\n\n"
+        f"{animated(EMOJI_REFRESH, '🔄')} <b>Перезапуск сервисов</b>\n\n"
         "Для перезапуска сервиса используйте команду:\n"
         "<code>docker-compose restart [service_name]</code>\n\n"
         "Доступные сервисы:\n"
@@ -116,7 +121,7 @@ async def back_from_admin(message: Message, state: FSMContext, is_admin: bool = 
 
     await state.set_state(MenuState.admin)
     await message.answer(
-        "👑 <b>Админ-панель</b>",
+        f"{animated(EMOJI_CROWN, '👑')} <b>Админ-панель</b>",
         reply_markup=get_admin_menu_keyboard(),
     )
 

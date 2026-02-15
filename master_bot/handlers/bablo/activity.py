@@ -12,7 +12,7 @@ from keyboards.reply.bablo_menu import (
 from keyboards.reply.back import get_back_keyboard
 from services.bablo_client import bablo_client
 from services.error_reporter import report_error
-from shared.constants import MENU_ACTIVITY, MENU_BACK
+from shared.constants import MENU_ACTIVITY, MENU_BACK, EMOJI_LIGHTNING, EMOJI_MONEY, animated
 from shared.utils.logger import get_logger
 from states.navigation import MenuState
 
@@ -50,7 +50,7 @@ async def activity_menu(message: Message, state: FSMContext) -> None:
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>\n\n"
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>\n\n"
         "Получайте уведомления при высокой активности рынка.\n\n"
         f"⏱ <b>Окно:</b> {window} минут\n"
         f"📊 <b>Порог:</b> {threshold} сигналов\n\n"
@@ -114,7 +114,7 @@ async def back_from_window_input(message: Message, state: FSMContext) -> None:
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -165,7 +165,7 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -192,7 +192,7 @@ async def back_from_threshold_input(message: Message, state: FSMContext) -> None
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -243,7 +243,7 @@ async def process_threshold_input(message: Message, state: FSMContext) -> None:
         threshold = value
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -258,6 +258,6 @@ async def back_from_activity(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.bablo)
     await message.answer(
-        "💰 <b>Раздел: Bablo</b>",
+        f"{animated(EMOJI_MONEY, '💰')} <b>Раздел: Bablo</b>",
         reply_markup=get_bablo_menu_keyboard(),
     )

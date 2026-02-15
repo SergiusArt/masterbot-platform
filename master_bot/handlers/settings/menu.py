@@ -12,7 +12,7 @@ from keyboards.reply.main_menu import get_main_menu_keyboard
 from keyboards.inline.timezone import get_timezone_keyboard, get_timezone_display
 from services.impulse_client import impulse_client
 from services.error_reporter import report_error
-from shared.constants import MENU_SETTINGS, MENU_BACK, MENU_MAIN, EMOJI_HOME
+from shared.constants import MENU_SETTINGS, MENU_BACK, MENU_MAIN, EMOJI_HOME, EMOJI_GLOBE, EMOJI_TOOLBOX, animated
 from shared.utils.timezone import validate_timezone_input, get_utc_offset_display
 from states.navigation import MenuState
 
@@ -23,7 +23,7 @@ def get_settings_keyboard() -> ReplyKeyboardMarkup:
     """Build settings menu keyboard."""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🌍 Часовой пояс", style="primary")],
+            [KeyboardButton(text="Часовой пояс", style="primary", icon_custom_emoji_id=EMOJI_GLOBE)],
             # [KeyboardButton(text="🌐 Язык")],  # TODO: Enable when i18n is ready
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
@@ -57,12 +57,12 @@ async def settings_menu(message: Message, state: FSMContext) -> None:
     """Handle settings menu button."""
     await state.set_state(MenuState.settings)
     await message.answer(
-        "⚙️ <b>Настройки</b>\n\nВыберите раздел:",
+        f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b>\n\nВыберите раздел:",
         reply_markup=get_settings_keyboard(),
     )
 
 
-@router.message(MenuState.settings, F.text == "🌍 Часовой пояс")
+@router.message(MenuState.settings, F.text == "Часовой пояс")
 async def timezone_settings(message: Message, state: FSMContext) -> None:
     """Handle timezone settings."""
     user_id = message.from_user.id
@@ -79,7 +79,7 @@ async def timezone_settings(message: Message, state: FSMContext) -> None:
 
     await state.set_state(MenuState.settings_timezone)
     await message.answer(
-        f"🌍 <b>Часовой пояс</b>\n\n"
+        f"{animated(EMOJI_GLOBE, '🌍')} <b>Часовой пояс</b>\n\n"
         f"Текущий часовой пояс: <b>{tz_display}</b> ({utc_offset})\n\n"
         "Выберите новый часовой пояс или введите вручную:",
         reply_markup=get_timezone_keyboard(current_tz),
@@ -142,7 +142,7 @@ async def process_custom_timezone(message: Message, state: FSMContext) -> None:
     if user_input == MENU_BACK:
         await state.set_state(MenuState.settings)
         await message.answer(
-            "⚙️ <b>Настройки</b>\n\nВыберите раздел:",
+            f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b>\n\nВыберите раздел:",
             reply_markup=get_settings_keyboard(),
         )
         return

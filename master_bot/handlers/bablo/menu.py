@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.bablo_menu import get_bablo_menu_keyboard
-from shared.constants import MENU_BABLO, MENU_BACK
+from shared.constants import MENU_BABLO, MENU_BACK, EMOJI_MONEY, EMOJI_CHART, EMOJI_MEMO, EMOJI_TOOLBOX, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -21,11 +21,11 @@ async def bablo_menu(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.bablo)
     await message.answer(
-        "💰 <b>Раздел: Bablo</b>\n\n"
+        f"{animated(EMOJI_MONEY, '💰')} <b>Раздел: Bablo</b>\n\n"
         "Торговые сигналы с вероятностным анализом.\n\n"
-        "📊 <b>Статистика</b> — аналитика сигналов\n"
-        "📋 <b>Сигналы</b> — последние сигналы\n"
-        "⚙️ <b>Настройки</b> — фильтры уведомлений\n\n"
+        f"{animated(EMOJI_CHART, '📊')} <b>Статистика</b> — аналитика сигналов\n"
+        f"{animated(EMOJI_MEMO, '📋')} <b>Сигналы</b> — последние сигналы\n"
+        f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b> — фильтры уведомлений\n\n"
         "Выберите действие:",
         reply_markup=get_bablo_menu_keyboard(),
     )
@@ -43,6 +43,6 @@ async def back_to_bablo_menu(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.bablo)
     await message.answer(
-        "💰 <b>Раздел: Bablo</b>\n\nВыберите действие:",
+        f"{animated(EMOJI_MONEY, '💰')} <b>Раздел: Bablo</b>\n\nВыберите действие:",
         reply_markup=get_bablo_menu_keyboard(),
     )

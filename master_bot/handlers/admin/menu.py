@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.admin_menu import get_admin_menu_keyboard
-from shared.constants import MENU_ADMIN
+from shared.constants import MENU_ADMIN, EMOJI_CROWN, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -26,7 +26,7 @@ async def admin_menu(message: Message, state: FSMContext, is_admin: bool = False
 
     await state.set_state(MenuState.admin)
     await message.answer(
-        "👑 <b>Админ-панель</b>\n\n"
+        f"{animated(EMOJI_CROWN, '👑')} <b>Админ-панель</b>\n\n"
         "Управление платформой MasterBot.\n\n"
         "Выберите раздел:",
         reply_markup=get_admin_menu_keyboard(),

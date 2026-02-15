@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.bablo_menu import get_bablo_analytics_keyboard
 from services.bablo_client import bablo_client
-from shared.constants import MENU_BABLO_ANALYTICS
+from shared.constants import MENU_BABLO_ANALYTICS, EMOJI_CHART, EMOJI_MONEY, EMOJI_CHART_UP, EMOJI_STAR, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -26,7 +26,7 @@ async def bablo_analytics_menu(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.bablo_analytics)
     await message.answer(
-        "📊 <b>Статистика Bablo</b>\n\n"
+        f"{animated(EMOJI_CHART, '📊')} <b>Статистика Bablo</b>\n\n"
         "Выберите период:",
         reply_markup=get_bablo_analytics_keyboard(),
     )
@@ -55,9 +55,9 @@ async def _show_analytics(message: Message, period: str) -> None:
         avg_quality = data.get("average_quality")
 
         lines = [
-            f"💰 <b>Статистика Bablo {period_labels.get(period, period)}</b>",
+            f"{animated(EMOJI_MONEY, '💰')} <b>Статистика Bablo {period_labels.get(period, period)}</b>",
             "",
-            f"📊 Всего сигналов: <b>{total}</b>",
+            f"{animated(EMOJI_CHART, '📊')} Всего сигналов: <b>{total}</b>",
             f"🟢 Long: {long_count} | 🔴 Short: {short_count}",
         ]
 
@@ -65,14 +65,14 @@ async def _show_analytics(message: Message, period: str) -> None:
         by_tf = data.get("by_timeframe", {})
         if by_tf:
             lines.append("")
-            lines.append("📈 <b>По таймфреймам:</b>")
+            lines.append(f"{animated(EMOJI_CHART_UP, '📈')} <b>По таймфреймам:</b>")
             for tf, count in sorted(by_tf.items()):
                 lines.append(f"  • {tf}: {count}")
 
         # Average quality
         if avg_quality:
             lines.append("")
-            lines.append(f"⭐ Средний показатель качества: <b>{avg_quality}</b>")
+            lines.append(f"{animated(EMOJI_STAR, '⭐')} Средний показатель качества: <b>{avg_quality}</b>")
 
         # Top symbols
         top_symbols = data.get("top_symbols", [])

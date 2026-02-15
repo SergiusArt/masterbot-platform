@@ -21,7 +21,7 @@ from keyboards.reply.bablo_menu import (
 from keyboards.inline.bablo import get_signals_pagination_keyboard
 from services.bablo_client import bablo_client
 from services.impulse_client import impulse_client
-from shared.constants import MENU_BABLO_SIGNALS, MENU_BACK, MENU_MAIN
+from shared.constants import MENU_BABLO_SIGNALS, MENU_BACK, MENU_MAIN, EMOJI_MEMO, animated
 from shared.utils.timezone import get_pytz_timezone
 from states.navigation import MenuState
 
@@ -64,7 +64,7 @@ async def bablo_signals_menu(message: Message, state: FSMContext) -> None:
     await state.set_state(MenuState.bablo_signals)
     await state.update_data(selected_timeframes=set(), signal_direction=None, user_timezone=user_tz)
     await message.answer(
-        "📋 <b>Сигналы Bablo</b>\n\n"
+        f"{animated(EMOJI_MEMO, '📋')} <b>Сигналы Bablo</b>\n\n"
         "Здесь отображаются <b>все сигналы за текущий день</b>, которые соответствуют вашим фильтрам.\n\n"
         "Выберите направление сигналов для просмотра:",
         reply_markup=get_bablo_signals_keyboard(),
@@ -358,7 +358,7 @@ async def back_from_timeframe_selection(message: Message, state: FSMContext) -> 
     """
     await state.set_state(MenuState.bablo_signals)
     await message.answer(
-        "📋 <b>Сигналы Bablo</b>\n\n"
+        f"{animated(EMOJI_MEMO, '📋')} <b>Сигналы Bablo</b>\n\n"
         "Выберите тип сигналов:",
         reply_markup=get_bablo_signals_keyboard(),
     )

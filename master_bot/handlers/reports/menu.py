@@ -8,13 +8,13 @@ from keyboards.reply.reports_menu import get_reports_menu_keyboard
 from keyboards.reply.main_menu import get_main_menu_keyboard
 from services.impulse_client import impulse_client
 from services.bablo_client import bablo_client
-from shared.constants import MENU_REPORTS, MENU_BACK, MENU_MAIN
+from shared.constants import MENU_REPORTS, MENU_BACK, MENU_MAIN, EMOJI_MEMO, EMOJI_HOME, animated
 from states.navigation import MenuState
 
 router = Router()
 
 
-REPORTS_HELP = """📋 <b>Отчёты</b>
+REPORTS_HELP = f"""{animated(EMOJI_MEMO, '📋')} <b>Отчёты</b>
 
 Управление отчётами от всех сервисов в одном месте.
 
@@ -267,7 +267,7 @@ async def back_from_reports(message: Message, state: FSMContext, is_admin: bool 
     await state.set_state(MenuState.main)
 
     await message.answer(
-        "🏠 <b>Главное меню</b>",
+        f"{animated(EMOJI_HOME, '🏠')} <b>Главное меню</b>",
         reply_markup=get_main_menu_keyboard(is_admin=is_admin),
     )
 
@@ -284,6 +284,6 @@ async def main_from_reports(message: Message, state: FSMContext, is_admin: bool 
     await state.set_state(MenuState.main)
 
     await message.answer(
-        "🏠 <b>Главное меню</b>",
+        f"{animated(EMOJI_HOME, '🏠')} <b>Главное меню</b>",
         reply_markup=get_main_menu_keyboard(is_admin=is_admin),
     )

@@ -17,7 +17,7 @@ from keyboards.reply.bablo_menu import (
 from keyboards.inline.bablo import get_quality_keyboard
 from services.bablo_client import bablo_client
 from services.error_reporter import report_error
-from shared.constants import MENU_BABLO_SETTINGS, MENU_BACK
+from shared.constants import MENU_BABLO_SETTINGS, MENU_BACK, EMOJI_TOOLBOX, EMOJI_MONEY, animated
 from states.navigation import MenuState
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ async def bablo_settings_menu(message: Message, state: FSMContext) -> None:
         tf_list = sorted(timeframes, key=lambda x: SETTINGS_TIMEFRAMES.index(x) if x in SETTINGS_TIMEFRAMES else 99)
 
         await message.answer(
-            f"⚙️ <b>Настройки Bablo</b>\n\n"
+            f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки Bablo</b>\n\n"
             f"<i>Здесь настраивается фильтрация поступающих уведомлений о сигналах.</i>\n\n"
             f"Уведомления: {status}\n\n"
             f"⭐ <b>Мин. качество:</b> {min_quality}/10\n"
@@ -534,6 +534,6 @@ async def back_from_settings(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.bablo)
     await message.answer(
-        "💰 <b>Bablo</b>\n\nВыберите раздел:",
+        f"{animated(EMOJI_MONEY, '💰')} <b>Bablo</b>\n\nВыберите раздел:",
         reply_markup=get_bablo_menu_keyboard(),
     )

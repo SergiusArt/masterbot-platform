@@ -18,7 +18,7 @@ from keyboards.inline.thresholds import (
 )
 from services.impulse_client import impulse_client
 from services.error_reporter import report_error
-from shared.constants import MENU_NOTIFICATIONS, MENU_BACK
+from shared.constants import MENU_NOTIFICATIONS, MENU_BACK, EMOJI_BELL, EMOJI_CHART_UP, EMOJI_CHART_DOWN, EMOJI_CHART, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -48,10 +48,10 @@ async def notifications_menu(message: Message, state: FSMContext) -> None:
     status_text = "🔔 <b>Включены</b>" if notifications_enabled else "🔕 <b>Выключены</b>"
 
     await message.answer(
-        f"🔔 <b>Уведомления об импульсах</b>\n\n"
+        f"{animated(EMOJI_BELL, '🔔')} <b>Уведомления об импульсах</b>\n\n"
         f"Статус: {status_text}\n\n"
-        f"📈 <b>Порог роста:</b> {growth}%\n"
-        f"📉 <b>Порог падения:</b> {fall}%\n\n"
+        f"{animated(EMOJI_CHART_UP, '📈')} <b>Порог роста:</b> {growth}%\n"
+        f"{animated(EMOJI_CHART_DOWN, '📉')} <b>Порог падения:</b> {fall}%\n\n"
         "<i>Если вам нужны только отчёты без сигналов в реальном времени — "
         "выключите уведомления.</i>\n\n"
         "Нажмите на кнопку для изменения:",
@@ -114,7 +114,7 @@ async def change_growth_threshold(message: Message) -> None:
         current = 20
 
     await message.answer(
-        "📈 <b>Порог роста</b>\n\n"
+        f"{animated(EMOJI_CHART_UP, '📈')} <b>Порог роста</b>\n\n"
         "Выберите процент, при котором будете получать уведомления о росте:",
         reply_markup=get_growth_threshold_keyboard(current),
     )
@@ -136,7 +136,7 @@ async def change_fall_threshold(message: Message) -> None:
         current = -15
 
     await message.answer(
-        "📉 <b>Порог падения</b>\n\n"
+        f"{animated(EMOJI_CHART_DOWN, '📉')} <b>Порог падения</b>\n\n"
         "Выберите процент, при котором будете получать уведомления о падении:",
         reply_markup=get_fall_threshold_keyboard(current),
     )
@@ -165,9 +165,9 @@ async def process_threshold_callback(callback: CallbackQuery) -> None:
         fall = settings.get("fall_threshold", -15)
 
         await callback.message.edit_text(
-            "🔔 <b>Уведомления</b>\n\n"
-            f"📈 <b>Порог роста:</b> {growth}%\n"
-            f"📉 <b>Порог падения:</b> {fall}%\n\n"
+            f"{animated(EMOJI_BELL, '🔔')} <b>Уведомления</b>\n\n"
+            f"{animated(EMOJI_CHART_UP, '📈')} <b>Порог роста:</b> {growth}%\n"
+            f"{animated(EMOJI_CHART_DOWN, '📉')} <b>Порог падения:</b> {fall}%\n\n"
             "✅ Настройки сохранены!"
         )
 
@@ -187,6 +187,6 @@ async def back_from_notifications(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.impulse)
     await message.answer(
-        "📊 <b>Раздел: Импульсы</b>",
+        f"{animated(EMOJI_CHART, '📊')} <b>Раздел: Импульсы</b>",
         reply_markup=get_impulse_menu_keyboard(),
     )

@@ -6,6 +6,7 @@ from aiogram.types import Message
 
 from keyboards.reply.main_menu import get_main_menu_keyboard
 from services.topic_manager import get_topic_manager
+from shared.constants import EMOJI_HOME, EMOJI_CHART, EMOJI_TOOLBOX, EMOJI_CROWN, animated
 from shared.utils.logger import get_logger
 
 router = Router()
@@ -57,9 +58,9 @@ async def cmd_help(message: Message) -> None:
         "/help — Показать справку\n"
         "/menu — Вернуться в главное меню\n\n"
         "<b>Разделы:</b>\n"
-        "📊 <b>Импульсы</b> — Аналитика и уведомления по криптовалютам\n"
-        "⚙️ <b>Настройки</b> — Настройки профиля\n"
-        "👑 <b>Админ-панель</b> — Управление пользователями (только для админов)\n\n"
+        f"{animated(EMOJI_CHART, '📊')} <b>Импульсы</b> — Аналитика и уведомления по криптовалютам\n"
+        f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b> — Настройки профиля\n"
+        f"{animated(EMOJI_CROWN, '👑')} <b>Админ-панель</b> — Управление пользователями (только для админов)\n\n"
         "По всем вопросам обращайтесь к администратору."
     )
 
@@ -73,6 +74,6 @@ async def cmd_menu(message: Message, is_admin: bool = False) -> None:
         is_admin: Whether user is admin
     """
     await message.answer(
-        "🏠 <b>Главное меню</b>\n\nВыберите раздел:",
+        f"{animated(EMOJI_HOME, '🏠')} <b>Главное меню</b>\n\nВыберите раздел:",
         reply_markup=get_main_menu_keyboard(is_admin),
     )

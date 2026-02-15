@@ -20,6 +20,9 @@ from shared.constants import (
     MENU_YESTERDAY,
     MENU_WEEK,
     MENU_MONTH,
+    EMOJI_CHART_UP,
+    EMOJI_CHART,
+    animated,
 )
 from states.navigation import MenuState
 from utils.formatters import format_analytics
@@ -37,7 +40,7 @@ async def analytics_menu(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.impulse_analytics)
     await message.answer(
-        "📈 <b>Аналитика</b>\n\nВыберите период:",
+        f"{animated(EMOJI_CHART_UP, '📈')} <b>Аналитика</b>\n\nВыберите период:",
         reply_markup=get_analytics_menu_keyboard(),
     )
 
@@ -118,6 +121,6 @@ async def back_from_analytics(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.impulse)
     await message.answer(
-        "📊 <b>Раздел: Импульсы</b>\n\nВыберите действие:",
+        f"{animated(EMOJI_CHART, '📊')} <b>Раздел: Импульсы</b>\n\nВыберите действие:",
         reply_markup=get_impulse_menu_keyboard(),
     )

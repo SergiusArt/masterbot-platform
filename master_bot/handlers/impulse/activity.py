@@ -11,7 +11,7 @@ from keyboards.reply.impulse_menu import (
 )
 from keyboards.reply.back import get_back_keyboard
 from services.impulse_client import impulse_client
-from shared.constants import MENU_ACTIVITY, MENU_BACK
+from shared.constants import MENU_ACTIVITY, MENU_BACK, EMOJI_LIGHTNING, EMOJI_CHART, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -44,7 +44,7 @@ async def activity_menu(message: Message, state: FSMContext) -> None:
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>\n\n"
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>\n\n"
         "Получайте уведомления при высокой активности рынка.\n\n"
         f"⏱ <b>Окно:</b> {window} минут\n"
         f"📊 <b>Порог:</b> {threshold} импульсов\n\n"
@@ -106,7 +106,7 @@ async def back_from_window_input(message: Message, state: FSMContext) -> None:
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -135,7 +135,7 @@ async def process_window_input(message: Message, state: FSMContext) -> None:
         # Refresh menu
         settings = await impulse_client.get_user_settings(user_id)
         await message.answer(
-            "⚡ <b>Настройки активности</b>",
+            f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
             reply_markup=get_activity_menu_keyboard(
                 settings.get("activity_window_minutes", 15),
                 settings.get("activity_threshold", 10),
@@ -168,7 +168,7 @@ async def back_from_threshold_input(message: Message, state: FSMContext) -> None
         threshold = 10
 
     await message.answer(
-        "⚡ <b>Настройки активности</b>",
+        f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
         reply_markup=get_activity_menu_keyboard(window, threshold),
     )
 
@@ -197,7 +197,7 @@ async def process_threshold_input(message: Message, state: FSMContext) -> None:
         # Refresh menu
         settings = await impulse_client.get_user_settings(user_id)
         await message.answer(
-            "⚡ <b>Настройки активности</b>",
+            f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Настройки активности</b>",
             reply_markup=get_activity_menu_keyboard(
                 settings.get("activity_window_minutes", 15),
                 settings.get("activity_threshold", 10),
@@ -220,6 +220,6 @@ async def back_from_activity(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(MenuState.impulse)
     await message.answer(
-        "📊 <b>Раздел: Импульсы</b>",
+        f"{animated(EMOJI_CHART, '📊')} <b>Раздел: Импульсы</b>",
         reply_markup=get_impulse_menu_keyboard(),
     )

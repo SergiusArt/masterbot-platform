@@ -22,6 +22,9 @@ from shared.constants import (
     MENU_EXTEND_ACCESS,
     MENU_USER_LIST,
     MENU_BACK,
+    EMOJI_PERSON,
+    EMOJI_MEMO,
+    animated,
 )
 
 router = Router()
@@ -47,7 +50,7 @@ async def users_menu(message: Message, is_admin: bool = False) -> None:
         return
 
     await message.answer(
-        "👥 <b>Управление пользователями</b>\n\nВыберите действие:",
+        f"{animated(EMOJI_PERSON, '👥')} <b>Управление пользователями</b>\n\nВыберите действие:",
         reply_markup=get_admin_users_keyboard(),
     )
 
@@ -136,7 +139,7 @@ async def list_users(message: Message, is_admin: bool = False) -> None:
         await message.answer("📋 Список пользователей пуст.")
         return
 
-    lines = ["📋 <b>Список пользователей</b>\n"]
+    lines = [f"{animated(EMOJI_MEMO, '📋')} <b>Список пользователей</b>\n"]
 
     for user in users:
         status = "✅" if user.is_active else "❌"
@@ -172,7 +175,7 @@ async def process_user_id(message: Message, state: FSMContext) -> None:
     if message.text == MENU_BACK:
         await state.clear()
         await message.answer(
-            "👥 <b>Управление пользователями</b>",
+            f"{animated(EMOJI_PERSON, '👥')} <b>Управление пользователями</b>",
             reply_markup=get_admin_users_keyboard(),
         )
         return
@@ -240,7 +243,7 @@ async def process_days(message: Message, state: FSMContext) -> None:
     if message.text == MENU_BACK:
         await state.clear()
         await message.answer(
-            "👥 <b>Управление пользователями</b>",
+            f"{animated(EMOJI_PERSON, '👥')} <b>Управление пользователями</b>",
             reply_markup=get_admin_users_keyboard(),
         )
         return
@@ -301,6 +304,6 @@ async def process_days(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(
-        "👥 <b>Управление пользователями</b>",
+        f"{animated(EMOJI_PERSON, '👥')} <b>Управление пользователями</b>",
         reply_markup=get_admin_users_keyboard(),
     )
