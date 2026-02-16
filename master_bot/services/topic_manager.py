@@ -4,6 +4,7 @@ Creates and manages forum topics in private chats,
 routing messages to the correct section topic.
 """
 
+import asyncio
 import json
 from typing import Optional
 
@@ -25,10 +26,18 @@ class TopicManager:
 
     Stores topic thread IDs in Redis for quick lookup.
     Creates topics on first interaction via /start.
+    Uses asyncio.Lock per user to prevent race conditions.
     """
 
     def __init__(self, bot: Bot):
         self.bot = bot
+        self._locks: dict[int, asyncio.Lock] = {}
+
+    def _get_lock(self, user_id: int) -> asyncio.Lock:
+        """Get or create a per-user lock."""
+        if user_id not in self._locks:
+            self._locks[user_id] = asyncio.Lock()
+        return self._locks[user_id]
 
     async def get_topic_id(
         self, user_id: int, section: str
@@ -53,6 +62,19 @@ class TopicManager:
 
     async def ensure_topics(self, user_id: int) -> dict[str, int]:
         """Create topics if they don't exist, return all topic IDs.
+
+        Uses per-user lock to prevent race conditions when
+        multiple notifications arrive simultaneously.
+
+        Returns:
+            Dict mapping section name to thread_id
+        """
+        lock = self._get_lock(user_id)
+        async with lock:
+            return await self._ensure_topics_locked(user_id)
+
+    async def _ensure_topics_locked(self, user_id: int) -> dict[str, int]:
+        """Create topics (called under lock).
 
         Returns:
             Dict mapping section name to thread_id
@@ -95,6 +117,31 @@ class TopicManager:
         if created_any:
             await self._store_topics(user_id, existing)
         return existing
+
+    async def handle_invalid_topic(self, user_id: int, section: str) -> Optional[int]:
+        """Handle case when a stored topic ID is invalid (deleted/not found).
+
+        Removes the invalid topic from Redis and creates a new one.
+
+        Args:
+            user_id: Telegram user ID
+            section: Section name (e.g., 'impulses', 'bablo')
+
+        Returns:
+            New topic thread ID or None
+        """
+        lock = self._get_lock(user_id)
+        async with lock:
+            existing = await self._get_stored_topics(user_id)
+            # Remove the invalid section
+            if section in existing:
+                del existing[section]
+                await self._store_topics(user_id, existing)
+                logger.info(f"Removed invalid topic '{section}' for user {user_id}")
+
+        # Re-create topics (ensure_topics will create the missing one)
+        topics = await self.ensure_topics(user_id)
+        return topics.get(section)
 
     async def delete_topics(self, user_id: int) -> None:
         """Remove stored topic IDs for a user (does not delete Telegram topics)."""

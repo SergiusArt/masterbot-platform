@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramRetryAfter, TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter, TelegramForbiddenError
 
 from shared.utils.logger import get_logger
 
@@ -151,6 +151,9 @@ class TelegramMessageQueue:
     async def _send_message(self, message: QueuedMessage) -> bool:
         """Send a single message with error handling.
 
+        If sending to a topic fails with MESSAGE_THREAD_INVALID,
+        falls back to sending without topic (General chat).
+
         Args:
             message: Message to send
 
@@ -169,6 +172,39 @@ class TelegramMessageQueue:
             await self.bot.send_message(**kwargs)
             self._stats["sent"] += 1
             return True
+
+        except TelegramBadRequest as e:
+            error_msg = str(e)
+            if message.message_thread_id and (
+                "MESSAGE_THREAD_INVALID" in error_msg
+                or "message thread not found" in error_msg.lower()
+                or "TOPIC_CLOSED" in error_msg
+                or "TOPIC_DELETED" in error_msg
+            ):
+                # Topic ID is invalid — send to General chat as fallback
+                logger.warning(
+                    f"Invalid topic {message.message_thread_id} for user "
+                    f"{message.user_id}, sending to General chat"
+                )
+                try:
+                    await self.bot.send_message(
+                        chat_id=message.user_id,
+                        text=message.text,
+                        parse_mode=message.parse_mode,
+                        disable_notification=message.disable_notification,
+                    )
+                    self._stats["sent"] += 1
+                    return True
+                except Exception as fallback_err:
+                    self._stats["failed"] += 1
+                    logger.error(
+                        f"Fallback send also failed for {message.user_id}: {fallback_err}"
+                    )
+                    return False
+            else:
+                self._stats["failed"] += 1
+                logger.error(f"Failed to send to {message.user_id}: {e}")
+                return False
 
         except TelegramRetryAfter as e:
             # Rate limited - wait and retry

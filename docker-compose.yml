@@ -23,6 +23,7 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
       - "6379:6379"
     volumes:
