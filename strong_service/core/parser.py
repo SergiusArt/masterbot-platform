@@ -22,19 +22,20 @@ class StrongParser:
     """Parser for Strong Signal messages from Telegram channel.
 
     Message formats:
-        Long: 🧤DOTUSDT.P Long🧤  (or with markdown: 🧤*DOTUSDT.P* _Long_🧤)
-        Short: 🎒SOLUSDT.P Short🎒 (or with markdown: 🎒*SOLUSDT.P* _Short_🎒)
+        Plain:    🧤DOTUSDT.P Long🧤 / 🎒SOLUSDT.P Short🎒
+        Markdown: 🧤**DOTUSDT.P** __Long__🧤 / 🎒**SOLUSDT.P** __Short__🎒
+        (also single * / _ variants)
     """
 
     # Long pattern: 🧤 ... Long ... 🧤
     LONG_PATTERN = re.compile(
-        r"🧤\*?([A-Z0-9]+(?:\.P)?)\*?\s*_?Long_?🧤",
+        r"🧤\*{0,2}([A-Z0-9]+(?:\.P)?)\*{0,2}\s*_{0,2}Long_{0,2}🧤",
         re.IGNORECASE,
     )
 
     # Short pattern: 🎒 ... Short ... 🎒
     SHORT_PATTERN = re.compile(
-        r"🎒\*?([A-Z0-9]+(?:\.P)?)\*?\s*_?Short_?🎒",
+        r"🎒\*{0,2}([A-Z0-9]+(?:\.P)?)\*{0,2}\s*_{0,2}Short_{0,2}🎒",
         re.IGNORECASE,
     )
 

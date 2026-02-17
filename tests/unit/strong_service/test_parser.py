@@ -164,3 +164,31 @@ class TestStrongParser:
         assert result is not None
         assert result.symbol == "1000PEPEUSDT"
         assert result.direction == "long"
+
+    # =========================================================================
+    # Real Channel Format (double ** and __)
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_parse_real_long_double_markdown(self, parser):
+        """Parser should handle real channel format: **symbol** __Long__."""
+        result = parser.parse("🧤**SFPUSDT.P** __Long__🧤")
+        assert result is not None
+        assert result.symbol == "SFPUSDT"
+        assert result.direction == "long"
+
+    @pytest.mark.unit
+    def test_parse_real_short_double_markdown(self, parser):
+        """Parser should handle real channel format: **symbol** __Short__."""
+        result = parser.parse("🎒**XRPUSDT.P** __Short__🎒")
+        assert result is not None
+        assert result.symbol == "XRPUSDT"
+        assert result.direction == "short"
+
+    @pytest.mark.unit
+    def test_parse_real_1000pepe_short(self, parser):
+        """Parser should handle 1000PEPE with double markdown."""
+        result = parser.parse("🎒**1000PEPEUSDT.P** __Short__🎒")
+        assert result is not None
+        assert result.symbol == "1000PEPEUSDT"
+        assert result.direction == "short"
