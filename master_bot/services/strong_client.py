@@ -55,7 +55,7 @@ class StrongServiceClient(BaseServiceClient):
         return await self._request(
             "POST",
             "/api/v1/performance/calculate",
-            params={"months": months, "recalculate": recalculate},
+            params={"months": months, "recalculate": str(recalculate).lower()},
             timeout=300,
         )
 
