@@ -29,6 +29,7 @@ class BaseServiceClient:
         endpoint: str,
         json: Optional[dict] = None,
         params: Optional[dict] = None,
+        timeout: Optional[int] = None,
     ) -> dict:
         """Make HTTP request to service.
 
@@ -37,6 +38,7 @@ class BaseServiceClient:
             endpoint: API endpoint
             json: JSON body
             params: Query parameters
+            timeout: Override timeout in seconds
 
         Returns:
             Response JSON
@@ -45,8 +47,9 @@ class BaseServiceClient:
             aiohttp.ClientError: On request failure
         """
         url = f"{self.base_url}{endpoint}"
+        req_timeout = ClientTimeout(total=timeout) if timeout else self.timeout
 
-        async with aiohttp.ClientSession(timeout=self.timeout) as session:
+        async with aiohttp.ClientSession(timeout=req_timeout) as session:
             async with session.request(
                 method=method,
                 url=url,

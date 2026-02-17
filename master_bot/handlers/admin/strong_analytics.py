@@ -1,5 +1,7 @@
 """Admin Strong Signal analytics handler."""
 
+from html import escape
+
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
@@ -80,7 +82,7 @@ async def show_stats(message: Message, is_admin: bool = False) -> None:
         await loading.edit_text("\n".join(lines))
 
     except Exception as e:
-        await loading.edit_text(f"❌ Ошибка: {e}")
+        await loading.edit_text(f"❌ Ошибка: {escape(str(e))}")
 
 
 @router.message(MenuState.admin_strong, F.text.in_({"🔄 Рассчитать", "🔄 Пересчитать всё"}))
@@ -104,7 +106,7 @@ async def calculate_performance(message: Message, is_admin: bool = False) -> Non
         )
 
     except Exception as e:
-        await loading.edit_text(f"❌ Ошибка: {e}")
+        await loading.edit_text(f"❌ Ошибка: {escape(str(e))}")
 
 
 @router.message(MenuState.admin_strong, F.text == "📋 Список сигналов")
@@ -144,7 +146,7 @@ async def show_signals_list(message: Message, is_admin: bool = False) -> None:
         await message.answer(text)
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка: {e}")
+        await message.answer(f"❌ Ошибка: {escape(str(e))}")
 
 
 @router.message(MenuState.admin_strong, F.text == MENU_BACK)

@@ -51,10 +51,12 @@ class StrongServiceClient(BaseServiceClient):
         return await self.put(f"/api/v1/notifications/{user_id}", json=settings)
 
     async def calculate_performance(self, months: int = 2, recalculate: bool = False) -> dict:
-        """Trigger performance calculation."""
-        return await self.post(
+        """Trigger performance calculation (long-running)."""
+        return await self._request(
+            "POST",
             "/api/v1/performance/calculate",
             params={"months": months, "recalculate": recalculate},
+            timeout=300,
         )
 
     async def get_performance_stats(self, months: int = 2) -> dict:
