@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # Timezone
     TIMEZONE: str = "Europe/Moscow"
 
+    # Binance Futures API
+    BINANCE_API_KEY: str = ""
+    BINANCE_API_SECRET: str = ""
+
     # Service
     SERVICE_NAME: str = "strong_service"
     SERVICE_PORT: int = 8004

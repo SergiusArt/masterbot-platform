@@ -152,6 +152,7 @@ MENU_EXTEND_ACCESS = "Продлить доступ"
 MENU_USER_LIST = "Список"
 MENU_SERVICE_STATUS = "Статус сервисов"
 MENU_RESTART_SERVICE = "Перезапустить"
+MENU_STRONG_ANALYTICS = "Strong Аналитика"
 
 # Private chat topic sections
 TOPIC_IMPULSES = "impulses"

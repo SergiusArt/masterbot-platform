@@ -7,6 +7,7 @@ from shared.constants import (
     MENU_BACK,
     MENU_USERS,
     MENU_SERVICES,
+    MENU_STRONG_ANALYTICS,
     MENU_ADD_USER,
     MENU_REMOVE_USER,
     MENU_EXTEND_ACCESS,
@@ -22,6 +23,7 @@ from shared.constants import (
     EMOJI_MEMO,
     EMOJI_SEARCH,
     EMOJI_REFRESH,
+    EMOJI_CHART,
 )
 
 
@@ -35,6 +37,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=MENU_USERS, style="primary", icon_custom_emoji_id=EMOJI_PERSON)],
             [KeyboardButton(text=MENU_SERVICES, style="primary", icon_custom_emoji_id=EMOJI_TOOLBOX)],
+            [KeyboardButton(text=MENU_STRONG_ANALYTICS, style="primary", icon_custom_emoji_id=EMOJI_CHART)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],
         resize_keyboard=True,
@@ -58,6 +61,21 @@ def get_admin_users_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_EXTEND_ACCESS, style="primary", icon_custom_emoji_id=EMOJI_CALENDAR),
                 KeyboardButton(text=MENU_USER_LIST, icon_custom_emoji_id=EMOJI_MEMO),
             ],
+            [KeyboardButton(text=MENU_BACK)],
+            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def get_admin_strong_keyboard() -> ReplyKeyboardMarkup:
+    """Build admin Strong Signal analytics keyboard."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📊 Статистика", style="primary")],
+            [KeyboardButton(text="🔄 Рассчитать", style="success")],
+            [KeyboardButton(text="📋 Список сигналов")],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],

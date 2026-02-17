@@ -34,6 +34,9 @@ class MenuState(StatesGroup):
     strong_signals = State()
     strong_settings = State()
 
+    # Admin sub-menus
+    admin_strong = State()  # Strong Signal analytics
+
     # Settings sub-menus
     settings_timezone = State()  # Timezone selection
     settings_timezone_custom = State()  # Custom UTC offset input

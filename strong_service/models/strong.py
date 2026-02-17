@@ -6,6 +6,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     Index,
     Integer,
     String,
@@ -29,6 +30,15 @@ class StrongSignal(Base):
     telegram_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     received_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Performance tracking (filled by Binance klines analysis)
+    entry_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    max_profit_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    max_profit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bars_to_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    performance_calculated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     __table_args__ = (

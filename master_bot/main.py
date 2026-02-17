@@ -20,6 +20,7 @@ from handlers.impulse import activity as impulse_activity
 from handlers.admin import menu as admin_menu
 from handlers.admin import users as admin_users
 from handlers.admin import services as admin_services
+from handlers.admin import strong_analytics as admin_strong_analytics
 from handlers.settings import menu as settings_menu
 from handlers.bablo import menu as bablo_menu
 from handlers.bablo import analytics as bablo_analytics
@@ -111,6 +112,7 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(admin_menu.router)
     dp.include_router(admin_users.router)
     dp.include_router(admin_services.router)
+    dp.include_router(admin_strong_analytics.router)
 
     # Settings handlers
     dp.include_router(settings_menu.router)

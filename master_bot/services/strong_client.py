@@ -50,6 +50,18 @@ class StrongServiceClient(BaseServiceClient):
         """Update user notification settings."""
         return await self.put(f"/api/v1/notifications/{user_id}", json=settings)
 
+    async def calculate_performance(self, months: int = 2) -> dict:
+        """Trigger performance calculation."""
+        return await self.post("/api/v1/performance/calculate", params={"months": months})
+
+    async def get_performance_stats(self, months: int = 2) -> dict:
+        """Get performance statistics."""
+        return await self.get("/api/v1/performance/stats", params={"months": months})
+
+    async def get_performance_signals(self, months: int = 2, limit: int = 50) -> dict:
+        """Get signals with performance data."""
+        return await self.get("/api/v1/performance/signals", params={"months": months, "limit": limit})
+
 
 # Global client instance
 strong_client = StrongServiceClient()
