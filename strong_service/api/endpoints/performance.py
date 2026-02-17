@@ -11,10 +11,13 @@ router = APIRouter(prefix="/performance", tags=["performance"])
 @router.post("/calculate")
 async def calculate_performance(
     months: int = Query(2, ge=1, le=24),
+    recalculate: bool = Query(False),
 ):
     """Trigger performance calculation for uncalculated signals."""
     async with async_session_maker() as session:
-        result = await performance_service.calculate_pending(session, months=months)
+        result = await performance_service.calculate_pending(
+            session, months=months, recalculate=recalculate,
+        )
         return result
 
 

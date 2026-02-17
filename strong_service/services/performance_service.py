@@ -7,7 +7,7 @@ from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.strong import StrongSignal
-from services.binance_client import binance_client, HIGH, LOW, CLOSE
+from services.binance_client import binance_client, OPEN, HIGH, LOW
 from shared.utils.logger import get_logger
 
 logger = get_logger("performance_service")
@@ -51,8 +51,8 @@ class PerformanceService:
             logger.warning(f"Not enough klines for {signal.symbol} (got {len(klines)})")
             return {"error": "not_enough_data"}
 
-        # Entry price = close of the candle containing the signal
-        entry_price = float(klines[0][CLOSE])
+        # Entry price = open of the candle containing the signal
+        entry_price = float(klines[0][OPEN])
 
         # Analyze subsequent candles for max profit
         analysis_candles = klines[1:]  # skip entry candle
@@ -110,12 +110,14 @@ class PerformanceService:
         self,
         session: AsyncSession,
         months: int = 2,
+        recalculate: bool = False,
     ) -> dict:
-        """Calculate performance for all uncalculated signals in period.
+        """Calculate performance for signals in period.
 
         Args:
             session: DB session
             months: How many months back to process
+            recalculate: If True, recalculate ALL signals (ignore previous results)
 
         Returns:
             Summary dict with calculated/skipped/errors counts
@@ -123,13 +125,16 @@ class PerformanceService:
         cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
         maturity = datetime.now(timezone.utc) - timedelta(hours=MATURITY_HOURS)
 
+        filters = [
+            StrongSignal.received_at >= cutoff,
+            StrongSignal.received_at <= maturity,
+        ]
+        if not recalculate:
+            filters.append(StrongSignal.performance_calculated_at.is_(None))
+
         query = (
             select(StrongSignal)
-            .where(
-                StrongSignal.performance_calculated_at.is_(None),
-                StrongSignal.received_at >= cutoff,
-                StrongSignal.received_at <= maturity,
-            )
+            .where(*filters)
             .order_by(StrongSignal.received_at.asc())
         )
 

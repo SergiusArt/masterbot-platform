@@ -83,16 +83,18 @@ async def show_stats(message: Message, is_admin: bool = False) -> None:
         await loading.edit_text(f"❌ Ошибка: {e}")
 
 
-@router.message(MenuState.admin_strong, F.text == "🔄 Рассчитать")
+@router.message(MenuState.admin_strong, F.text.in_({"🔄 Рассчитать", "🔄 Пересчитать всё"}))
 async def calculate_performance(message: Message, is_admin: bool = False) -> None:
     """Trigger performance calculation."""
     if not is_admin:
         return
 
-    loading = await message.answer("⏳ Запускаю расчёт отработки (Binance API)...")
+    recalculate = message.text == "🔄 Пересчитать всё"
+    label = "пересчёт всех" if recalculate else "расчёт новых"
+    loading = await message.answer(f"⏳ Запускаю {label} сигналов (Binance API)...")
 
     try:
-        result = await strong_client.calculate_performance(months=2)
+        result = await strong_client.calculate_performance(months=2, recalculate=recalculate)
 
         await loading.edit_text(
             f"✅ <b>Расчёт завершён</b>\n\n"

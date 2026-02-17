@@ -74,7 +74,10 @@ def get_admin_strong_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📊 Статистика", style="primary")],
-            [KeyboardButton(text="🔄 Рассчитать", style="success")],
+            [
+                KeyboardButton(text="🔄 Рассчитать", style="success"),
+                KeyboardButton(text="🔄 Пересчитать всё", style="danger"),
+            ],
             [KeyboardButton(text="📋 Список сигналов")],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
