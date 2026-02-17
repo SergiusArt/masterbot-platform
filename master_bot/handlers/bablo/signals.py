@@ -273,19 +273,19 @@ async def _go_to_timeframe_selection(message: Message, state: FSMContext, direct
     )
 
 
-@router.message(F.text == "🟢 Long сигналы")
+@router.message(MenuState.bablo_signals, F.text == "🟢 Long сигналы")
 async def bablo_long_signals(message: Message, state: FSMContext) -> None:
     """Select Long signals direction."""
     await _go_to_timeframe_selection(message, state, "long")
 
 
-@router.message(F.text == "🔴 Short сигналы")
+@router.message(MenuState.bablo_signals, F.text == "🔴 Short сигналы")
 async def bablo_short_signals(message: Message, state: FSMContext) -> None:
     """Select Short signals direction."""
     await _go_to_timeframe_selection(message, state, "short")
 
 
-@router.message(F.text == "📋 Все сигналы")
+@router.message(MenuState.bablo_signals, F.text == "📋 Все сигналы")
 async def bablo_all_signals(message: Message, state: FSMContext) -> None:
     """Select all signals."""
     await _go_to_timeframe_selection(message, state, None)

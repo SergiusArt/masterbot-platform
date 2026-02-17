@@ -51,6 +51,8 @@ class SignalService:
         limit: int = 100,
         offset: int = 0,
         direction: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
     ) -> list[StrongSignal]:
         """Get signals with optional filtering.
 
@@ -59,6 +61,8 @@ class SignalService:
             limit: Maximum number of signals
             offset: Number of signals to skip
             direction: Filter by direction (long/short)
+            from_date: Start date filter
+            to_date: End date filter
 
         Returns:
             List of StrongSignal instances
@@ -67,6 +71,10 @@ class SignalService:
 
         if direction:
             query = query.where(StrongSignal.direction == direction)
+        if from_date:
+            query = query.where(StrongSignal.received_at >= from_date)
+        if to_date:
+            query = query.where(StrongSignal.received_at <= to_date)
 
         query = query.limit(limit).offset(offset)
         result = await session.execute(query)

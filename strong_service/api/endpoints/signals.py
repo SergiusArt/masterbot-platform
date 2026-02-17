@@ -1,5 +1,6 @@
 """Strong Signal endpoints."""
 
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Query
@@ -15,14 +16,18 @@ async def get_signals(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     direction: Optional[str] = Query(None, regex="^(long|short)$"),
+    from_date: Optional[datetime] = Query(None),
+    to_date: Optional[datetime] = Query(None),
 ):
-    """Get list of signals."""
+    """Get list of signals with optional date range filtering."""
     async with async_session_maker() as session:
         signals = await signal_service.get_signals(
             session,
             limit=limit,
             offset=offset,
             direction=direction,
+            from_date=from_date,
+            to_date=to_date,
         )
 
         return {

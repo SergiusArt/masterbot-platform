@@ -17,6 +17,8 @@ class StrongServiceClient(BaseServiceClient):
         limit: int = 100,
         offset: int = 0,
         direction: Optional[str] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
     ) -> dict:
         """Get list of signals.
 
@@ -24,6 +26,8 @@ class StrongServiceClient(BaseServiceClient):
             limit: Maximum number of signals
             offset: Number of signals to skip
             direction: Filter by direction (long/short)
+            from_date: ISO datetime start filter
+            to_date: ISO datetime end filter
 
         Returns:
             Signals list response
@@ -31,30 +35,19 @@ class StrongServiceClient(BaseServiceClient):
         params = {"limit": limit, "offset": offset}
         if direction:
             params["direction"] = direction
+        if from_date:
+            params["from_date"] = from_date
+        if to_date:
+            params["to_date"] = to_date
 
         return await self.get("/api/v1/signals", params=params)
 
     async def get_user_settings(self, user_id: int) -> dict:
-        """Get user notification settings.
-
-        Args:
-            user_id: User ID
-
-        Returns:
-            User settings dictionary
-        """
+        """Get user notification settings."""
         return await self.get(f"/api/v1/notifications/{user_id}")
 
     async def update_user_settings(self, user_id: int, settings: dict) -> dict:
-        """Update user notification settings.
-
-        Args:
-            user_id: User ID
-            settings: Settings to update
-
-        Returns:
-            Update response
-        """
+        """Update user notification settings."""
         return await self.put(f"/api/v1/notifications/{user_id}", json=settings)
 
 

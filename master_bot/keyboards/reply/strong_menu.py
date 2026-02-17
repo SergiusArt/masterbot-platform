@@ -12,6 +12,11 @@ from shared.constants import (
     EMOJI_HOME,
 )
 
+# Period button constants
+BTN_STRONG_WEEK = "За неделю"
+BTN_STRONG_MONTH = "За месяц"
+BTN_STRONG_PREV_MONTH = "За прошлый месяц"
+
 
 def get_strong_menu_keyboard() -> ReplyKeyboardMarkup:
     """Build Strong Signal section menu keyboard."""
@@ -29,14 +34,14 @@ def get_strong_menu_keyboard() -> ReplyKeyboardMarkup:
 
 
 def get_strong_signals_keyboard() -> ReplyKeyboardMarkup:
-    """Build Strong Signal signals direction selection keyboard."""
+    """Build Strong Signal period selection keyboard."""
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="🧤 Long сигналы", style="success"),
-                KeyboardButton(text="🎒 Short сигналы", style="danger"),
+                KeyboardButton(text=BTN_STRONG_WEEK, style="primary"),
+                KeyboardButton(text=BTN_STRONG_MONTH, style="primary"),
             ],
-            [KeyboardButton(text="📋 Все сигналы", style="primary")],
+            [KeyboardButton(text=BTN_STRONG_PREV_MONTH)],
             [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],
