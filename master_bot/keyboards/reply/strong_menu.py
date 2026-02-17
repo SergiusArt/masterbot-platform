@@ -7,8 +7,10 @@ from shared.constants import (
     MENU_BACK,
     MENU_STRONG_SIGNALS,
     MENU_STRONG_SETTINGS,
+    MENU_STRONG_PERFORMANCE,
     EMOJI_MEMO,
     EMOJI_TOOLBOX,
+    EMOJI_TROPHY,
     EMOJI_HOME,
 )
 
@@ -16,6 +18,10 @@ from shared.constants import (
 BTN_STRONG_WEEK = "За неделю"
 BTN_STRONG_MONTH = "За месяц"
 BTN_STRONG_PREV_MONTH = "За прошлый месяц"
+
+# Performance period buttons
+BTN_PERF_CURRENT_MONTH = "За текущий месяц"
+BTN_PERF_PREV_MONTH = "За прошлый месяц"
 
 
 def get_strong_menu_keyboard() -> ReplyKeyboardMarkup:
@@ -26,6 +32,23 @@ def get_strong_menu_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text=MENU_STRONG_SIGNALS, style="primary", icon_custom_emoji_id=EMOJI_MEMO),
                 KeyboardButton(text=MENU_STRONG_SETTINGS, icon_custom_emoji_id=EMOJI_TOOLBOX),
             ],
+            [KeyboardButton(text=MENU_STRONG_PERFORMANCE, icon_custom_emoji_id=EMOJI_TROPHY)],
+            [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def get_strong_performance_keyboard() -> ReplyKeyboardMarkup:
+    """Build Strong Signal performance period selection keyboard."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text=BTN_PERF_CURRENT_MONTH, style="primary"),
+                KeyboardButton(text=BTN_PERF_PREV_MONTH, style="primary"),
+            ],
+            [KeyboardButton(text=MENU_BACK)],
             [KeyboardButton(text=MENU_MAIN, icon_custom_emoji_id=EMOJI_HOME)],
         ],
         resize_keyboard=True,

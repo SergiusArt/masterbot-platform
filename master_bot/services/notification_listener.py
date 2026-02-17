@@ -27,6 +27,7 @@ from shared.constants import (
     EVENT_STRONG_SIGNAL,
     EVENT_SERVICE_ERROR,
     EVENT_ADMIN_BROADCAST,
+    EVENT_STRONG_PERFORMANCE,
     TOPIC_IMPULSES,
     TOPIC_BABLO,
     TOPIC_STRONG,
@@ -138,6 +139,8 @@ class NotificationListener:
             await self._send_bablo_activity_alert(user_id, event_data)
         elif event == EVENT_STRONG_SIGNAL:
             await self._send_strong_signal(user_id, event_data)
+        elif event == EVENT_STRONG_PERFORMANCE:
+            await self._send_strong_performance(user_id, event_data)
         elif event == EVENT_REPORT_READY:
             source = "impulse" if channel == REDIS_CHANNEL_NOTIFICATIONS else "bablo"
             await self._handle_report_part(user_id, event_data, source)
@@ -327,6 +330,51 @@ class NotificationListener:
                 logger.info(f"✅ Strong signal sent to {user_id}: {symbol} {direction}")
             except Exception as e:
                 logger.error(f"Failed to send Strong signal to {user_id}: {e}")
+
+    async def _send_strong_performance(self, user_id: int, data: dict) -> None:
+        """Send Strong Signal performance notification to user.
+
+        Args:
+            user_id: Telegram user ID
+            data: Performance data
+        """
+        symbol = data.get("symbol", "N/A")
+        direction = data.get("direction", "long")
+        max_profit_pct = data.get("max_profit_pct", 0)
+        entry_price = data.get("entry_price", 0)
+        bars_to_max = data.get("bars_to_max", 0)
+
+        if direction == "long":
+            emoji = "🧤"
+            dir_text = "Long"
+        else:
+            emoji = "🎒"
+            dir_text = "Short"
+
+        pct_str = f"+{max_profit_pct:.2f}%" if max_profit_pct >= 0 else f"{max_profit_pct:.2f}%"
+
+        text = (
+            f"🏆 <b>Отработка сигнала</b>\n\n"
+            f"{emoji} <b>{html_escape(symbol)}</b> {dir_text}\n"
+            f"📈 Макс. профит: <b>{pct_str}</b>\n"
+            f"⏱ Бар макс. профита: <b>{bars_to_max}</b> из 100\n"
+            f"💰 Цена входа: <b>{entry_price:,.2f}</b>"
+        )
+
+        topic_id = await self._get_topic_id(user_id, TOPIC_STRONG)
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text, message_thread_id=topic_id)
+            logger.info(f"✅ Strong performance queued for {user_id}: {symbol} {pct_str}")
+        else:
+            try:
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
+                logger.info(f"✅ Strong performance sent to {user_id}: {symbol} {pct_str}")
+            except Exception as e:
+                logger.error(f"Failed to send Strong performance to {user_id}: {e}")
 
     async def _send_bablo_activity_alert(self, user_id: int, data: dict) -> None:
         """Send Bablo activity alert to user.

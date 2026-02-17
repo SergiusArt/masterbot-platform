@@ -5,6 +5,7 @@ Optimizations:
 - Rate-limited queue: respects Telegram API limits (30 msg/sec)
 """
 
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import pytz
@@ -14,6 +15,7 @@ from aiogram import Bot
 
 from services.impulse_client import impulse_client
 from services.bablo_client import bablo_client
+from services.strong_client import strong_client
 from services.message_queue import get_message_queue
 from services.topic_manager import get_topic_manager
 from config import settings
@@ -117,6 +119,11 @@ class ReportScheduler:
         impulse_content = await self._get_cached_report("impulse", report_type)
         bablo_content = await self._get_cached_report("bablo", report_type)
 
+        # For monthly reports, include Strong Signal performance section
+        strong_content = None
+        if report_type == "monthly":
+            strong_content = await self._get_strong_monthly_section()
+
         # Group users by their subscription type
         impulse_only_users: list[int] = []
         bablo_only_users: list[int] = []
@@ -149,20 +156,28 @@ class ReportScheduler:
         # Build text per group
         texts: list[tuple[list[int], str]] = []
 
+        strong_section = f"\n\n{strong_content}" if strong_content else ""
+
         if both_users and impulse_content and bablo_content:
             text = (
                 f"<b>{title}</b>\n\n"
                 f"── <b>Импульсы</b> ──\n{impulse_content}\n\n"
                 f"── <b>Bablo</b> ──\n{bablo_content}"
-                f"{closing}"
+                f"{strong_section}{closing}"
             )
             texts.append((both_users, text))
 
         if impulse_only_users and impulse_content:
-            texts.append((impulse_only_users, f"<b>{title}</b>\n\n{impulse_content}{closing}"))
+            texts.append((impulse_only_users, f"<b>{title}</b>\n\n{impulse_content}{strong_section}{closing}"))
 
         if bablo_only_users and bablo_content:
-            texts.append((bablo_only_users, f"<b>{title}</b>\n\n{bablo_content}{closing}"))
+            texts.append((bablo_only_users, f"<b>{title}</b>\n\n{bablo_content}{strong_section}{closing}"))
+
+        # If only strong content but no impulse/bablo users, send to all known users
+        if strong_content and not texts:
+            all_user_ids = list(users_to_notify.keys())
+            if all_user_ids:
+                texts.append((all_user_ids, f"<b>{title}</b>\n{strong_section}{closing}"))
 
         # Send to each user with topic routing
         for user_ids, text in texts:
@@ -188,6 +203,56 @@ class ReportScheduler:
                 queued_count += 1
 
         logger.info(f"{report_type.capitalize()} reports queued for {queued_count} users")
+
+    async def _get_strong_monthly_section(self) -> Optional[str]:
+        """Get Strong Signal performance section for monthly report.
+
+        Returns previous month stats formatted as report section.
+        """
+        try:
+            now = datetime.now(timezone.utc)
+            first_this = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            last_prev = first_this - timedelta(seconds=1)
+            first_prev = last_prev.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+            month_names = {
+                1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
+                5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
+                9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
+            }
+            month_name = month_names[last_prev.month]
+
+            stats = await strong_client.get_performance_stats(
+                from_date=first_prev.isoformat(),
+                to_date=first_this.isoformat(),
+            )
+
+            if stats["total"] == 0:
+                return None
+
+            long = stats.get("by_direction", {}).get("long", {})
+            short = stats.get("by_direction", {}).get("short", {})
+
+            lines = [
+                f"── 🏆 <b>Strong Signal — {month_name}</b> ──",
+                f"📌 Сигналов: <b>{stats['total']}</b>",
+            ]
+
+            if stats["calculated"] > 0:
+                lines.append(f"📈 Средний профит: <b>{stats['avg_profit_pct']}%</b>")
+                if long.get("count", 0) > 0:
+                    lines.append(f"🧤 Long: {long['avg_profit_pct']}% ({long['count']} шт.)")
+                if short.get("count", 0) > 0:
+                    lines.append(f"🎒 Short: {short['avg_profit_pct']}% ({short['count']} шт.)")
+
+            if stats["pending"] > 0:
+                lines.append(f"⏳ Ожидают расчёта: {stats['pending']}")
+
+            return "\n".join(lines)
+
+        except Exception as e:
+            logger.error(f"Error getting Strong monthly section: {e}")
+            return None
 
     async def _get_cached_report(self, service: str, report_type: str) -> Optional[str]:
         """Get report content from service (cached per report cycle).

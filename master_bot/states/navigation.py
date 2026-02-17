@@ -33,6 +33,7 @@ class MenuState(StatesGroup):
     strong = State()
     strong_signals = State()
     strong_settings = State()
+    strong_performance = State()
 
     # Admin sub-menus
     admin_strong = State()  # Strong Signal analytics

@@ -1,12 +1,15 @@
 """Admin Strong Signal analytics handler."""
 
+from datetime import datetime
 from html import escape
 
+import pytz
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.admin_menu import get_admin_strong_keyboard, get_admin_menu_keyboard
+from services.impulse_client import impulse_client
 from services.strong_client import strong_client
 from shared.constants import (
     MENU_STRONG_ANALYTICS,
@@ -15,6 +18,7 @@ from shared.constants import (
     EMOJI_CROWN,
     animated,
 )
+from shared.utils.timezone import get_pytz_timezone
 from states.navigation import MenuState
 
 router = Router()
@@ -45,13 +49,13 @@ async def show_stats(message: Message, is_admin: bool = False) -> None:
     loading = await message.answer("⏳ Загружаю статистику...")
 
     try:
-        stats = await strong_client.get_performance_stats(months=2)
+        stats = await strong_client.get_performance_stats(months=0)
 
         long = stats.get("by_direction", {}).get("long", {})
         short = stats.get("by_direction", {}).get("short", {})
 
         lines = [
-            f"{animated(EMOJI_CHART, '📊')} <b>Отработка Strong Signal (2 мес.)</b>\n",
+            f"{animated(EMOJI_CHART, '📊')} <b>Отработка Strong Signal (все)</b>\n",
             f"📌 Всего сигналов: <b>{stats['total']}</b>",
             f"✅ Рассчитано: <b>{stats['calculated']}</b>",
             f"⏳ Ожидают: <b>{stats['pending']}</b>\n",
@@ -96,7 +100,7 @@ async def calculate_performance(message: Message, is_admin: bool = False) -> Non
     loading = await message.answer(f"⏳ Запускаю {label} сигналов (Binance API)...")
 
     try:
-        result = await strong_client.calculate_performance(months=2, recalculate=recalculate)
+        result = await strong_client.calculate_performance(months=0, recalculate=recalculate)
 
         await loading.edit_text(
             f"✅ <b>Расчёт завершён</b>\n\n"
@@ -116,28 +120,37 @@ async def show_signals_list(message: Message, is_admin: bool = False) -> None:
         return
 
     try:
-        result = await strong_client.get_performance_signals(months=2, limit=30)
+        # Get user timezone
+        user_tz_str = "Europe/Moscow"
+        try:
+            settings = await impulse_client.get_user_settings(message.from_user.id)
+            user_tz_str = settings.get("timezone", "Europe/Moscow")
+        except Exception:
+            pass
+        tz = get_pytz_timezone(user_tz_str) or pytz.timezone("Europe/Moscow")
+
+        result = await strong_client.get_performance_signals(months=0, limit=30)
         signals = result.get("signals", [])
 
         if not signals:
             await message.answer("📭 Нет рассчитанных сигналов")
             return
 
-        lines = [f"{animated(EMOJI_CHART, '📊')} <b>Сигналы с отработкой (2 мес.)</b>\n"]
+        lines = [f"{animated(EMOJI_CHART, '📊')} <b>Сигналы с отработкой (все)</b>\n"]
 
         for s in signals:
-            direction = s["direction"]
-            emoji = "🧤" if direction == "long" else "🎒"
-            dir_label = "L" if direction == "long" else "S"
+            emoji = "🧤" if s["direction"] == "long" else "🎒"
             pct = s["max_profit_pct"]
-            bars = s["bars_to_max"]
-            ts = s["received_at"][:10]
+            pct_str = f"+{pct:.2f}%" if pct >= 0 else f"{pct:.2f}%"
 
-            pct_str = f"+{pct}%" if pct >= 0 else f"{pct}%"
-            lines.append(
-                f"{emoji} <b>{s['symbol']}</b> {dir_label} | "
-                f"{pct_str} (бар {bars}) | {ts}"
-            )
+            # Format time in user timezone
+            try:
+                dt = datetime.fromisoformat(s["received_at"].replace("Z", "+00:00"))
+                ts = dt.astimezone(tz).strftime("%d.%m.%y %H:%M")
+            except Exception:
+                ts = s["received_at"][:16]
+
+            lines.append(f"{emoji} <b>{s['symbol']}</b> | {pct_str} | {ts}")
 
         text = "\n".join(lines)
         if len(text) > 4000:

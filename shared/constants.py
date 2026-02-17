@@ -52,6 +52,7 @@ EVENT_BABLO_ACTIVITY = "bablo_activity"
 EVENT_STRONG_SIGNAL = "strong_signal"
 EVENT_SERVICE_ERROR = "service_error"
 EVENT_ADMIN_BROADCAST = "admin_broadcast"
+EVENT_STRONG_PERFORMANCE = "strong_performance"
 
 # Default values
 DEFAULT_GROWTH_THRESHOLD = 20
@@ -121,6 +122,7 @@ MENU_SERVICES = "Сервисы"
 # Strong Signal menu buttons
 MENU_STRONG_SIGNALS = "Сигналы"
 MENU_STRONG_SETTINGS = "Настройки"
+MENU_STRONG_PERFORMANCE = "Отработка"
 
 # Bablo menu buttons
 MENU_BABLO_ANALYTICS = "Статистика"

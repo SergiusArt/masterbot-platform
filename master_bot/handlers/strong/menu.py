@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from keyboards.reply.strong_menu import get_strong_menu_keyboard
-from shared.constants import MENU_STRONG, MENU_BACK, EMOJI_LIGHTNING, EMOJI_MEMO, EMOJI_TOOLBOX, animated
+from shared.constants import MENU_STRONG, MENU_BACK, EMOJI_LIGHTNING, EMOJI_MEMO, EMOJI_TOOLBOX, EMOJI_TROPHY, animated
 from states.navigation import MenuState
 
 router = Router()
@@ -19,7 +19,8 @@ async def strong_menu(message: Message, state: FSMContext) -> None:
         f"{animated(EMOJI_LIGHTNING, '⚡')} <b>Раздел: Strong Signal</b>\n\n"
         "Торговые сигналы Long/Short.\n\n"
         f"{animated(EMOJI_MEMO, '📋')} <b>Сигналы</b> — последние сигналы\n"
-        f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b> — фильтры уведомлений\n\n"
+        f"{animated(EMOJI_TOOLBOX, '⚙️')} <b>Настройки</b> — фильтры уведомлений\n"
+        f"{animated(EMOJI_TROPHY, '🏆')} <b>Отработка</b> — аналитика профита\n\n"
         "Выберите действие:",
         reply_markup=get_strong_menu_keyboard(),
     )

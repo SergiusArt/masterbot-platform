@@ -30,6 +30,7 @@ from handlers.bablo import activity as bablo_activity
 from handlers.strong import menu as strong_menu
 from handlers.strong import signals as strong_signals
 from handlers.strong import settings as strong_settings
+from handlers.strong import performance as strong_performance
 from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from services.scheduler import init_scheduler
@@ -100,6 +101,7 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(strong_menu.router)
     dp.include_router(strong_signals.router)
     dp.include_router(strong_settings.router)
+    dp.include_router(strong_performance.router)
 
     # Impulse handlers
     dp.include_router(impulse_menu.router)

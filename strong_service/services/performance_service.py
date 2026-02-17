@@ -109,26 +109,27 @@ class PerformanceService:
     async def calculate_pending(
         self,
         session: AsyncSession,
-        months: int = 2,
+        months: int = 0,
         recalculate: bool = False,
     ) -> dict:
         """Calculate performance for signals in period.
 
         Args:
             session: DB session
-            months: How many months back to process
+            months: How many months back (0 = all signals)
             recalculate: If True, recalculate ALL signals (ignore previous results)
 
         Returns:
             Summary dict with calculated/skipped/errors counts
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
         maturity = datetime.now(timezone.utc) - timedelta(hours=MATURITY_HOURS)
 
         filters = [
-            StrongSignal.received_at >= cutoff,
             StrongSignal.received_at <= maturity,
         ]
+        if months > 0:
+            cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
+            filters.append(StrongSignal.received_at >= cutoff)
         if not recalculate:
             filters.append(StrongSignal.performance_calculated_at.is_(None))
 
@@ -163,33 +164,47 @@ class PerformanceService:
             "errors": errors,
         }
 
+    def _date_filters(
+        self,
+        months: int = 0,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+    ) -> list:
+        """Build date range filters for queries."""
+        filters = []
+        if from_date:
+            filters.append(StrongSignal.received_at >= from_date)
+        elif months > 0:
+            cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
+            filters.append(StrongSignal.received_at >= cutoff)
+        if to_date:
+            filters.append(StrongSignal.received_at <= to_date)
+        return filters
+
     async def get_performance_stats(
         self,
         session: AsyncSession,
-        months: int = 2,
+        months: int = 0,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
     ) -> dict:
         """Get aggregate performance statistics.
 
         Args:
             session: DB session
-            months: How many months back
-
-        Returns:
-            Stats dictionary
+            months: How many months back (0 = all)
+            from_date: Start date filter (overrides months)
+            to_date: End date filter
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
+        date_filters = self._date_filters(months, from_date, to_date)
 
         # Total signals in period
-        total_q = select(func.count(StrongSignal.id)).where(
-            StrongSignal.received_at >= cutoff
-        )
+        total_q = select(func.count(StrongSignal.id)).where(*date_filters) if date_filters else select(func.count(StrongSignal.id))
         total = (await session.execute(total_q)).scalar() or 0
 
         # Calculated signals
-        calc_q = select(func.count(StrongSignal.id)).where(
-            StrongSignal.received_at >= cutoff,
-            StrongSignal.performance_calculated_at.is_not(None),
-        )
+        calc_filters = [*date_filters, StrongSignal.performance_calculated_at.is_not(None)]
+        calc_q = select(func.count(StrongSignal.id)).where(*calc_filters)
         calculated = (await session.execute(calc_q)).scalar() or 0
 
         # Aggregate stats (only calculated signals)
@@ -198,10 +213,7 @@ class PerformanceService:
             func.min(StrongSignal.max_profit_pct),
             func.max(StrongSignal.max_profit_pct),
             func.avg(StrongSignal.bars_to_max),
-        ).where(
-            StrongSignal.received_at >= cutoff,
-            StrongSignal.performance_calculated_at.is_not(None),
-        )
+        ).where(*calc_filters)
         row = (await session.execute(stats_q)).one_or_none()
 
         avg_profit = round(float(row[0]), 2) if row and row[0] else 0
@@ -218,8 +230,7 @@ class PerformanceService:
                 func.min(StrongSignal.max_profit_pct),
                 func.max(StrongSignal.max_profit_pct),
             ).where(
-                StrongSignal.received_at >= cutoff,
-                StrongSignal.performance_calculated_at.is_not(None),
+                *calc_filters,
                 StrongSignal.direction == direction,
             )
             dr = (await session.execute(dir_q)).one_or_none()
@@ -244,7 +255,9 @@ class PerformanceService:
     async def get_performance_signals(
         self,
         session: AsyncSession,
-        months: int = 2,
+        months: int = 0,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[dict]:
@@ -252,19 +265,18 @@ class PerformanceService:
 
         Args:
             session: DB session
-            months: How many months back
+            months: How many months back (0 = all)
+            from_date: Start date filter (overrides months)
+            to_date: End date filter
             limit: Max results
             offset: Offset
-
-        Returns:
-            List of signal dicts with performance
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
+        date_filters = self._date_filters(months, from_date, to_date)
 
         query = (
             select(StrongSignal)
             .where(
-                StrongSignal.received_at >= cutoff,
+                *date_filters,
                 StrongSignal.performance_calculated_at.is_not(None),
             )
             .order_by(StrongSignal.received_at.desc())

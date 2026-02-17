@@ -1,5 +1,8 @@
 """Performance calculation and analytics endpoints."""
 
+from datetime import datetime, timezone
+from typing import Optional
+
 from fastapi import APIRouter, Query
 
 from shared.database.connection import async_session_maker
@@ -8,9 +11,19 @@ from services.performance_service import performance_service
 router = APIRouter(prefix="/performance", tags=["performance"])
 
 
+def _parse_date(s: Optional[str]) -> Optional[datetime]:
+    """Parse ISO date string to aware datetime."""
+    if not s:
+        return None
+    dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 @router.post("/calculate")
 async def calculate_performance(
-    months: int = Query(2, ge=1, le=24),
+    months: int = Query(0, ge=0, le=24),
     recalculate: bool = Query(False),
 ):
     """Trigger performance calculation for uncalculated signals."""
@@ -23,22 +36,36 @@ async def calculate_performance(
 
 @router.get("/stats")
 async def get_performance_stats(
-    months: int = Query(2, ge=1, le=24),
+    months: int = Query(0, ge=0, le=24),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
 ):
     """Get aggregate performance statistics."""
     async with async_session_maker() as session:
-        return await performance_service.get_performance_stats(session, months=months)
+        return await performance_service.get_performance_stats(
+            session,
+            months=months,
+            from_date=_parse_date(from_date),
+            to_date=_parse_date(to_date),
+        )
 
 
 @router.get("/signals")
 async def get_performance_signals(
-    months: int = Query(2, ge=1, le=24),
+    months: int = Query(0, ge=0, le=24),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
     """Get signals with performance data."""
     async with async_session_maker() as session:
         signals = await performance_service.get_performance_signals(
-            session, months=months, limit=limit, offset=offset,
+            session,
+            months=months,
+            from_date=_parse_date(from_date),
+            to_date=_parse_date(to_date),
+            limit=limit,
+            offset=offset,
         )
         return {"signals": signals, "count": len(signals)}

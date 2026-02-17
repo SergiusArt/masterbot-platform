@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.router import router
 from config import settings
 from telegram_listener.listener import strong_listener
+from services.performance_scheduler import performance_scheduler
 from shared.database.connection import init_db, close_db
 from shared.utils.redis_client import get_redis_client
 from shared.utils.logger import get_logger
@@ -49,12 +50,16 @@ async def lifespan(app: FastAPI):
 
     listener_task.add_done_callback(task_done_callback)
 
+    logger.info("Starting performance scheduler...")
+    scheduler_task = asyncio.create_task(performance_scheduler.start())
+
     logger.info("Strong Signal Service started successfully!")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Strong Signal Service...")
+    await performance_scheduler.stop()
     await strong_listener.stop()
     await close_db()
     logger.info("Strong Signal Service stopped")

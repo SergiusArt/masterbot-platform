@@ -50,7 +50,7 @@ class StrongServiceClient(BaseServiceClient):
         """Update user notification settings."""
         return await self.put(f"/api/v1/notifications/{user_id}", json=settings)
 
-    async def calculate_performance(self, months: int = 2, recalculate: bool = False) -> dict:
+    async def calculate_performance(self, months: int = 0, recalculate: bool = False) -> dict:
         """Trigger performance calculation (long-running)."""
         return await self._request(
             "POST",
@@ -59,13 +59,34 @@ class StrongServiceClient(BaseServiceClient):
             timeout=300,
         )
 
-    async def get_performance_stats(self, months: int = 2) -> dict:
+    async def get_performance_stats(
+        self,
+        months: int = 0,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+    ) -> dict:
         """Get performance statistics."""
-        return await self.get("/api/v1/performance/stats", params={"months": months})
+        params: dict = {"months": months}
+        if from_date:
+            params["from_date"] = from_date
+        if to_date:
+            params["to_date"] = to_date
+        return await self.get("/api/v1/performance/stats", params=params)
 
-    async def get_performance_signals(self, months: int = 2, limit: int = 50) -> dict:
+    async def get_performance_signals(
+        self,
+        months: int = 0,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        limit: int = 50,
+    ) -> dict:
         """Get signals with performance data."""
-        return await self.get("/api/v1/performance/signals", params={"months": months, "limit": limit})
+        params: dict = {"months": months, "limit": limit}
+        if from_date:
+            params["from_date"] = from_date
+        if to_date:
+            params["to_date"] = to_date
+        return await self.get("/api/v1/performance/signals", params=params)
 
 
 # Global client instance
