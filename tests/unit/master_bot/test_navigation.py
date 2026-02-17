@@ -42,9 +42,9 @@ class TestMainMenuKeyboard:
 
     @pytest.mark.unit
     def test_main_menu_layout(self):
-        """Test main menu layout with Reports button."""
+        """Test main menu layout with Strong Signal and Reports buttons."""
         from keyboards.reply.main_menu import get_main_menu_keyboard
-        from shared.constants import MENU_IMPULSES, MENU_BABLO, MENU_REPORTS, MENU_SETTINGS
+        from shared.constants import MENU_IMPULSES, MENU_BABLO, MENU_STRONG, MENU_REPORTS, MENU_SETTINGS
 
         keyboard = get_main_menu_keyboard(is_admin=False)
 
@@ -54,15 +54,20 @@ class TestMainMenuKeyboard:
         assert first_row[0].text == MENU_IMPULSES
         assert first_row[1].text == MENU_BABLO
 
-        # Second row should have Reports
+        # Second row should have Strong Signal
         second_row = keyboard.keyboard[1]
         assert len(second_row) == 1
-        assert second_row[0].text == MENU_REPORTS
+        assert second_row[0].text == MENU_STRONG
 
-        # Third row should have Settings
+        # Third row should have Reports
         third_row = keyboard.keyboard[2]
         assert len(third_row) == 1
-        assert third_row[0].text == MENU_SETTINGS
+        assert third_row[0].text == MENU_REPORTS
+
+        # Fourth row should have Settings
+        fourth_row = keyboard.keyboard[3]
+        assert len(fourth_row) == 1
+        assert fourth_row[0].text == MENU_SETTINGS
 
     @pytest.mark.unit
     def test_main_menu_with_admin(self):
@@ -72,9 +77,9 @@ class TestMainMenuKeyboard:
 
         keyboard = get_main_menu_keyboard(is_admin=True)
 
-        # Should have 4 rows: [Impulses, Bablo], [Reports], [Settings], [Admin]
-        assert len(keyboard.keyboard) == 4
-        admin_row = keyboard.keyboard[3]
+        # Should have 5 rows: [Impulses, Bablo], [Strong], [Reports], [Settings], [Admin]
+        assert len(keyboard.keyboard) == 5
+        admin_row = keyboard.keyboard[4]
         assert admin_row[0].text == MENU_ADMIN
 
 
@@ -354,7 +359,7 @@ class TestSettingsKeyboard:
 
         all_buttons = [btn.text for row in keyboard.keyboard for btn in row]
 
-        assert "🌍 Часовой пояс" in all_buttons
+        assert "Часовой пояс" in all_buttons
 
     @pytest.mark.unit
     def test_settings_keyboard_has_back(self):

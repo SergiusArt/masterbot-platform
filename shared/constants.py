@@ -36,6 +36,9 @@ REDIS_CHANNEL_REPORTS = "impulse:reports"
 # Redis channels - Bablo
 REDIS_CHANNEL_BABLO = "bablo:notifications"
 
+# Redis channels - Strong Signal
+REDIS_CHANNEL_STRONG = "strong:notifications"
+
 # Redis channels - System
 REDIS_CHANNEL_ERRORS = "system:errors"
 REDIS_CHANNEL_BROADCAST = "admin:broadcast"
@@ -46,6 +49,7 @@ EVENT_ACTIVITY_ALERT = "activity_alert"
 EVENT_REPORT_READY = "report_ready"
 EVENT_BABLO_SIGNAL = "bablo_signal"
 EVENT_BABLO_ACTIVITY = "bablo_activity"
+EVENT_STRONG_SIGNAL = "strong_signal"
 EVENT_SERVICE_ERROR = "service_error"
 EVENT_ADMIN_BROADCAST = "admin_broadcast"
 
@@ -104,6 +108,7 @@ MENU_MAIN = "Главное меню"
 MENU_BACK = "◀️ Назад"
 MENU_IMPULSES = "Импульсы"
 MENU_BABLO = "Bablo"
+MENU_STRONG = "Strong Signal"
 MENU_ANALYTICS = "Аналитика"
 MENU_NOTIFICATIONS = "Уведомления"
 MENU_REPORTS = "Отчёты"
@@ -112,6 +117,10 @@ MENU_SETTINGS = "Настройки"
 MENU_ADMIN = "Админ-панель"
 MENU_USERS = "Пользователи"
 MENU_SERVICES = "Сервисы"
+
+# Strong Signal menu buttons
+MENU_STRONG_SIGNALS = "Сигналы"
+MENU_STRONG_SETTINGS = "Настройки"
 
 # Bablo menu buttons
 MENU_BABLO_ANALYTICS = "Статистика"
@@ -148,13 +157,14 @@ MENU_RESTART_SERVICE = "Перезапустить"
 TOPIC_IMPULSES = "impulses"
 TOPIC_BABLO = "bablo"
 TOPIC_REPORTS = "reports"
-TOPIC_SETTINGS = "settings"
+TOPIC_STRONG = "strong"
 
 # Topic display names and icon colors (Telegram color IDs)
 TOPIC_CONFIG = {
     TOPIC_IMPULSES: {"name": "📊 Импульсы", "icon_color": 0x6FB9F0},
     TOPIC_BABLO: {"name": "💰 Бабло", "icon_color": 0xFFD67E},
     TOPIC_REPORTS: {"name": "📋 Отчёты", "icon_color": 0xCB86DB},
+    TOPIC_STRONG: {"name": "💪 Strong Signal", "icon_color": 0x8EEE98},
 }
 
 # Redis key prefix for user topic storage

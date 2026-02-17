@@ -107,6 +107,7 @@ class TelegramMessageQueue:
         text: str,
         parse_mode: Optional[str] = "HTML",
         disable_notification: bool = False,
+        message_thread_id: Optional[int] = None,
     ) -> None:
         """Add same message for multiple users to queue.
 
@@ -115,9 +116,12 @@ class TelegramMessageQueue:
             text: Message text (same for all)
             parse_mode: Parse mode
             disable_notification: Send silently
+            message_thread_id: Topic thread ID for private chat topics
         """
         for user_id in user_ids:
-            await self.send(user_id, text, parse_mode, disable_notification)
+            await self.send(
+                user_id, text, parse_mode, disable_notification, message_thread_id
+            )
 
     @property
     def pending_count(self) -> int:

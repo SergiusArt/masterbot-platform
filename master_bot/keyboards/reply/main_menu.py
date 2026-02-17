@@ -5,11 +5,13 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from shared.constants import (
     MENU_IMPULSES,
     MENU_BABLO,
+    MENU_STRONG,
     MENU_REPORTS,
     MENU_SETTINGS,
     MENU_ADMIN,
     EMOJI_CHART,
     EMOJI_MONEY,
+    EMOJI_LIGHTNING,
     EMOJI_MEMO,
     EMOJI_TOOLBOX,
     EMOJI_CROWN,
@@ -30,6 +32,7 @@ def get_main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
             KeyboardButton(text=MENU_IMPULSES, style="primary", icon_custom_emoji_id=EMOJI_CHART),
             KeyboardButton(text=MENU_BABLO, style="success", icon_custom_emoji_id=EMOJI_MONEY),
         ],
+        [KeyboardButton(text=MENU_STRONG, style="primary", icon_custom_emoji_id=EMOJI_LIGHTNING)],
         [KeyboardButton(text=MENU_REPORTS, icon_custom_emoji_id=EMOJI_MEMO)],
         [KeyboardButton(text=MENU_SETTINGS, icon_custom_emoji_id=EMOJI_TOOLBOX)],
     ]

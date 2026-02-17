@@ -16,6 +16,7 @@ from config import settings
 from shared.constants import (
     REDIS_CHANNEL_NOTIFICATIONS,
     REDIS_CHANNEL_BABLO,
+    REDIS_CHANNEL_STRONG,
     REDIS_CHANNEL_ERRORS,
     REDIS_CHANNEL_BROADCAST,
     EVENT_IMPULSE_ALERT,
@@ -23,10 +24,12 @@ from shared.constants import (
     EVENT_REPORT_READY,
     EVENT_BABLO_SIGNAL,
     EVENT_BABLO_ACTIVITY,
+    EVENT_STRONG_SIGNAL,
     EVENT_SERVICE_ERROR,
     EVENT_ADMIN_BROADCAST,
     TOPIC_IMPULSES,
     TOPIC_BABLO,
+    TOPIC_STRONG,
     TOPIC_REPORTS,
 )
 
@@ -66,10 +69,11 @@ class NotificationListener:
             pubsub = await redis.subscribe(
                 REDIS_CHANNEL_NOTIFICATIONS,
                 REDIS_CHANNEL_BABLO,
+                REDIS_CHANNEL_STRONG,
                 REDIS_CHANNEL_ERRORS,
                 REDIS_CHANNEL_BROADCAST,
             )
-            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}, {REDIS_CHANNEL_ERRORS}, {REDIS_CHANNEL_BROADCAST}")
+            logger.info(f"✅ Subscribed to channels: {REDIS_CHANNEL_NOTIFICATIONS}, {REDIS_CHANNEL_BABLO}, {REDIS_CHANNEL_STRONG}, {REDIS_CHANNEL_ERRORS}, {REDIS_CHANNEL_BROADCAST}")
 
             async for message in pubsub.listen():
                 if not self._running:
@@ -132,6 +136,8 @@ class NotificationListener:
             await self._send_bablo_signal(user_id, event_data)
         elif event == EVENT_BABLO_ACTIVITY:
             await self._send_bablo_activity_alert(user_id, event_data)
+        elif event == EVENT_STRONG_SIGNAL:
+            await self._send_strong_signal(user_id, event_data)
         elif event == EVENT_REPORT_READY:
             source = "impulse" if channel == REDIS_CHANNEL_NOTIFICATIONS else "bablo"
             await self._handle_report_part(user_id, event_data, source)
@@ -282,6 +288,45 @@ class NotificationListener:
                 logger.info(f"✅ Bablo signal sent to {user_id}: {symbol}")
             except Exception as e:
                 logger.error(f"Failed to send Bablo signal to {user_id}: {e}")
+
+    async def _send_strong_signal(self, user_id: int, data: dict) -> None:
+        """Send Strong Signal alert to user.
+
+        Args:
+            user_id: Telegram user ID
+            data: Signal data
+        """
+        symbol = data.get("symbol", "N/A")
+        direction = data.get("direction", "long")
+
+        if direction == "long":
+            emoji = "🧤"
+            dir_text = "Long"
+            dir_emoji = "🟢"
+        else:
+            emoji = "🎒"
+            dir_text = "Short"
+            dir_emoji = "🔴"
+
+        text = (
+            f"{emoji} <b>Strong Signal: {symbol}</b>\n\n"
+            f"{dir_emoji} Направление: <b>{dir_text}</b>"
+        )
+
+        topic_id = await self._get_topic_id(user_id, TOPIC_STRONG)
+        queue = get_message_queue()
+        if queue:
+            await queue.send(user_id, text, message_thread_id=topic_id)
+            logger.info(f"✅ Strong signal queued for {user_id}: {symbol} {direction}")
+        else:
+            try:
+                kwargs = {"chat_id": user_id, "text": text}
+                if topic_id:
+                    kwargs["message_thread_id"] = topic_id
+                await self.bot.send_message(**kwargs)
+                logger.info(f"✅ Strong signal sent to {user_id}: {symbol} {direction}")
+            except Exception as e:
+                logger.error(f"Failed to send Strong signal to {user_id}: {e}")
 
     async def _send_bablo_activity_alert(self, user_id: int, data: dict) -> None:
         """Send Bablo activity alert to user.

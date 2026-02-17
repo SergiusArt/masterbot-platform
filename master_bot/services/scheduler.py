@@ -15,8 +15,10 @@ from aiogram import Bot
 from services.impulse_client import impulse_client
 from services.bablo_client import bablo_client
 from services.message_queue import get_message_queue
+from services.topic_manager import get_topic_manager
 from config import settings
 from shared.utils.logger import get_logger
+from shared.constants import TOPIC_REPORTS
 
 logger = get_logger("scheduler")
 
@@ -141,9 +143,12 @@ class ReportScheduler:
         closing = closings.get(report_type, "")
 
         queue = get_message_queue()
+        tm = get_topic_manager()
         queued_count = 0
 
-        # Send to users with both services
+        # Build text per group
+        texts: list[tuple[list[int], str]] = []
+
         if both_users and impulse_content and bablo_content:
             text = (
                 f"<b>{title}</b>\n\n"
@@ -151,44 +156,36 @@ class ReportScheduler:
                 f"── <b>Bablo</b> ──\n{bablo_content}"
                 f"{closing}"
             )
-            if queue:
-                await queue.send_bulk(both_users, text)
-                queued_count += len(both_users)
-            else:
-                for user_id in both_users:
-                    try:
-                        await self.bot.send_message(user_id, text)
-                        queued_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to send report to {user_id}: {e}")
+            texts.append((both_users, text))
 
-        # Send to impulse-only users
         if impulse_only_users and impulse_content:
-            text = f"<b>{title}</b>\n\n{impulse_content}{closing}"
-            if queue:
-                await queue.send_bulk(impulse_only_users, text)
-                queued_count += len(impulse_only_users)
-            else:
-                for user_id in impulse_only_users:
-                    try:
-                        await self.bot.send_message(user_id, text)
-                        queued_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to send report to {user_id}: {e}")
+            texts.append((impulse_only_users, f"<b>{title}</b>\n\n{impulse_content}{closing}"))
 
-        # Send to bablo-only users
         if bablo_only_users and bablo_content:
-            text = f"<b>{title}</b>\n\n{bablo_content}{closing}"
-            if queue:
-                await queue.send_bulk(bablo_only_users, text)
-                queued_count += len(bablo_only_users)
-            else:
-                for user_id in bablo_only_users:
+            texts.append((bablo_only_users, f"<b>{title}</b>\n\n{bablo_content}{closing}"))
+
+        # Send to each user with topic routing
+        for user_ids, text in texts:
+            for user_id in user_ids:
+                topic_id = None
+                if tm:
                     try:
-                        await self.bot.send_message(user_id, text)
-                        queued_count += 1
+                        topic_id = await tm.get_topic_id(user_id, TOPIC_REPORTS)
+                    except Exception:
+                        pass
+
+                if queue:
+                    await queue.send(user_id, text, message_thread_id=topic_id)
+                else:
+                    try:
+                        kwargs = {"chat_id": user_id, "text": text}
+                        if topic_id:
+                            kwargs["message_thread_id"] = topic_id
+                        await self.bot.send_message(**kwargs)
                     except Exception as e:
                         logger.error(f"Failed to send report to {user_id}: {e}")
+                        continue
+                queued_count += 1
 
         logger.info(f"{report_type.capitalize()} reports queued for {queued_count} users")
 

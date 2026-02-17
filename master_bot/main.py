@@ -26,6 +26,9 @@ from handlers.bablo import analytics as bablo_analytics
 from handlers.bablo import settings as bablo_settings
 from handlers.bablo import signals as bablo_signals
 from handlers.bablo import activity as bablo_activity
+from handlers.strong import menu as strong_menu
+from handlers.strong import signals as strong_signals
+from handlers.strong import settings as strong_settings
 from handlers.reports import menu as reports_menu
 from services.notification_listener import NotificationListener
 from services.scheduler import init_scheduler
@@ -91,6 +94,11 @@ def register_routers(dp: Dispatcher) -> None:
     dp.include_router(bablo_settings.router)
     dp.include_router(bablo_signals.router)
     dp.include_router(bablo_activity.router)
+
+    # Strong Signal handlers
+    dp.include_router(strong_menu.router)
+    dp.include_router(strong_signals.router)
+    dp.include_router(strong_settings.router)
 
     # Impulse handlers
     dp.include_router(impulse_menu.router)

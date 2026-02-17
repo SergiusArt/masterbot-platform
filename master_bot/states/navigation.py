@@ -29,6 +29,11 @@ class MenuState(StatesGroup):
     bablo_settings_timeframes = State()  # Editing timeframe filter
     bablo_settings_directions = State()  # Editing direction filter
 
+    # Strong Signal sub-menus
+    strong = State()
+    strong_signals = State()
+    strong_settings = State()
+
     # Settings sub-menus
     settings_timezone = State()  # Timezone selection
     settings_timezone_custom = State()  # Custom UTC offset input

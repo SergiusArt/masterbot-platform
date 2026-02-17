@@ -59,6 +59,9 @@ run_all() {
     echo -e "\n${YELLOW}=== Bablo Service tests ===${NC}"
     python -m pytest tests/unit/bablo_service/ -v --tb=short || exit_code=1
 
+    echo -e "\n${YELLOW}=== Strong Signal Service tests ===${NC}"
+    python -m pytest tests/unit/strong_service/ -v --tb=short || exit_code=1
+
     if [[ -d "tests/e2e" && "$(ls tests/e2e/test_*.py 2>/dev/null)" ]]; then
         echo -e "\n${YELLOW}=== E2E tests ===${NC}"
         python -m pytest tests/e2e/ -v --tb=short || exit_code=1
@@ -75,7 +78,7 @@ run_unit() {
     echo -e "${GREEN}Running unit tests (per-service isolation)...${NC}"
     local exit_code=0
 
-    for dir in tests/unit/shared tests/unit/master_bot tests/unit/impulse_service tests/unit/bablo_service; do
+    for dir in tests/unit/shared tests/unit/master_bot tests/unit/impulse_service tests/unit/bablo_service tests/unit/strong_service; do
         if [[ -d "$dir" ]]; then
             echo -e "\n${YELLOW}=== $(basename $dir) ===${NC}"
             python -m pytest "$dir" -v --tb=short -m unit || exit_code=1
@@ -122,7 +125,7 @@ run_api() {
 # Run fast smoke tests
 run_fast() {
     echo -e "${GREEN}Running fast smoke tests...${NC}"
-    python -m pytest tests/unit/impulse_service/test_parser.py tests/unit/bablo_service/test_parser.py -v --tb=short -x
+    python -m pytest tests/unit/impulse_service/test_parser.py tests/unit/bablo_service/test_parser.py tests/unit/strong_service/test_parser.py -v --tb=short -x
 }
 
 # Show help
