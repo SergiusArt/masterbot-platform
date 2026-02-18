@@ -6,6 +6,7 @@ import { TabNavigation } from './components/common/TabNavigation'
 import { CombinedDashboard } from './components/common/CombinedDashboard'
 import { ImpulseDashboard } from './components/impulse/ImpulseDashboard'
 import { BabloDashboard } from './components/bablo/BabloDashboard'
+import { StrongDashboard } from './components/strong/StrongDashboard'
 import { ReportsDashboard } from './components/reports/ReportsDashboard'
 import { AdminDashboard } from './components/admin/AdminDashboard'
 import type { TabType } from './types'
@@ -32,6 +33,8 @@ function App() {
         return 'Импульсы'
       case 'bablo':
         return 'Bablo'
+      case 'strong':
+        return 'Strong Signal'
       case 'reports':
         return 'Отчёты'
       case 'admin':
@@ -56,10 +59,12 @@ function App() {
           <CombinedDashboard
             onNavigateToImpulse={() => setActiveTab('impulse')}
             onNavigateToBablo={() => setActiveTab('bablo')}
+            onNavigateToStrong={() => setActiveTab('strong')}
           />
         )}
         {activeTab === 'impulse' && <ImpulseDashboard />}
         {activeTab === 'bablo' && <BabloDashboard />}
+        {activeTab === 'strong' && <StrongDashboard />}
         {activeTab === 'reports' && <ReportsDashboard />}
         {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>

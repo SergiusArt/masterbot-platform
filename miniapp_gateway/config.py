@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # Backend services
     IMPULSE_SERVICE_URL: str = "http://localhost:8001"
     BABLO_SERVICE_URL: str = "http://localhost:8002"
+    STRONG_SERVICE_URL: str = "http://localhost:8004"
 
     # WebSocket
     WS_HEARTBEAT_INTERVAL: int = 30  # seconds
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     # Redis channels to subscribe
     REDIS_CHANNEL_IMPULSE: str = "impulse:notifications"
     REDIS_CHANNEL_BABLO: str = "bablo:notifications"
+    REDIS_CHANNEL_STRONG: str = "strong:notifications"
 
     class Config:
         env_file = ".env"

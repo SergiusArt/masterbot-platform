@@ -11,6 +11,7 @@ const baseTabs: { id: TabType; label: string; icon: string }[] = [
   { id: 'combined', label: 'Обзор', icon: '📊' },
   { id: 'impulse', label: 'Импульсы', icon: '⚡' },
   { id: 'bablo', label: 'Bablo', icon: '💰' },
+  { id: 'strong', label: 'Strong', icon: '🏆' },
   { id: 'reports', label: 'Отчёты', icon: '📈' },
 ]
 

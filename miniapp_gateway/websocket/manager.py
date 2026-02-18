@@ -21,6 +21,7 @@ class WSMessageType(str, Enum):
     IMPULSE_STATS = "impulse:stats"
     BABLO_NEW = "bablo:new"
     BABLO_STATS = "bablo:stats"
+    STRONG_NEW = "strong:new"
     ACTIVITY_ZONE = "activity:zone"
     CONNECTED = "connected"
     ERROR = "error"

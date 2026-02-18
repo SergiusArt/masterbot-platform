@@ -24,6 +24,38 @@ export interface BabloSignal {
   received_at: string
 }
 
+export interface StrongSignal {
+  id: number
+  symbol: string
+  direction: 'long' | 'short'
+  received_at: string
+  entry_price: number | null
+  max_profit_pct: number | null
+  max_profit_price: number | null
+  bars_to_max: number | null
+}
+
+export interface StrongDirectionStats {
+  count: number
+  avg_profit_pct: number
+  min_profit_pct: number
+  max_profit_pct: number
+}
+
+export interface StrongStats {
+  total: number
+  calculated: number
+  pending: number
+  avg_profit_pct: number
+  min_profit_pct: number
+  max_profit_pct: number
+  avg_bars_to_max: number
+  by_direction: {
+    long: StrongDirectionStats
+    short: StrongDirectionStats
+  }
+}
+
 // Activity zones
 export type ActivityZone = 'very_low' | 'low' | 'normal' | 'high' | 'extreme'
 export type MarketPulse = 'calm' | 'normal' | 'active' | 'very_active'
@@ -96,6 +128,7 @@ export type WSMessageType =
   | 'impulse:stats'
   | 'bablo:new'
   | 'bablo:stats'
+  | 'strong:new'
   | 'activity:zone'
   | 'connected'
   | 'error'
@@ -108,7 +141,7 @@ export interface WSMessage {
 }
 
 // Tab navigation
-export type TabType = 'combined' | 'impulse' | 'bablo' | 'reports' | 'admin'
+export type TabType = 'combined' | 'impulse' | 'bablo' | 'strong' | 'reports' | 'admin'
 
 // Reports data
 export interface ServiceReport {

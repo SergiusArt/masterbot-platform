@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useImpulseStore } from '../store/impulseStore'
 import { useBabloStore } from '../store/babloStore'
-import type { WSMessage, Impulse, BabloSignal } from '../types'
+import { useStrongStore } from '../store/strongStore'
+import type { WSMessage, Impulse, BabloSignal, StrongSignal } from '../types'
 
 interface UseWebSocketOptions {
   initDataRaw: string
@@ -31,6 +32,7 @@ export function useWebSocket({ initDataRaw, devMode = false }: UseWebSocketOptio
   // Store actions
   const addImpulse = useImpulseStore(state => state.addImpulse)
   const addBabloSignal = useBabloStore(state => state.addSignal)
+  const addStrongSignal = useStrongStore(state => state.addSignal)
 
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
@@ -42,6 +44,9 @@ export function useWebSocket({ initDataRaw, devMode = false }: UseWebSocketOptio
           break
         case 'bablo:new':
           addBabloSignal(message.data as unknown as BabloSignal)
+          break
+        case 'strong:new':
+          addStrongSignal(message.data as unknown as StrongSignal)
           break
         case 'connected':
           console.log('WebSocket connected:', message.data)
@@ -59,7 +64,7 @@ export function useWebSocket({ initDataRaw, devMode = false }: UseWebSocketOptio
     } catch (e) {
       console.error('Failed to parse WebSocket message:', e)
     }
-  }, [addImpulse, addBabloSignal])
+  }, [addImpulse, addBabloSignal, addStrongSignal])
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

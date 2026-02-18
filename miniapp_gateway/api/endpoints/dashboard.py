@@ -264,6 +264,82 @@ async def get_bablo_signals(
             raise HTTPException(status_code=500, detail=f"Bablo service error: {e}")
 
 
+@router.get("/strong/stats")
+async def get_strong_stats(
+    user: TelegramUser = Depends(get_current_user),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
+) -> dict:
+    """Get Strong Signal performance statistics."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            params = {}
+            if from_date:
+                params["from_date"] = from_date
+            if to_date:
+                params["to_date"] = to_date
+
+            resp = await client.get(
+                f"{settings.STRONG_SERVICE_URL}/api/v1/performance/stats",
+                params=params,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=500, detail=f"Strong service error: {e}")
+
+
+@router.get("/strong/signals")
+async def get_strong_signals(
+    user: TelegramUser = Depends(get_current_user),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> dict:
+    """Get Strong Signal signals with performance data."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            params = {"limit": limit, "offset": offset}
+            if from_date:
+                params["from_date"] = from_date
+            if to_date:
+                params["to_date"] = to_date
+
+            resp = await client.get(
+                f"{settings.STRONG_SERVICE_URL}/api/v1/performance/signals",
+                params=params,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=500, detail=f"Strong service error: {e}")
+
+
+@router.get("/strong/recent")
+async def get_strong_recent(
+    user: TelegramUser = Depends(get_current_user),
+    limit: int = Query(default=20, le=100),
+    offset: int = Query(default=0, ge=0),
+    direction: Optional[str] = None,
+) -> dict:
+    """Get recent Strong Signal signals (raw, without performance data)."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            params = {"limit": limit, "offset": offset}
+            if direction:
+                params["direction"] = direction
+
+            resp = await client.get(
+                f"{settings.STRONG_SERVICE_URL}/api/v1/signals",
+                params=params,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=500, detail=f"Strong service error: {e}")
+
+
 @router.get("/analytics/{service}/{period}")
 async def get_analytics(
     service: Literal["impulse", "bablo"],

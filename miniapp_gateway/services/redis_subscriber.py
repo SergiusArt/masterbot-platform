@@ -47,6 +47,7 @@ class RedisSubscriber:
             channels = [
                 settings.REDIS_CHANNEL_IMPULSE,
                 settings.REDIS_CHANNEL_BABLO,
+                settings.REDIS_CHANNEL_STRONG,
             ]
             await self._pubsub.subscribe(*channels)
             logger.info(f"Subscribed to Redis channels: {channels}")
@@ -129,6 +130,11 @@ class RedisSubscriber:
             elif channel == settings.REDIS_CHANNEL_BABLO:
                 ws_message = WebSocketMessage(
                     type=WSMessageType.BABLO_NEW,
+                    data=payload,
+                )
+            elif channel == settings.REDIS_CHANNEL_STRONG:
+                ws_message = WebSocketMessage(
+                    type=WSMessageType.STRONG_NEW,
                     data=payload,
                 )
             else:

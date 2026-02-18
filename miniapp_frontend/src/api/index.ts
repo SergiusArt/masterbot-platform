@@ -1,4 +1,4 @@
-import type { DashboardSummary, Impulse, BabloSignal, TimeSeriesData, TimeSeriesPeriod } from '../types'
+import type { DashboardSummary, Impulse, BabloSignal, StrongSignal, StrongStats, TimeSeriesData, TimeSeriesPeriod } from '../types'
 
 const API_BASE = '/api/v1/dashboard'
 
@@ -118,6 +118,38 @@ export const api = {
     period: TimeSeriesPeriod
   ): Promise<TimeSeriesData> {
     return fetchApi(`/timeseries/${service}/${period}`)
+  },
+
+  /**
+   * Get Strong Signal performance stats.
+   */
+  async getStrongStats(params: {
+    from_date?: string
+    to_date?: string
+  } = {}): Promise<StrongStats> {
+    const searchParams = new URLSearchParams()
+    if (params.from_date) searchParams.set('from_date', params.from_date)
+    if (params.to_date) searchParams.set('to_date', params.to_date)
+    const query = searchParams.toString()
+    return fetchApi(`/strong/stats${query ? `?${query}` : ''}`)
+  },
+
+  /**
+   * Get Strong Signal signals with performance data.
+   */
+  async getStrongSignals(params: {
+    from_date?: string
+    to_date?: string
+    limit?: number
+    offset?: number
+  } = {}): Promise<{ signals: StrongSignal[]; count: number }> {
+    const searchParams = new URLSearchParams()
+    if (params.from_date) searchParams.set('from_date', params.from_date)
+    if (params.to_date) searchParams.set('to_date', params.to_date)
+    if (params.limit) searchParams.set('limit', String(params.limit))
+    if (params.offset) searchParams.set('offset', String(params.offset))
+    const query = searchParams.toString()
+    return fetchApi(`/strong/signals${query ? `?${query}` : ''}`)
   },
 
   /**

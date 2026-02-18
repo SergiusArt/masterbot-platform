@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api'
-import type { DashboardSummary, Impulse, BabloSignal } from '../../types'
+import type { DashboardSummary, Impulse, BabloSignal, StrongStats } from '../../types'
 import { getMarketPulseLabel, getMarketPulseColor } from '../../utils/activityZone'
 import { ActivityZoneBadge } from './ActivityZoneBadge'
 import { LoadingSpinner } from './LoadingSpinner'
@@ -9,6 +9,7 @@ import { formatPercent, formatRelativeTime, formatQuality } from '../../utils/fo
 interface CombinedDashboardProps {
   onNavigateToImpulse: () => void
   onNavigateToBablo: () => void
+  onNavigateToStrong: () => void
 }
 
 // Combined signal type for unified feed
@@ -16,8 +17,9 @@ type CombinedSignal =
   | { type: 'impulse'; data: Impulse; timestamp: string }
   | { type: 'bablo'; data: BabloSignal; timestamp: string }
 
-export function CombinedDashboard({ onNavigateToImpulse, onNavigateToBablo }: CombinedDashboardProps) {
+export function CombinedDashboard({ onNavigateToImpulse, onNavigateToBablo, onNavigateToStrong }: CombinedDashboardProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [strongStats, setStrongStats] = useState<StrongStats | null>(null)
   const [combinedFeed, setCombinedFeed] = useState<CombinedSignal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -26,13 +28,15 @@ export function CombinedDashboard({ onNavigateToImpulse, onNavigateToBablo }: Co
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const [summaryData, impulsesData, babloData] = await Promise.all([
+        const [summaryData, impulsesData, babloData, strongData] = await Promise.all([
           api.getSummary(),
           api.getImpulses({ limit: 10 }),
           api.getBabloSignals({ limit: 10 }),
+          api.getStrongStats().catch(() => null),
         ])
 
         setSummary(summaryData)
+        if (strongData) setStrongStats(strongData)
 
         // Combine and sort by timestamp
         const impulseSignals: CombinedSignal[] = (impulsesData.impulses || []).map((i: Impulse) => ({
@@ -127,6 +131,32 @@ export function CombinedDashboard({ onNavigateToImpulse, onNavigateToBablo }: Co
           </div>
         </button>
       </div>
+
+      {/* Strong Signal Performance */}
+      {strongStats && strongStats.calculated > 0 && (
+        <button
+          onClick={onNavigateToStrong}
+          className="card w-full text-left active:opacity-80 transition-opacity"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">🏆</span>
+              <span className="card-header !mb-0">Strong Signal</span>
+            </div>
+            <span className="text-sm font-semibold text-tg-accent">
+              {formatPercent(strongStats.avg_profit_pct)}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs text-tg-hint">
+            <span>Сигналов: {strongStats.total}</span>
+            <span>
+              🧤 {formatPercent(strongStats.by_direction.long.avg_profit_pct)} ({strongStats.by_direction.long.count})
+              {' | '}
+              🎒 {formatPercent(strongStats.by_direction.short.avg_profit_pct)} ({strongStats.by_direction.short.count})
+            </span>
+          </div>
+        </button>
+      )}
 
       {/* Combined Feed */}
       <div className="card">
