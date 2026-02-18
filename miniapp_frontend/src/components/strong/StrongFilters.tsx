@@ -26,31 +26,45 @@ export function StrongFilters({
   onPeriodChange,
 }: StrongFiltersProps) {
   return (
-    <div className="space-y-2">
+    <div className="card space-y-3">
       {/* Direction filter */}
-      <div className="flex space-x-2">
-        {directions.map((d) => (
-          <button
-            key={d.value}
-            onClick={() => onDirectionChange(d.value)}
-            className={`pill ${filterDirection === d.value ? 'pill-active' : 'pill-inactive'}`}
-          >
-            {d.label}
-          </button>
-        ))}
+      <div>
+        <div className="text-xs text-tg-hint mb-1">Направление</div>
+        <div className="flex space-x-2">
+          {directions.map((d) => (
+            <button
+              key={d.value}
+              onClick={() => onDirectionChange(d.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                filterDirection === d.value
+                  ? 'bg-tg-button text-tg-button-text'
+                  : 'bg-tg-secondary-bg text-tg-hint'
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Period filter */}
-      <div className="flex space-x-2">
-        {periods.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => onPeriodChange(p.value)}
-            className={`pill ${period === p.value ? 'pill-active' : 'pill-inactive'}`}
-          >
-            {p.label}
-          </button>
-        ))}
+      <div>
+        <div className="text-xs text-tg-hint mb-1">Период</div>
+        <div className="flex space-x-2">
+          {periods.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => onPeriodChange(p.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                period === p.value
+                  ? 'bg-tg-button text-tg-button-text'
+                  : 'bg-tg-secondary-bg text-tg-hint'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

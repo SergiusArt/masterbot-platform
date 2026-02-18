@@ -7,55 +7,74 @@ interface StrongStatsProps {
 
 export function StrongStats({ stats }: StrongStatsProps) {
   return (
-    <div>
-      {/* Main stats grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Average profit */}
-        <div className="card">
-          <div className="stat-label">Средний профит</div>
-          <div className="stat-value text-tg-accent">
-            {formatPercent(stats.avg_profit_pct)}
-          </div>
-        </div>
+    <div className="card space-y-4">
+      <div className="card-header">Отработка сигналов</div>
 
-        {/* Best signal */}
-        <div className="card">
-          <div className="stat-label">Лучший сигнал</div>
-          <div className="stat-value text-growth">
-            {formatPercent(stats.max_profit_pct)}
-          </div>
+      {/* Hero: Average profit */}
+      <div className="text-center py-2">
+        <div className="text-xs text-tg-hint mb-1">Средний макс. профит</div>
+        <div className="text-4xl font-bold text-tg-accent">
+          {formatPercent(stats.avg_profit_pct)}
         </div>
-
-        {/* Long stats */}
-        <div className="card">
-          <div className="flex items-center space-x-1 mb-1">
-            <span>🧤</span>
-            <span className="stat-label">Long</span>
-            <span className="text-xs text-tg-hint">({stats.by_direction.long.count})</span>
-          </div>
-          <div className="stat-value text-long">
-            {formatPercent(stats.by_direction.long.avg_profit_pct)}
-          </div>
-        </div>
-
-        {/* Short stats */}
-        <div className="card">
-          <div className="flex items-center space-x-1 mb-1">
-            <span>🎒</span>
-            <span className="stat-label">Short</span>
-            <span className="text-xs text-tg-hint">({stats.by_direction.short.count})</span>
-          </div>
-          <div className="stat-value text-short">
-            {formatPercent(stats.by_direction.short.avg_profit_pct)}
-          </div>
+        <div className="mt-1 text-xs text-tg-hint">
+          Рассчитано {stats.calculated} из {stats.total} сигналов
+          {stats.pending > 0 && (
+            <span className="ml-1">({stats.pending} ожидают)</span>
+          )}
         </div>
       </div>
 
-      {/* Summary line */}
-      <div className="mt-2 text-center text-xs text-tg-hint">
-        Рассчитано: {stats.calculated}/{stats.total}
-        {stats.pending > 0 && <span> | Ожидают: {stats.pending}</span>}
-        {stats.avg_bars_to_max > 0 && <span> | Avg бар: {Math.round(stats.avg_bars_to_max)}</span>}
+      {/* Stats grid */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="text-center">
+          <div className="stat-value text-lg text-growth">
+            {formatPercent(stats.max_profit_pct)}
+          </div>
+          <div className="stat-label">Лучший</div>
+        </div>
+        <div className="text-center">
+          <div className="stat-value text-lg text-tg-hint">
+            {formatPercent(stats.min_profit_pct)}
+          </div>
+          <div className="stat-label">Худший</div>
+        </div>
+        <div className="text-center">
+          <div className="stat-value text-lg text-tg-text">
+            {stats.avg_bars_to_max > 0 ? Math.round(stats.avg_bars_to_max) : '—'}
+          </div>
+          <div className="stat-label">Avg бар</div>
+        </div>
+      </div>
+
+      {/* Direction breakdown */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-long/5 rounded-lg p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <span>🧤</span>
+            <span className="text-xs font-medium text-long">LONG</span>
+            <span className="badge badge-long">{stats.by_direction.long.count}</span>
+          </div>
+          <div className="text-xl font-bold text-long">
+            {formatPercent(stats.by_direction.long.avg_profit_pct)}
+          </div>
+          <div className="text-xs text-tg-hint mt-1">
+            Лучший: {formatPercent(stats.by_direction.long.max_profit_pct)}
+          </div>
+        </div>
+
+        <div className="bg-short/5 rounded-lg p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <span>🎒</span>
+            <span className="text-xs font-medium text-short">SHORT</span>
+            <span className="badge badge-short">{stats.by_direction.short.count}</span>
+          </div>
+          <div className="text-xl font-bold text-short">
+            {formatPercent(stats.by_direction.short.avg_profit_pct)}
+          </div>
+          <div className="text-xs text-tg-hint mt-1">
+            Лучший: {formatPercent(stats.by_direction.short.max_profit_pct)}
+          </div>
+        </div>
       </div>
     </div>
   )
