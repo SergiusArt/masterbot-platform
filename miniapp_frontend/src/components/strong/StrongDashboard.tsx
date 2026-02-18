@@ -1,10 +1,12 @@
 import { useEffect, useCallback } from 'react'
 import { api } from '../../api'
-import { useStrongStore, selectFilteredSignals } from '../../store/strongStore'
+import { useStrongStore, selectFilteredSignals, selectStrongSignals } from '../../store/strongStore'
 import type { StrongPeriod } from '../../store/strongStore'
 import { StrongStats } from './StrongStats'
 import { StrongFilters } from './StrongFilters'
 import { StrongSignalList } from './StrongSignalList'
+import { ProfitDistributionChart } from './ProfitDistributionChart'
+import { SignalPerformanceChart } from './SignalPerformanceChart'
 import { LoadingSpinner } from '../common/LoadingSpinner'
 
 function getPeriodDates(period: StrongPeriod): { from_date?: string; to_date?: string } {
@@ -46,6 +48,7 @@ export function StrongDashboard() {
     setError,
   } = useStrongStore()
 
+  const allSignals = useStrongStore(selectStrongSignals)
   const filteredSignals = useStrongStore(selectFilteredSignals)
 
   const fetchData = useCallback(async (currentPeriod: StrongPeriod) => {
@@ -90,6 +93,20 @@ export function StrongDashboard() {
     <div className="p-4 space-y-4">
       {/* Stats cards */}
       {stats && <StrongStats stats={stats} />}
+
+      {/* Charts */}
+      {stats && allSignals.length > 0 && (
+        <>
+          <ProfitDistributionChart
+            signals={allSignals}
+            avgProfit={stats.avg_profit_pct}
+          />
+          <SignalPerformanceChart
+            signals={allSignals}
+            avgProfit={stats.avg_profit_pct}
+          />
+        </>
+      )}
 
       {/* Filters */}
       <StrongFilters
